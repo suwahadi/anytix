@@ -13,7 +13,7 @@ export const options = {
   thresholds: { http_req_duration: ["p(95)<500"], http_req_failed: ["rate<0.01"] },
 };
 
-export default function () {
+export default function eventPage() {
   const res = http.get(`${BASE_URL}/events/${SLUG}`);
   check(res, { "200": (r) => r.status === 200 });
   sleep(1);

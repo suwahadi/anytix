@@ -14,7 +14,7 @@ export const options = {
   thresholds: { "http_req_duration{name:hold}": ["p(95)<150"], checks: ["rate>0.99"] },
 };
 
-export default function () {
+export default function holdRush() {
   const res = http.post(
     `${BASE_URL}/api/holds`,
     JSON.stringify({ eventId: EVENT_ID, items: [{ inventoryId: INVENTORY_ID, qty: 1 }], turnstileToken: "XXXX.DUMMY.TOKEN.XXXX" }),

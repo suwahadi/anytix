@@ -12,7 +12,7 @@ export const options = {
   thresholds: { http_req_duration: ["p(95)<300"], checks: ["rate>0.99"] },
 };
 
-export default function () {
+export default function checkIn() {
   const token = tokens[exec.scenario.iterationInTest];
   const res = http.post(`${BASE_URL}/api/admin/check-ins`, JSON.stringify({ token, eventId: EVENT_ID, gate: `K6-${__VU % 4}` }), {
     headers: { "content-type": "application/json", cookie: __ENV.ADMIN_COOKIE },
