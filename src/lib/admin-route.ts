@@ -38,6 +38,10 @@ function errorFields(issues: Array<{ path: PropertyKey[]; message: string }>): R
   return fields;
 }
 
+export function validationResponse(issues: Array<{ path: PropertyKey[]; message: string }>): NextResponse {
+  return NextResponse.json({ error: "Periksa kembali isian yang ditandai.", fields: errorFields(issues) }, { status: 422 });
+}
+
 function foreignOrigin(req: NextRequest): boolean {
   const origin = req.headers.get("origin");
   if (!origin || req.method === "GET" || req.method === "HEAD") return false;
@@ -66,12 +70,7 @@ export function adminRoute<T = undefined>(
     let body = undefined as T;
     if (schema) {
       const parsed = schema.safeParse(await readJson(req));
-      if (!parsed.success) {
-        return NextResponse.json(
-          { error: "Periksa kembali isian yang ditandai.", fields: errorFields(parsed.error.issues) },
-          { status: 422 },
-        );
-      }
+      if (!parsed.success) return validationResponse(parsed.error.issues);
       body = parsed.data;
     }
 
