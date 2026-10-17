@@ -420,4 +420,4 @@ tests/unit/*.test.ts, tests/db/*.test.ts
 - [ ] **Step 2:** End-to-end in the browser as `admin@admin.com`: create category, create event with poster and description, add three ticket categories (one Bundle), build a form with an identity field, set transaction settings, publish, open the public pages and see everything; rename the slug and confirm the old URL redirects.
 - [ ] **Step 3:** AGENTS.md comment check (same grep as Fase 0 Task 10) and the antislop Delivery Gate report for the public pages.
 - [ ] **Step 4:** Final whole-phase review by a fresh reviewer; fix Critical/Important with RED→GREEN tests.
-- [ ] **Step 5:** Report to the owner in Indonesian and ask before pushing to `main`.
+- [ ] **Step 5:** Commit and push to `main` right away (owner rule), then report to the owner in Indonesian.
