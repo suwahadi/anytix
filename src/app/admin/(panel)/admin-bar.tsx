@@ -12,6 +12,7 @@ const NAV = [
   { href: "/admin", label: "Dasbor" },
   { href: "/admin/events", label: "Event" },
   { href: "/admin/orders", label: "Pesanan" },
+  { href: "/admin/check-in", label: "Check-in" },
   { href: "/admin/event-categories", label: "Kategori Event" },
   { href: "/admin/settings", label: "Pengaturan" },
   { href: "/admin/security", label: "Keamanan" },

@@ -14,7 +14,7 @@ function mediaOrigin(): string {
 // shortcut: inline scripts are allowed because Next.js inlines its bootstrap without a nonce; move to a nonce-based CSP when a security audit asks for it.
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${MIDTRANS} ${TURNSTILE}`,
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' ${MIDTRANS} ${TURNSTILE}`,
   `frame-src ${MIDTRANS} ${TURNSTILE}`,
   `connect-src 'self' ${MIDTRANS} ${TURNSTILE}`,
   `img-src 'self' data: blob: ${mediaOrigin()} ${MIDTRANS}`,
@@ -29,6 +29,7 @@ const securityHeaders = [
   { key: "Content-Security-Policy", value: csp },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
   ...(process.env.APP_URL?.startsWith("https://") ? [{ key: "Strict-Transport-Security", value: "max-age=31536000" }] : []),
 ];
 

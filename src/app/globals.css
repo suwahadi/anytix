@@ -69,6 +69,8 @@
   --color-warning: var(--warning);
   --color-warning-soft: var(--warning-soft);
   --color-focus: var(--focus);
+  --color-scan-ok: #047857;
+  --color-scan-bad: #b91c1c;
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
 }
 
