@@ -193,3 +193,44 @@ export const formFieldInput = z
     }
   });
 export type FormFieldValues = z.infer<typeof formFieldInput>;
+
+const nullableDate = (label: string) => z.preprocess(emptyToUndefined, isoDate(label).nullable().default(null));
+
+const voucherFields = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(3, "Kode minimal 3 karakter.")
+    .max(40, "Kode maksimal 40 karakter.")
+    .regex(/^[A-Za-z0-9_-]+$/, "Kode hanya boleh huruf, angka, garis bawah, dan tanda hubung."),
+  type: z.enum(["percent", "fixed"]),
+  value: z.number({ message: "Isi nilai diskon." }).int("Nilai harus bilangan bulat.").min(1, "Nilai minimal 1."),
+  maxDiscount: z.number().int().min(1, "Maksimal diskon minimal Rp1.").nullable().default(null),
+  minQty: z.number().int().min(0, "Tidak boleh negatif.").max(1000).default(0),
+  minSubtotal: z.number().int().min(0, "Tidak boleh negatif.").max(1_000_000_000).default(0),
+  ticketCategoryIds: z.array(z.number().int().positive()).max(100).default([]),
+  validFrom: nullableDate("Waktu mulai"),
+  validTo: nullableDate("Waktu selesai"),
+  maxUses: z.number().int().min(1, "Kuota minimal 1.").max(1_000_000).nullable().default(null),
+  active: z.boolean().default(true),
+});
+
+function voucherRules(v: { type: string; value: number; validFrom: string | null; validTo: string | null }, ctx: z.RefinementCtx) {
+  if (v.type === "percent" && v.value > 100) ctx.addIssue({ code: "custom", path: ["value"], message: "Persen maksimal 100." });
+  if (v.validFrom && v.validTo && new Date(v.validTo) <= new Date(v.validFrom)) {
+    ctx.addIssue({ code: "custom", path: ["validTo"], message: "Harus setelah waktu mulai." });
+  }
+}
+
+export const voucherInput = voucherFields.superRefine(voucherRules);
+export type VoucherValues = z.infer<typeof voucherInput>;
+
+export const voucherGenerateInput = voucherFields
+  .omit({ code: true })
+  .extend({
+    prefix: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{0,10}$/, "Awalan maksimal 10 huruf atau angka."),
+    count: z.number().int().min(1, "Minimal 1 kode.").max(500, "Maksimal 500 kode sekali buat."),
+    length: z.number().int().min(6, "Panjang minimal 6.").max(12, "Panjang maksimal 12.").default(8),
+  })
+  .superRefine(voucherRules);
+export type VoucherGenerateValues = z.infer<typeof voucherGenerateInput>;
