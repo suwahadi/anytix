@@ -1,0 +1,18 @@
+import { describe, expect, it } from "vitest";
+import { toIsoFromLocal, toLocalInput } from "@/lib/format";
+
+describe("timezone conversion for datetime-local inputs", () => {
+  it("adds the fixed Indonesian offset", () => {
+    expect(toIsoFromLocal("2026-12-20T19:00", "Asia/Jakarta")).toBe("2026-12-20T19:00:00+07:00");
+    expect(toIsoFromLocal("2026-12-20T19:00", "Asia/Jayapura")).toBe("2026-12-20T19:00:00+09:00");
+  });
+
+  it("shows a UTC instant in the event timezone", () => {
+    expect(toLocalInput("2026-12-20T12:00:00Z", "Asia/Makassar")).toBe("2026-12-20T20:00");
+    expect(toLocalInput(new Date("2026-12-31T20:30:00Z"), "Asia/Jakarta")).toBe("2027-01-01T03:30");
+  });
+
+  it("round trips", () => {
+    expect(toLocalInput(toIsoFromLocal("2026-03-05T08:15", "Asia/Jayapura"), "Asia/Jayapura")).toBe("2026-03-05T08:15");
+  });
+});

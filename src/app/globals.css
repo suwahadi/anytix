@@ -81,3 +81,33 @@ body {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+
+.rich-text > * + * {
+  margin-top: 0.75em;
+}
+.rich-text h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.rich-text h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.rich-text ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+}
+.rich-text ol {
+  list-style: decimal;
+  padding-left: 1.25rem;
+}
+.rich-text a {
+  color: var(--accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.rich-text blockquote {
+  border-left: 3px solid var(--border-strong);
+  padding-left: 0.75rem;
+  color: var(--muted);
+}
