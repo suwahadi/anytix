@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  cancelTransaction,
   createSnapTransaction,
+  expireTransaction,
   getTransactionStatus,
   MidtransError,
   toEngineStatus,
@@ -97,5 +99,29 @@ describe("createSnapTransaction", () => {
     await createSnapTransaction(payload, { ...cfg, production: true, notificationUrl: undefined });
     expect(fn.mock.calls[0][0]).toBe("https://app.midtrans.com/snap/v1/transactions");
     expect(new Headers(fn.mock.calls[0][1]?.headers).has("x-override-notification")).toBe(false);
+  });
+});
+
+describe("error codes inside an HTTP 200 body", () => {
+  it("expire rejects when Midtrans refuses in the body", async () => {
+    stubFetch(200, { status_code: "412", status_message: "Merchant cannot modify the status of the transaction" });
+    await expect(expireTransaction("A1-1", cfg)).rejects.toBeInstanceOf(MidtransError);
+  });
+
+  it("cancel rejects when Midtrans refuses in the body", async () => {
+    stubFetch(200, { status_code: "412", status_message: "Merchant cannot modify the status of the transaction" });
+    await expect(cancelTransaction("A1-1", cfg)).rejects.toBeInstanceOf(MidtransError);
+  });
+
+  it("expire accepts the 407 expired answer", async () => {
+    stubFetch(200, { status_code: "407", transaction_status: "expire" });
+    await expect(expireTransaction("A1-1", cfg)).resolves.toBeUndefined();
+  });
+
+  it("status keeps an expired transaction (407) and throws on a server error in the body", async () => {
+    stubFetch(200, { order_id: "A1-1", status_code: "407", transaction_status: "expire", gross_amount: "1.00" });
+    expect(await getTransactionStatus("A1-1", cfg)).toMatchObject({ transaction_status: "expire" });
+    stubFetch(200, { status_code: "500", status_message: "Sorry, we encountered internal server error" });
+    await expect(getTransactionStatus("A1-1", cfg)).rejects.toBeInstanceOf(MidtransError);
   });
 });

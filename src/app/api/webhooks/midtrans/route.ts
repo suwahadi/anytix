@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { sql } from "@/lib/db";
+import { enqueueJob } from "@/lib/jobs";
 import { verifyNotificationSignature } from "@/lib/payments/midtrans";
 import { syncPaymentStatus } from "@/lib/payments/payment-service";
 
@@ -17,8 +19,14 @@ export async function POST(req: NextRequest) {
   try {
     await syncPaymentStatus(body.order_id);
   } catch (e) {
-    // Answering 200 stops Midtrans retry storms; payment-check and reconciliation repair the state later.
+    // Answering 200 stops Midtrans retrying, so schedule our own re-check before the hold can expire and free the slot.
     console.error(`webhook sync failed for ${body.order_id}: ${e instanceof Error ? e.message : String(e)}`);
+    try {
+      const [p] = await sql<{ order_id: number }[]>`select order_id from payments where midtrans_order_id = ${body.order_id}`;
+      if (p) await enqueueJob("payment-check", { order_id: p.order_id }, `payment-check:${p.order_id}:webhook:${Date.now()}`, new Date(Date.now() + 30_000));
+    } catch (inner) {
+      console.error(`webhook re-check could not be queued for ${body.order_id}: ${inner instanceof Error ? inner.message : String(inner)}`);
+    }
   }
   return NextResponse.json({ ok: true });
 }

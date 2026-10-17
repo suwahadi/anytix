@@ -130,11 +130,16 @@ describe("Midtrans webhook", () => {
     expect(await orderStatus(order.orderId)).toBe("awaiting_payment");
   });
 
-  it("an error after the signature check still answers 200", async () => {
+  it("an error after the signature check answers 200 and queues a payment check", async () => {
     const { order } = await paidOrder();
     vi.mocked(getTransactionStatus).mockRejectedValue(new Error("network down"));
     const res = await post(notification(order.midtransOrderId, "settlement"));
     expect(res.status).toBe(200);
     expect(await orderStatus(order.orderId)).toBe("awaiting_payment");
+    const jobs = await sql<{ payload: { order_id: number }; due_in: number }[]>`
+      select payload, extract(epoch from run_at - now()) as due_in from jobs where dedupe_key like ${`payment-check:${order.orderId}:webhook:%`}`;
+    expect(jobs).toHaveLength(1);
+    expect(Number(jobs[0].payload.order_id)).toBe(order.orderId);
+    expect(Number(jobs[0].due_in)).toBeGreaterThan(20);
   });
 });

@@ -146,6 +146,17 @@ describe("checkout API", () => {
     expect(retry.headers.get("referrer-policy")).toBe("no-referrer");
   });
 
+  it("snap network error or timeout still returns the order", async () => {
+    vi.mocked(createSnapTransaction).mockRejectedValueOnce(new TypeError("fetch failed"));
+    const { visitor, holdId } = await setup();
+    const res = await call(holdId, visitor.value, {});
+    expect(res.status).toBe(201);
+    vi.mocked(createSnapTransaction).mockRejectedValueOnce(new DOMException("The operation was aborted due to timeout", "TimeoutError"));
+    const retry = await callPay((await res.json()).orderUuid);
+    expect(retry.status).toBe(409);
+    expect((await retry.json()).error).toBe("Pembayaran belum bisa disiapkan. Coba lagi sebentar lagi.");
+  });
+
   it("pay reuses the stored token", async () => {
     const { visitor, holdId } = await setup();
     const { orderUuid } = await (await call(holdId, visitor.value, {})).json();

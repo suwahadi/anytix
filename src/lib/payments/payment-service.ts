@@ -67,12 +67,12 @@ export async function ensureSnapToken(orderId: number): Promise<{ token: string 
     const [stored] = await sql<{ snap_token: string }[]>`select snap_token from payments where id = ${p.payment_id}`;
     return { token: stored.snap_token };
   } catch (e) {
-    if (!(e instanceof MidtransError)) throw e;
-    // A parallel request may have created the token first, which makes Midtrans reject this order_id as taken.
+    // The order already exists, so a Snap failure of any kind (HTTP error, network, timeout) must not fail the caller.
+    // A parallel request may also have created the token first, which makes Midtrans reject this order_id as taken.
     const [stored] = await sql<{ snap_token: string | null }[]>`select snap_token from payments where id = ${p.payment_id}`;
     if (stored?.snap_token) return { token: stored.snap_token };
     // shortcut: a Snap call that succeeded at Midtrans but whose response was lost leaves this order_id unusable; the buyer then needs CS, until attempt rotation is built.
-    console.error(`snap token failed for order ${orderId}: HTTP ${e.status}`);
+    console.error(`snap token failed for order ${orderId}: ${e instanceof MidtransError ? `HTTP ${e.status}` : e instanceof Error ? e.name : "unknown"}`);
     return { error: NOT_READY };
   }
 }

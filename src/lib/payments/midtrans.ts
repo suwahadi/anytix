@@ -57,6 +57,12 @@ async function call(url: string, init: RequestInit): Promise<{ status: number; b
   return { status: res.status, body };
 }
 
+/** Core API answers HTTP 200 with the real outcome in body.status_code; 407 is the normal answer for an expired transaction. */
+function failed(status: number, body: Record<string, unknown>): boolean {
+  const code = Number(body.status_code);
+  return status < 200 || status >= 300 || (code >= 400 && code !== 407);
+}
+
 export function snapScriptUrl(c: MidtransConfig = midtransConfig()): string {
   return `${appHost(c)}/snap/snap.js`;
 }
@@ -81,7 +87,7 @@ export async function createSnapTransaction(payload: SnapPayload, c: MidtransCon
 export async function getTransactionStatus(orderId: string, c: MidtransConfig = midtransConfig()): Promise<MidtransStatus | null> {
   const { status, body } = await call(`${apiHost(c)}/v2/${encodeURIComponent(orderId)}/status`, { method: "GET", headers: headers(c, false) });
   if (status === 404 || body.status_code === "404") return null;
-  if (status < 200 || status >= 300) throw new MidtransError(`Get Status failed with HTTP ${status}`, status, body);
+  if (failed(status, body)) throw new MidtransError(`Get Status failed with HTTP ${status}, code ${String(body.status_code)}`, status, body);
   return body as MidtransStatus;
 }
 
@@ -91,7 +97,7 @@ async function changeStatus(orderId: string, action: "expire" | "cancel", c: Mid
     headers: headers(c, true),
   });
   if (status === 404 || body.status_code === "404") return;
-  if (status < 200 || status >= 300) throw new MidtransError(`${action} failed with HTTP ${status}`, status, body);
+  if (failed(status, body)) throw new MidtransError(`${action} failed with HTTP ${status}, code ${String(body.status_code)}`, status, body);
 }
 
 export function expireTransaction(orderId: string, c: MidtransConfig = midtransConfig()): Promise<void> {

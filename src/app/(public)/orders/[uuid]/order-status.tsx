@@ -6,7 +6,7 @@ import { Countdown } from "@/components/countdown";
 import { Alert } from "@/components/ui/alert";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { Button, buttonClass } from "@/components/ui/button";
-import type { DisplayStatus } from "@/lib/booking/order-status";
+import { isFinalizing, shouldPoll, type DisplayStatus } from "@/lib/booking/order-status";
 import type { OrderView } from "@/lib/booking/order-view";
 import { requestJson } from "@/lib/client-fetch";
 import { formatDateTime, formatEventSchedule, formatRupiah } from "@/lib/format";
@@ -56,6 +56,8 @@ export function OrderStatus({ initial, cs }: { initial: OrderView; cs: { whatsap
   const tz = view.event.timezone as Timezone;
   const schedule = formatEventSchedule(new Date(view.event.startsAt), new Date(view.event.endsAt), tz);
   const pending = view.displayStatus === "PENDING";
+  const polling = shouldPoll(view.status);
+  const finalizing = isFinalizing(view.status, view.displayStatus);
 
   const refresh = useCallback(async () => {
     const res = await requestJson<OrderView>(`/api/orders/${view.uuid}`);
@@ -100,7 +102,7 @@ export function OrderStatus({ initial, cs }: { initial: OrderView; cs: { whatsap
   }, [pending, view.uuid, openSnap]);
 
   useEffect(() => {
-    if (!pending) return;
+    if (!polling) return;
     let timer: ReturnType<typeof setInterval> | undefined;
     const sync = () => {
       clearInterval(timer);
@@ -112,7 +114,7 @@ export function OrderStatus({ initial, cs }: { initial: OrderView; cs: { whatsap
       clearInterval(timer);
       document.removeEventListener("visibilitychange", sync);
     };
-  }, [pending, refresh]);
+  }, [polling, refresh]);
 
   const contact = [cs.whatsapp && `WhatsApp +${cs.whatsapp}`, cs.email].filter(Boolean).join(" · ");
 
@@ -138,7 +140,10 @@ export function OrderStatus({ initial, cs }: { initial: OrderView; cs: { whatsap
             Silakan lakukan pembayaran sebelum <strong>{formatDateTime(new Date(view.payExpiresAt), tz)}</strong>.
           </p>
         )}
-        {view.displayStatus === "KEDALUWARSA" && <p className="text-text">Batas bayar sudah lewat, jadi pesanan ini dibatalkan dan slot tiket dilepas.</p>}
+        {finalizing && (
+          <p className="text-text">Batas bayar sudah lewat. Kami sedang memastikan status pembayaran Anda, dan halaman ini diperbarui otomatis.</p>
+        )}
+        {view.displayStatus === "KEDALUWARSA" && !finalizing && <p className="text-text">Batas bayar sudah lewat, jadi pesanan ini dibatalkan dan slot tiket dilepas.</p>}
         {view.displayStatus === "DIBATALKAN" && <p className="text-text">Pesanan ini dibatalkan oleh pengelola sebelum dibayar.</p>}
         {view.displayStatus === "DITINJAU" && (
           <p className="text-text">
@@ -175,7 +180,7 @@ export function OrderStatus({ initial, cs }: { initial: OrderView; cs: { whatsap
             <p className="text-sm text-muted">Halaman ini diperbarui otomatis setelah pembayaran diterima.</p>
           </div>
         )}
-        {(view.displayStatus === "KEDALUWARSA" || view.displayStatus === "DIBATALKAN") && (
+        {((view.displayStatus === "KEDALUWARSA" && !finalizing) || view.displayStatus === "DIBATALKAN") && (
           <Link href={`/events/${view.event.slug}`} className={`${buttonClass()} self-start`}>
             Pesan lagi
           </Link>
