@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { requestJson } from "@/lib/client-fetch";
-import { Button } from "./ui";
+import { Button } from "@/components/ui/button";
 
 export function LogoutButton() {
   const router = useRouter();

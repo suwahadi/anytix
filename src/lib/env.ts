@@ -11,6 +11,7 @@ const schema = z.object({
   APP_URL: z.string().url().default("http://localhost:3000"),
   SUPABASE_URL: optional,
   SUPABASE_SERVICE_ROLE_KEY: optional,
+  NEXT_PUBLIC_MEDIA_BASE_URL: optional,
   MIDTRANS_SERVER_KEY: optional,
   MIDTRANS_CLIENT_KEY: optional,
   MIDTRANS_IS_PRODUCTION: z

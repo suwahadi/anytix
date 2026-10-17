@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { requestJson } from "@/lib/client-fetch";
-import { Alert, Button, Field } from "../ui";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 
 type Next = { next: "done" | "2fa" };
 
@@ -49,7 +51,7 @@ export function LoginForm() {
 
   if (step === "code") {
     return (
-      <form onSubmit={submitCode} className="flex flex-col gap-4" noValidate>
+      <form key="code" onSubmit={submitCode} className="flex flex-col gap-4" noValidate>
         <Field
           ref={codeRef}
           id="code"
@@ -75,7 +77,8 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={submitCredentials} className="flex flex-col gap-4" noValidate>
+    // Distinct keys stop React reusing the Kembali button node as the submit button, which would re-submit the login form.
+    <form key="credentials" onSubmit={submitCredentials} className="flex flex-col gap-4" noValidate>
       <Field
         id="email"
         label="Email"

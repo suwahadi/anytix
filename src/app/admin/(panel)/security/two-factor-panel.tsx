@@ -3,7 +3,10 @@
 import Image from "next/image";
 import { useEffect, useState, type FormEvent } from "react";
 import { requestJson, type FetchResult } from "@/lib/client-fetch";
-import { Alert, Button, Field, Spinner } from "../ui";
+import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
+import { Spinner } from "@/components/ui/spinner";
 
 type Setup = { enabled: true } | { enabled: false; secret: string; uri: string; qr: string };
 
@@ -57,18 +60,18 @@ export function TwoFactorPanel() {
   }
 
   return (
-    <section aria-labelledby="two-factor-title" className="mt-6 max-w-xl rounded-lg border border-zinc-200 p-5 dark:border-zinc-800">
-      <h2 id="two-factor-title" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+    <section aria-labelledby="two-factor-title" className="mt-6 max-w-xl rounded-lg border border-border bg-surface p-5">
+      <h2 id="two-factor-title" className="text-lg font-semibold text-text">
         Verifikasi dua langkah
       </h2>
       {notice && (
-        <p role="status" className="mt-3 rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">
+        <p role="status" className="mt-3 rounded-md border border-success bg-success-soft px-3 py-2 text-sm text-success">
           {notice}
         </p>
       )}
 
       {!setup && !loadError && (
-        <p className="mt-3 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-3 flex items-center gap-2 text-sm text-muted">
           <Spinner /> Memuat status verifikasi dua langkah…
         </p>
       )}
@@ -84,7 +87,7 @@ export function TwoFactorPanel() {
 
       {setup?.enabled && (
         <form onSubmit={submit} className="mt-3 flex flex-col gap-4" noValidate>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">
+          <p className="text-sm text-text">
             Aktif. Setiap kali masuk, panel meminta kode dari aplikasi autentikator di ponsel Anda. Untuk mematikannya,
             masukkan kode yang sedang tampil di aplikasi.
           </p>
@@ -97,7 +100,7 @@ export function TwoFactorPanel() {
 
       {setup && !setup.enabled && (
         <form onSubmit={submit} className="mt-3 flex flex-col gap-4" noValidate>
-          <ol className="list-decimal space-y-2 pl-5 text-sm text-zinc-700 dark:text-zinc-300">
+          <ol className="list-decimal space-y-2 pl-5 text-sm text-text">
             <li>Pindai kode QR di bawah dengan aplikasi autentikator, misalnya Google Authenticator atau Authy.</li>
             <li>Masukkan 6 digit kode yang muncul di aplikasi, lalu aktifkan.</li>
           </ol>
@@ -109,9 +112,9 @@ export function TwoFactorPanel() {
             unoptimized
             className="rounded-md bg-white p-2"
           />
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="text-sm text-muted">
             Tidak bisa memindai? Ketik kunci ini di aplikasi:{" "}
-            <code className="break-all rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100">
+            <code className="break-all rounded bg-surface-muted px-1.5 py-0.5 text-text">
               {setup.secret}
             </code>
           </p>

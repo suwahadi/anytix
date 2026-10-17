@@ -1,5 +1,4 @@
 import { requireEnv } from "@/lib/env";
-import type { VariantSize } from "@/lib/image-service";
 
 const BUCKET = "media";
 
@@ -32,6 +31,4 @@ export async function deleteObjects(paths: string[]): Promise<void> {
   if (!res.ok) throw new Error(`Storage delete failed (${res.status}): ${await res.text()}`);
 }
 
-export function mediaUrl(base: string, size: VariantSize): string {
-  return storageUrl(`object/public/${BUCKET}/${base}-${size}.webp`);
-}
+export { mediaUrl } from "@/lib/media";
