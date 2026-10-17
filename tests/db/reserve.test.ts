@@ -147,6 +147,13 @@ describe("reserve_tickets", () => {
     expect(err.code).toBe("NOT_ON_SALE");
   });
 
+  it("ended event is not on sale", async () => {
+    const ev = await createTestEvent({ categories: [{ capacity: 10 }] });
+    await sql`update events set starts_at = now() - interval '3 hours', ends_at = now() - interval '1 minute' where id = ${ev.eventId}`;
+    const err = await catchHoldError(reserve(randomUUID(), ev.eventId, [{ inventoryId: ev.inventoryIds[0], qty: 1 }]));
+    expect(err.code).toBe("NOT_ON_SALE");
+  });
+
   it("category outside sale window is not on sale", async () => {
     const ev = await createTestEvent({ categories: [{ capacity: 10 }] });
     await sql`update ticket_categories set sale_starts_at = now() + interval '1 hour', sale_ends_at = now() + interval '2 hours'

@@ -144,7 +144,7 @@ export const formFieldInput = z
       .object({
         minLength: optionalInt("Panjang minimal"),
         maxLength: optionalInt("Panjang maksimal"),
-        pattern: z.preprocess(emptyToUndefined, z.string().max(200).optional()),
+        pattern: z.preprocess(emptyToUndefined, z.string().max(200, "Pola regex tidak valid.").optional()),
         min: z.preprocess(emptyToUndefined, z.number().optional()),
         max: z.preprocess(emptyToUndefined, z.number().optional()),
         minDate: optionalDate,
@@ -165,6 +165,19 @@ export const formFieldInput = z
       if (v.options.length === 0) ctx.addIssue({ code: "custom", path: ["options"], message: "Tambahkan minimal satu opsi." });
       if (new Set(v.options.map((o) => o.value)).size !== v.options.length) {
         ctx.addIssue({ code: "custom", path: ["options"], message: "Nilai opsi tidak boleh sama." });
+      }
+    }
+    const pairs = [
+      ["minLength", "maxLength"],
+      ["min", "max"],
+      ["minDate", "maxDate"],
+      ["minSelected", "maxSelected"],
+    ] as const;
+    for (const [lo, hi] of pairs) {
+      const a = v.validation[lo];
+      const b = v.validation[hi];
+      if (a !== undefined && b !== undefined && a > b) {
+        ctx.addIssue({ code: "custom", path: ["validation", hi], message: "Harus lebih besar atau sama dengan nilai minimal." });
       }
     }
     if (v.validation.pattern) {

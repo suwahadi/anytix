@@ -23,7 +23,7 @@
 - Visitor identity is the signed `vid` cookie (`readVisitorId`); a hold belongs only to its visitor. Order pages are reachable by `public_uuid` only (PRD §19); the invoice code is never an access key.
 - Identity numbers: never in logs, emails, payloads to Midtrans, job payloads or API responses; masked as `3201********0001` wherever shown (PRD §14).
 - Jobs: `jobs.dedupe_key` is unique forever, so a repeatable job needs a key that changes per attempt (`…:resend:<ms>`, `…:recon:<YYYY-MM-DDTHH>`).
-- Out of scope (Fase 3): QR images, PDF, scanner, voucher admin and the promo modal ("Lebih hemat pakai promo" is not shown; `quote` still accepts a code), PDP full-reveal and retention, sales dashboard, admin accounts. The paid order page shows the ticket list (category, "Tiket 1 dari N") without QR, with the note "QR e-ticket tampil di sini sebelum hari acara." **Ask the owner before shipping this wording.**
+- Out of scope (Fase 3): QR images, PDF, scanner, voucher admin and the promo modal ("Lebih hemat pakai promo" is not shown; `quote` still accepts a code), PDP full-reveal and retention, sales dashboard, admin accounts. The paid order page shows the ticket list (category, "Tiket 1 dari N") without QR, with the note "QR e-ticket tampil di sini sebelum hari acara." (wording approved by the owner, 17 Okt 2026).
 
 ## Review Focus
 

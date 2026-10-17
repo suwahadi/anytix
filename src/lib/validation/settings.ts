@@ -30,6 +30,10 @@ export const transactionSettings = z.object({
     qris: z.boolean(),
     va: z.object(Object.fromEntries(VA_KEYS.map((k) => [k, z.boolean()])) as Record<(typeof VA_KEYS)[number], z.ZodBoolean>),
   }),
+}).superRefine((v, ctx) => {
+  if (!v.paymentMethods.qris && !Object.values(v.paymentMethods.va).some(Boolean)) {
+    ctx.addIssue({ code: "custom", path: ["paymentMethods"], message: "Aktifkan minimal satu metode pembayaran." });
+  }
 });
 export type TransactionSettingsValues = z.infer<typeof transactionSettings>;
 

@@ -330,7 +330,7 @@ export function FormBuilder() {
             {draft.type === "date" && (
               <div className="grid gap-4 sm:grid-cols-3">
                 <Field id="ff-minDate" label="Tanggal paling awal" type="date" value={draft.v.minDate ?? ""} onChange={(e) => setV("minDate", e.target.value)} />
-                <Field id="ff-maxDate" label="Tanggal paling akhir" type="date" value={draft.v.maxDate ?? ""} onChange={(e) => setV("maxDate", e.target.value)} />
+                <Field id="ff-maxDate" label="Tanggal paling akhir" type="date" value={draft.v.maxDate ?? ""} error={errors["validation.maxDate"]} onChange={(e) => setV("maxDate", e.target.value)} />
                 {numberField("minAge", "Usia minimal (tahun)")}
               </div>
             )}

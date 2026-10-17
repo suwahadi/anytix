@@ -1,3 +1,4 @@
+import { UserError } from "@/lib/admin-route";
 import { diffFields, writeAudit } from "@/lib/audit";
 import { encrypt } from "@/lib/crypto";
 import { sql, transaction } from "@/lib/db";
@@ -130,6 +131,10 @@ export async function putSettingsGroup(
 
   const m = input as SmtpSettingsValues;
   const before = await getSettingsGroup("smtp");
+  if (!m.password && before.hasPassword && m.host !== before.host) {
+    const message = "Isi ulang kata sandi karena host SMTP berubah.";
+    throw new UserError(message, 422, { password: message });
+  }
   const value = { host: m.host, port: m.port, user: m.user, from: m.from };
   await transaction(async (tx) => {
     await setValue(tx, "smtp", value);

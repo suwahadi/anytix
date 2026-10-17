@@ -94,7 +94,7 @@ export function TransactionForm() {
           <h2 className="text-lg font-bold text-text">Metode pembayaran</h2>
           <p className="mt-1 text-sm text-muted">Metode yang dimatikan tidak tampil di halaman pembayaran.</p>
         </div>
-        <fieldset className="grid gap-3 sm:grid-cols-2">
+        <fieldset className="grid gap-3 sm:grid-cols-2" aria-describedby={errors.paymentMethods ? "methods-error" : undefined}>
           <legend className="sr-only">Metode pembayaran aktif</legend>
           {PAYMENT_METHODS.map((m) => (
             <Checkbox
@@ -106,6 +106,11 @@ export function TransactionForm() {
             />
           ))}
         </fieldset>
+        {errors.paymentMethods && (
+          <p id="methods-error" className="text-sm text-danger">
+            {errors.paymentMethods}
+          </p>
+        )}
       </section>
 
       {formError && <Alert>{formError}</Alert>}

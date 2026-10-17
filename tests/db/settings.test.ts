@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { PUT as putRoute } from "@/app/api/admin/settings/[group]/route";
+import { UserError } from "@/lib/admin-route";
 import { ADMIN_COOKIE, createSessionValue } from "@/lib/admin-session";
 import { createAdmin } from "@/lib/admin-service";
 import { decrypt } from "@/lib/crypto";
@@ -74,10 +75,35 @@ describe("settings", () => {
 
   it("empty password keeps the stored one", async () => {
     await putSettingsGroup(adminId, "smtp", { host: "mail.uji.test", port: 587, user: "uji", password: "lama-123", from: "a@uji.test" });
-    await putSettingsGroup(adminId, "smtp", { host: "mail2.uji.test", port: 465, user: "uji", password: "", from: "a@uji.test" });
+    await putSettingsGroup(adminId, "smtp", { host: "mail.uji.test", port: 465, user: "uji", password: "", from: "a@uji.test" });
     const [row] = await sql<{ secret_enc: Buffer }[]>`select secret_enc from settings where key = 'smtp'`;
     expect(decrypt(Buffer.from(row.secret_enc))).toBe("lama-123");
-    expect((await getSettingsGroup("smtp")).host).toBe("mail2.uji.test");
+    expect((await getSettingsGroup("smtp")).port).toBe(465);
+  });
+
+  it("smtp host change needs the password again", async () => {
+    await putSettingsGroup(adminId, "smtp", { host: "mail.uji.test", port: 587, user: "uji", password: "lama-123", from: "a@uji.test" });
+    const err = await putSettingsGroup(adminId, "smtp", { host: "mail.lain.test", port: 587, user: "uji", password: "", from: "a@uji.test" }).catch(
+      (e: unknown) => e,
+    );
+    expect(err).toBeInstanceOf(UserError);
+    expect((err as UserError).status).toBe(422);
+    expect((err as UserError).fields?.password).toBe("Isi ulang kata sandi karena host SMTP berubah.");
+    expect((await getSettingsGroup("smtp")).host).toBe("mail.uji.test");
+  });
+
+  it("all payment methods off is refused", async () => {
+    const off = { qris: false, va: { bca: false, bni: false, bri: false, mandiri: false, permata: false, cimb: false } };
+    const res = await putRoute(
+      new NextRequest("http://localhost/api/admin/settings/transaction", {
+        method: "PUT",
+        body: JSON.stringify({ ...transaction, paymentMethods: off }),
+        headers: { "content-type": "application/json", cookie: `${ADMIN_COOKIE}=${createSessionValue(adminId)}` },
+      }),
+      { params: Promise.resolve({ group: "transaction" }) },
+    );
+    expect(res.status).toBe(422);
+    expect((await res.json()).fields.paymentMethods).toBe("Aktifkan minimal satu metode pembayaran.");
   });
 
   it("privacy timestamp changes only with the privacy text", async () => {
