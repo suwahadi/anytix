@@ -10,6 +10,7 @@ Sumber utama perilaku produk adalah `PRD.md` di root repo. Dokumen ini hanya men
 | Kredensial dev | Tersedia: project Supabase, Midtrans sandbox, SMTP. Belum ada: Cloudflare Turnstile, sehingga dipakai test key resmi Cloudflare (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`) sampai key asli tersedia |
 | Antislop | Diterapkan selama pengerjaan (UI, teks antarmuka, komentar kode) |
 | Tampilan | Tata letak dan alur meniru Artatix; palet netral dengan satu warna aksen; nama situs sementara "Anytix" (bisa diganti dari panel lewat `settings.site`) |
+| Arah visual (17 Okt 2026) | Warna aksen merah bata `#C2410C`, dipakai hemat (tombol utama, harga, status penting); sisanya netral. Font Plus Jakarta Sans. Logo sementara: teks "Anytix" dengan font yang sama; logo asli bisa diunggah dari Pengaturan Situs |
 | Repo | `https://github.com/suwahadi/anytix.git`, branch `main`. Pesan commit dan deskripsi PR tidak boleh memuat co-author atau atribusi Anthropic/Claude |
 
 ## 2. Pilihan teknis (keputusan builder)
