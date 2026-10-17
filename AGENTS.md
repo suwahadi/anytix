@@ -34,6 +34,13 @@ Check every file you touched:
 3. The code behaves exactly as before, apart from the change you were asked to make.
 <!-- BEGIN:nextjs-agent-rules -->
 
+## Rule 2: Owner workflow
+
+- Read `docs/superpowers/HANDOFF.md` before continuing work. It has the current status, the next steps and known environment traps.
+- Commits and pull requests never include AI attribution: no `Co-Authored-By: Claude`/Anthropic trailer and no "Generated with Claude Code" line.
+- Work on `main`. At the end of every phase, commit and push to `origin main` (https://github.com/suwahadi/anytix.git) without asking.
+- Explain and report to the owner in Indonesian. Code, comments and commit messages stay in English.
+
 ## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
