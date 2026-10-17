@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatRupiah, toIsoFromLocal, toLocalInput } from "@/lib/format";
+import { formatEventSchedule, formatRupiah, toIsoFromLocal, toLocalInput } from "@/lib/format";
 
 describe("timezone conversion for datetime-local inputs", () => {
   it("adds the fixed Indonesian offset", () => {
@@ -22,5 +22,25 @@ describe("formatRupiah", () => {
     expect(formatRupiah(135000)).toBe("Rp135.000");
     expect(formatRupiah(1000)).toBe("Rp1.000");
     expect(formatRupiah(0)).toBe("Rp0");
+  });
+});
+
+describe("formatEventSchedule", () => {
+  it("same day in WITA", () => {
+    expect(formatEventSchedule(new Date("2026-12-20T11:00:00Z"), new Date("2026-12-20T14:00:00Z"), "Asia/Makassar")).toEqual({
+      date: "Minggu, 20 Desember 2026",
+      time: "19.00 – 22.00 WITA",
+    });
+  });
+
+  it("uses the event timezone to decide the day", () => {
+    expect(formatEventSchedule(new Date("2026-12-19T17:30:00Z"), new Date("2026-12-19T20:00:00Z"), "Asia/Jakarta").date).toBe("Minggu, 20 Desember 2026");
+  });
+
+  it("two-day range lists both dates", () => {
+    expect(formatEventSchedule(new Date("2026-12-19T12:00:00Z"), new Date("2026-12-20T15:00:00Z"), "Asia/Jakarta")).toEqual({
+      date: "Sabtu, 19 Desember 2026 – Minggu, 20 Desember 2026",
+      time: "19.00 – 22.00 WIB",
+    });
   });
 });

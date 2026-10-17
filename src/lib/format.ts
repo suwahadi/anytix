@@ -19,3 +19,14 @@ export function toLocalInput(value: string | Date, tz: Timezone): string {
 export function formatRupiah(amount: number): string {
   return `Rp${new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(amount)}`;
 }
+
+export function formatEventSchedule(startsAt: Date, endsAt: Date, tz: Timezone): { date: string; time: string } {
+  const day = new Intl.DateTimeFormat("id-ID", { timeZone: tz, weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const clock = new Intl.DateTimeFormat("id-ID", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  const startDay = day.format(startsAt);
+  const endDay = day.format(endsAt);
+  return {
+    date: startDay === endDay ? startDay : `${startDay} – ${endDay}`,
+    time: `${clock.format(startsAt)} – ${clock.format(endsAt)} ${TIMEZONES[tz].label}`,
+  };
+}
