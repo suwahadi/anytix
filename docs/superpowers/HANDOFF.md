@@ -18,7 +18,7 @@ Ruang lingkup yang disepakati adalah Fase 0–3. Pengerjaan berhenti di akhir ti
 |---|---|
 | Fase 0 (fondasi, engine anti-oversell, worker) | Selesai, sudah di-review dan di-push |
 | Fase 1 Task 1–9 | Selesai, semua test lulus, sudah dicek di browser |
-| Fase 1 Task 10 (halaman publik) | Langkah 4 (curl) selesai dan lulus setelah perbaikan `ensureStatic`. **Langkah 5 belum dikerjakan** |
+| Fase 1 Task 10 (halaman publik) | Selesai. Langkah 4 (curl) lulus setelah perbaikan `ensureStatic`, langkah 5 (browser) lulus tanpa perubahan kode |
 | Fase 1 Task 11 (checkpoint) | Belum |
 
 Hasil test terakhir: `npm test` 74 lulus (ditambah 2 test `toPlainText` di Task 10), dan `npm run test:db` 112 lulus sebelum Task 9 ditambah 7 test `catalog-queries`.
@@ -45,7 +45,10 @@ Yang harus terbukti:
 - `/`, `/events` dan `/events/<slug>` tidak mengirim `set-cookie`.
 - `/robots.txt` dan `/sitemap.xml` berisi URL dari `APP_URL`.
 
-### 2. Task 10 langkah 5: cek di browser
+### 2. Task 10 langkah 5: cek di browser (selesai)
+
+Hasil: 8 halaman × 375/1280 px × terang/gelap tanpa overflow horizontal, gambar rusak, atau error konsol (kecuali laporan 404 bawaan browser di `/events/tidak-ada`). Kontras terendah 4.84 (`#b45309` di atas `#fffbeb`, badge "Hampir habis"). Badge berubah tanpa reload setelah 20 hold dari skrip, lalu kembali setelah hold dilepas. Request prefetch RSC yang tampak "menggantung" di Playwright adalah stream yang sengaja dibatalkan router Next (`ERR_ABORTED` setelah 200), jadi pakai `waitUntil: 'load'`, bukan `networkidle`.
+
 
 Gunakan Playwright di 375 px dan 1280 px, dalam mode terang dan gelap. Yang dicek:
 
@@ -57,9 +60,9 @@ Gunakan Playwright di 375 px dan 1280 px, dalam mode terang dan gelap. Yang dice
 - Setiap pasangan teks dan latar dicek dengan contrast checker antislop.
 - Konsol tanpa error.
 
-### 3. Commit Task 10
+### 3. Commit Task 10 (selesai)
 
-Kode Task 10 sudah di-commit sebagai pekerjaan yang belum diverifikasi. Perbaikan dari langkah 1–2 masuk sebagai commit baru.
+Perbaikan dari langkah 1 ada di commit `fix(public): real 404 and 308 for unlisted event slugs`.
 
 ### 4. Task 11: checkpoint Fase 1
 
