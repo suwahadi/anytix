@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createAdmin } from "@/lib/admin-service";
-import { ordersCsv } from "@/lib/admin/sales-report";
+import { getSalesSummary, ordersCsv } from "@/lib/admin/sales-report";
 import { encrypt } from "@/lib/crypto";
 import { sql } from "@/lib/db";
 import { applyPaymentStatus } from "@/lib/payments/payment-service";
+import { reserveTickets } from "@/lib/hold-service";
 import { checkoutTestOrder, cleanupTestEvents, createTestEvent, createTestVoucher } from "./helpers";
 
 let adminId = 0;
@@ -73,5 +74,22 @@ describe("orders CSV", () => {
     const [a] = await sql<{ diff: unknown }[]>`
       select diff from audit_logs where admin_id = ${adminId} and action = 'export' and entity = 'orders' order by id desc limit 1`;
     expect(a.diff).toEqual({ eventId: ev.eventId, status: "paid", rows: 1 });
+  });
+
+  it("sales summary counts paid orders only", async () => {
+    const ev = await createTestEvent({ categories: [{ name: "Reguler", capacity: 10 }, { name: "VIP", capacity: 5 }] });
+    const paid = await checkoutTestOrder({ eventId: ev.eventId, items: [{ inventoryId: ev.inventoryIds[0], qty: 2 }] });
+    await applyPaymentStatus(paid.midtransOrderId, "settlement", { transaction_id: randomUUID() });
+    const expired = await checkoutTestOrder({ eventId: ev.eventId, items: [{ inventoryId: ev.inventoryIds[1], qty: 1 }] });
+    await applyPaymentStatus(expired.midtransOrderId, "expire", { transaction_id: randomUUID() });
+    await checkoutTestOrder({ eventId: ev.eventId, items: [{ inventoryId: ev.inventoryIds[1], qty: 1 }] });
+    await reserveTickets({ visitorId: randomUUID(), eventId: ev.eventId, items: [{ inventoryId: ev.inventoryIds[0], qty: 1 }], idempotencyKey: randomUUID() });
+    await sql`update tickets set checked_in_at = now() where order_id = ${paid.orderId} and seq = 1`;
+    const row = (await getSalesSummary()).find((e) => e.eventId === ev.eventId);
+    expect(row).toMatchObject({ paidOrders: 1, gross: 200000, discount: 0, fee: 5000, total: 205000, activeHolds: 2 });
+    expect(row?.categories).toEqual([
+      { name: "Reguler", capacity: 10, sold: 2, held: 1, available: 7, checkedIn: 1 },
+      { name: "VIP", capacity: 5, sold: 0, held: 1, available: 4, checkedIn: 0 },
+    ]);
   });
 });

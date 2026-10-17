@@ -103,3 +103,50 @@ export async function ordersCsv(adminId: number, f: { eventId?: number; status?:
   await writeAudit(sql, { adminId, action: "export", entity: "orders", entityId: eventId ?? "all", diff: { eventId, status, rows: orders.length } });
   return { filename: `pesanan-${slug?.slug ?? "semua"}-${day}.csv`, body };
 }
+
+export type SalesSummary = {
+  eventId: number;
+  title: string;
+  startsAt: Date;
+  timezone: string;
+  status: string;
+  saleStatus: string;
+  paidOrders: number;
+  gross: number;
+  discount: number;
+  fee: number;
+  total: number;
+  activeHolds: number;
+  categories: Array<{ name: string; capacity: number; sold: number; held: number; available: number; checkedIn: number }>;
+};
+
+/** Money figures count paid orders only; quota figures come straight from ticket_inventory. */
+export async function getSalesSummary(): Promise<SalesSummary[]> {
+  const [events, categories] = await Promise.all([
+    sql<Omit<SalesSummary, "categories">[]>`
+      select e.id as "eventId", e.title, e.starts_at as "startsAt", e.timezone, e.status, e.sale_status as "saleStatus",
+             coalesce(m.n, 0)::int as "paidOrders", coalesce(m.gross, 0)::int8 as gross, coalesce(m.discount, 0)::int8 as discount,
+             coalesce(m.fee, 0)::int8 as fee, coalesce(m.total, 0)::int8 as total,
+             (select count(*) from holds h where h.event_id = e.id and h.status in ('held', 'pending_payment') and h.expires_at > now())::int as "activeHolds"
+        from events e
+        left join lateral (
+          select count(*) as n, sum(o.subtotal) as gross, sum(o.discount_amount) as discount, sum(o.fee_amount) as fee, sum(o.total) as total
+            from orders o where o.event_id = e.id and o.status = 'paid'
+        ) m on true
+       where e.status <> 'archived'
+       order by (e.ends_at < now()), case when e.ends_at >= now() then e.starts_at end, e.starts_at desc`,
+    sql<Array<SalesSummary["categories"][number] & { eventId: number }>>`
+      select c.event_id as "eventId", c.name, i.capacity, i.sold, i.held, i.capacity - i.sold - i.held as available,
+             (select count(*) from tickets t where t.ticket_category_id = c.id and t.status = 'valid' and t.checked_in_at is not null)::int as "checkedIn"
+        from ticket_categories c join ticket_inventory i on i.ticket_category_id = c.id
+        join events e on e.id = c.event_id
+       where e.status <> 'archived'
+       order by c.position, c.id`,
+  ]);
+  return events.map((e) => ({
+    ...e,
+    categories: categories
+      .filter((c) => c.eventId === e.eventId)
+      .map((c) => ({ name: c.name, capacity: c.capacity, sold: c.sold, held: c.held, available: c.available, checkedIn: c.checkedIn })),
+  }));
+}
