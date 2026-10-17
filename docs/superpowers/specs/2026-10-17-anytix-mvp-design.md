@@ -17,7 +17,7 @@ Sumber utama perilaku produk adalah `PRD.md` di root repo. Dokumen ini hanya men
 | Area | Pilihan | Alasan |
 |---|---|---|
 | Framework | Next.js versi stabil terbaru (App Router) + TypeScript, Tailwind CSS v4, npm | Sesuai PRD §5; npm sudah terpasang |
-| Akses DB | `postgres` (postgres.js), SQL mentah tanpa ORM, `prepare: false`, pool 10–20, satu `DATABASE_URL` ke transaction pooler 6543 | Sesuai PRD §5. Koneksi memakai role `postgres` milik Supabase, yang setara service role untuk akses DB |
+| Akses DB | `postgres` (postgres.js), SQL mentah tanpa ORM, `prepare: false`, `max_pipeline: 0` (Supavisor transaction mode kehilangan query yang di-pipeline di belakang query lain; terbukti di uji 17 Okt 2026), pool 10–20, satu `DATABASE_URL` ke transaction pooler 6543 | Sesuai PRD §5. Koneksi memakai role `postgres` milik Supabase, yang setara service role untuk akses DB |
 | Migrasi | File SQL bernomor di `db/migrations/`, dijalankan skrip Node kecil (`npm run db:migrate`) yang mencatat file terpasang di tabel `schema_migrations`. Satu file = satu transaksi | Tidak butuh Supabase CLI/Docker (tidak tersedia di mesin dev) |
 | Fungsi kuota | Semua di plpgsql sesuai PRD §10, `security definer`, `search_path = ''`, `execute` dicabut dari `public`, `anon`, `authenticated` | PRD §10.1 |
 | Perhitungan harga | Satu fungsi plpgsql `quote_hold(hold_id, voucher_code)` dipakai oleh endpoint quote dan oleh `checkout_hold` | Satu sumber kebenaran untuk subtotal, diskon, biaya layanan, total |

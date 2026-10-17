@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { sql } from "@/lib/db";
+import { sql, transaction } from "@/lib/db";
 
 type CategoryInput = {
   name?: string;
@@ -56,7 +56,7 @@ export async function inventoryRow(id: number): Promise<{ capacity: number; sold
 }
 
 export async function cleanupTestEvents(): Promise<void> {
-  await sql.begin(async (tx) => {
+  await transaction(async (tx) => {
     const events = await tx<{ id: number }[]>`select id from events where slug like 'test-%'`;
     const ids = events.map((e) => e.id);
     if (ids.length === 0) return;

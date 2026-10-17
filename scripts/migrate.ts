@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { createSql } from "@/lib/db";
+import { createSql, transaction } from "@/lib/db";
 
 const dir = join(process.cwd(), "db", "migrations");
 
@@ -24,10 +24,10 @@ async function main() {
     }
     for (const file of pending) {
       const text = readFileSync(join(dir, file), "utf8");
-      await sql.begin(async (tx) => {
+      await transaction(async (tx) => {
         await tx.unsafe(text);
         await tx`insert into public.schema_migrations (filename) values (${file})`;
-      });
+      }, sql);
       console.log(`applied ${file}`);
     }
   } finally {
