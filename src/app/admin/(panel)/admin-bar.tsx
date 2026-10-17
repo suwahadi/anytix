@@ -10,6 +10,7 @@ import { MobileMenu } from "./mobile-menu";
 
 const NAV = [
   { href: "/admin", label: "Dasbor" },
+  { href: "/admin/event-categories", label: "Kategori Event" },
   { href: "/admin/security", label: "Keamanan" },
 ];
 

@@ -23,6 +23,12 @@ export type AdminContext<T> = {
 
 type RouteArgs = { params: Promise<Record<string, string>> };
 
+export function numericParam(params: Record<string, string>, name: string): number {
+  const value = Number(params[name]);
+  if (!Number.isSafeInteger(value) || value <= 0) throw new UserError("Data tidak ditemukan.", 404);
+  return value;
+}
+
 function errorFields(issues: Array<{ path: PropertyKey[]; message: string }>): Record<string, string> {
   const fields: Record<string, string> = {};
   for (const issue of issues) {

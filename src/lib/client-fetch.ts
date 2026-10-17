@@ -1,4 +1,6 @@
-export type FetchResult<T> = { ok: true; data: T } | { ok: false; status: number; error: string };
+export type FetchResult<T> =
+  | { ok: true; data: T }
+  | { ok: false; status: number; error: string; fields?: Record<string, string> };
 
 const TIMEOUT_MS = 15_000;
 
@@ -15,7 +17,8 @@ export async function requestJson<T>(url: string, init: { method?: string; body?
     });
     const data = await res.json().catch(() => ({}));
     if (res.ok) return { ok: true, data: data as T };
-    return { ok: false, status: res.status, error: (data as { error?: string }).error ?? "Terjadi kesalahan. Coba lagi." };
+    const failure = data as { error?: string; fields?: Record<string, string> };
+    return { ok: false, status: res.status, error: failure.error ?? "Terjadi kesalahan. Coba lagi.", fields: failure.fields };
   } catch (e) {
     const timedOut = e instanceof DOMException && e.name === "AbortError";
     return {
