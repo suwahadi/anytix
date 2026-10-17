@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const COUNTRY_CODES = [
-  { code: "62", label: "+62 Indonesia" },
-  { code: "60", label: "+60 Malaysia" },
-  { code: "65", label: "+65 Singapura" },
-  { code: "61", label: "+61 Australia" },
-  { code: "1", label: "+1 Amerika Serikat" },
+  { code: "62", label: "+62 ID" },
+  { code: "60", label: "+60 MY" },
+  { code: "65", label: "+65 SG" },
+  { code: "61", label: "+61 AU" },
+  { code: "1", label: "+1 US" },
 ] as const;
 
 type CountryCode = (typeof COUNTRY_CODES)[number]["code"];

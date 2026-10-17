@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { TurnstileWidget, type TurnstileHandle } from "@/components/turnstile-widget";
+import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { requestJson } from "@/lib/client-fetch";
 import { formatRupiah } from "@/lib/format";
 import type { TicketBadge } from "@/lib/ticket-status";
 
 type Category = {
   id: number;
+  inventoryId: number;
   name: string;
   description: string;
   price: number;
@@ -23,9 +28,47 @@ const CLOSED: TicketBadge = { label: "Penjualan ditutup", tone: "muted", buyable
 /** aria-disabled instead of disabled so keyboard focus stays on the stepper at its limits. */
 const stepClass = "w-11 px-0 aria-disabled:cursor-not-allowed aria-disabled:opacity-60";
 
-export function TicketPicker({ slug, categories }: { slug: string; categories: Category[] }) {
+export const selectionKey = (eventId: number) => `anytix:selection:${eventId}`;
+
+const noSubscription = () => () => {};
+
+function readStored(key: string): string | null {
+  try {
+    return sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function TicketPicker({ slug, eventId, siteKey, categories }: { slug: string; eventId: number; siteKey: string; categories: Category[] }) {
+  const router = useRouter();
   const [badges, setBadges] = useState<Record<number, TicketBadge>>(() => Object.fromEntries(categories.map((c) => [c.id, c.badge])));
-  const [qty, setQty] = useState<Record<number, number>>({});
+  const stored = useSyncExternalStore(noSubscription, () => readStored(selectionKey(eventId)), () => null);
+  const restored = useMemo(() => {
+    try {
+      return stored ? (JSON.parse(stored) as Record<number, number>) : {};
+    } catch {
+      return {};
+    }
+  }, [stored]);
+  const [edited, setQty] = useState<Record<number, number> | null>(null);
+  const qty = edited ?? restored;
+  const [token, setToken] = useState("");
+  const [buying, setBuying] = useState(false);
+  const [buyError, setBuyError] = useState("");
+  const turnstile = useRef<TurnstileHandle>(null);
+  const idempotencyKey = useRef("");
+
+  // Next keeps this page's state while the buyer is on /checkout; start fresh when they come back.
+  useEffect(
+    () => () => {
+      setBuying(false);
+      setToken("");
+      idempotencyKey.current = "";
+    },
+    [],
+  );
+
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -61,7 +104,37 @@ export function TicketPicker({ slug, categories }: { slug: string; categories: C
     .filter((line) => line.count > 0);
   const subtotal = chosen.reduce((sum, line) => sum + line.count * line.category.price, 0);
   const units = chosen.reduce((sum, line) => sum + line.count, 0);
-  const setCount = (id: number, count: number) => setQty({ ...qty, [id]: count });
+  const setCount = (id: number, count: number) => {
+    idempotencyKey.current = "";
+    setQty({ ...qty, [id]: count });
+  };
+
+  async function buy() {
+    if (chosen.length === 0 || buying) return;
+    setBuying(true);
+    setBuyError("");
+    idempotencyKey.current ||= crypto.randomUUID();
+    const res = await requestJson<{ holdId: string }>("/api/holds", {
+      body: { eventId, items: chosen.map((l) => ({ inventoryId: l.category.inventoryId, qty: l.count })), turnstileToken: token },
+      headers: { "idempotency-key": idempotencyKey.current },
+    });
+    if (res.ok) {
+      try {
+        sessionStorage.setItem(selectionKey(eventId), JSON.stringify(Object.fromEntries(chosen.map((l) => [l.category.id, l.count]))));
+      } catch {}
+      router.push(`/checkout/${res.data.holdId}`);
+      return;
+    }
+    setBuying(false);
+    setBuyError(res.error);
+    idempotencyKey.current = "";
+    setToken("");
+    turnstile.current?.reset();
+    if (res.body?.code === "SOLD_OUT") {
+      const category = categories.find((c) => c.inventoryId === res.body?.inventoryId);
+      if (category) setQty({ ...qty, [category.id]: Number(res.body?.available ?? 0) });
+    }
+  }
 
   if (categories.length === 0) {
     return <p className="rounded-lg border border-dashed border-border-strong px-4 py-10 text-center text-muted">Tiket untuk event ini belum tersedia.</p>;
@@ -161,11 +234,13 @@ export function TicketPicker({ slug, categories }: { slug: string; categories: C
               <dd className="text-lg font-extrabold text-text">{formatRupiah(subtotal)}</dd>
             </div>
           </dl>
-          <Button disabled className="w-full" aria-describedby="buy-note">
+          {buyError && <Alert>{buyError}</Alert>}
+          {chosen.length > 0 && <TurnstileWidget ref={turnstile} siteKey={siteKey} onToken={setToken} />}
+          <Button className="w-full" onClick={buy} loading={buying} disabled={chosen.length === 0 || !token} aria-describedby="buy-note">
             Beli Sekarang
           </Button>
           <p id="buy-note" className="text-sm text-muted">
-            Pembayaran dibuka di tahap berikutnya.
+            {chosen.length === 0 ? "Pilih tiket dulu." : "Slot tiket dikunci untuk Anda selama mengisi data pemesan."}
           </p>
         </div>
       </aside>

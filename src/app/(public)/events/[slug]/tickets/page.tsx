@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getEnv } from "@/lib/env";
 import { formatEventSchedule } from "@/lib/format";
 import { loadEvent, publishedSlugParams } from "../load-event";
 import { TicketPicker } from "./ticket-picker";
@@ -33,8 +34,11 @@ export default async function TicketsPage({ params }: PageProps<"/events/[slug]/
       </div>
       <TicketPicker
         slug={event.slug}
+        eventId={event.id}
+        siteKey={getEnv().TURNSTILE_SITE_KEY}
         categories={event.ticketCategories.map((c) => ({
           id: c.id,
+          inventoryId: c.inventoryId,
           name: c.name,
           description: c.description,
           price: c.price,
