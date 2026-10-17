@@ -85,3 +85,63 @@ export async function cleanupTestEvents(): Promise<void> {
     await tx`delete from events where id = any(${ids})`;
   });
 }
+
+type VoucherFields = Partial<{
+  code: string;
+  type: "percent" | "fixed";
+  value: number;
+  maxDiscount: number;
+  minQty: number;
+  minSubtotal: number;
+  ticketCategoryIds: number[];
+  maxUses: number;
+  active: boolean;
+  validFrom: Date;
+  validTo: Date;
+}>;
+
+export async function createTestVoucher(eventId: number, f: VoucherFields = {}): Promise<number> {
+  const [row] = await sql<{ id: number }[]>`
+    insert into vouchers (event_id, code, type, value, max_discount, min_qty, min_subtotal, ticket_category_ids,
+                          max_uses, active, valid_from, valid_to)
+    values (${eventId}, ${f.code ?? `V${randomUUID().slice(0, 6).toUpperCase()}`}, ${f.type ?? "percent"},
+            ${f.value ?? 10}, ${f.maxDiscount ?? null}, ${f.minQty ?? 0}, ${f.minSubtotal ?? 0},
+            ${f.ticketCategoryIds ?? null}, ${f.maxUses ?? null}, ${f.active ?? true},
+            ${f.validFrom ?? null}, ${f.validTo ?? null})
+    returning id`;
+  return row.id;
+}
+
+export const testBuyer = { name: "Budi Santoso", email: "budi@example.com", phone: "6281234567890" };
+
+export const testConsents = [
+  { policy_version: "2026-10-17", purpose: "terms", ip: "127.0.0.1" },
+  { policy_version: "2026-10-17", purpose: "privacy", ip: "127.0.0.1" },
+];
+
+export async function checkoutHold(
+  holdId: string,
+  visitorId: string,
+  opts: { voucherCode?: string | null; answers?: unknown[]; method?: string } = {},
+) {
+  const [order] = await sql<{ id: number; invoice_code: string; status: string }[]>`
+    select * from checkout_hold(${holdId}::uuid, ${visitorId}::uuid, ${sql.json(testBuyer)},
+                                ${sql.json((opts.answers ?? []) as never)}, ${opts.method ?? "qris"},
+                                ${opts.voucherCode ?? null}, ${sql.json(testConsents)})`;
+  return order;
+}
+
+export async function checkoutTestOrder(opts: {
+  eventId: number;
+  items: Array<{ inventoryId: number; qty: number }>;
+  voucherCode?: string;
+  visitorId?: string;
+}): Promise<{ holdId: string; orderId: number; midtransOrderId: string; visitorId: string }> {
+  const { reserveTickets } = await import("@/lib/hold-service");
+  const visitorId = opts.visitorId ?? randomUUID();
+  const hold = await reserveTickets({ visitorId, eventId: opts.eventId, items: opts.items, idempotencyKey: randomUUID() });
+  const order = await checkoutHold(hold.id, visitorId, { voucherCode: opts.voucherCode });
+  const [payment] = await sql<{ midtrans_order_id: string }[]>`
+    select midtrans_order_id from payments where order_id = ${order.id}`;
+  return { holdId: hold.id, orderId: order.id, midtransOrderId: payment.midtrans_order_id, visitorId };
+}

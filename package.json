@@ -12,7 +12,8 @@
     "db:migrate": "tsx --env-file=.env.local scripts/migrate.ts",
     "admin:create": "tsx --env-file=.env.local scripts/create-admin.ts",
     "admin:reset-2fa": "tsx --env-file=.env.local scripts/reset-2fa.ts",
-    "worker": "tsx --env-file=.env.local worker/index.ts"
+    "worker": "tsx --env-file=.env.local worker/index.ts",
+    "db:apply": "tsx --env-file=.env.local scripts/apply-sql.ts"
   },
   "dependencies": {
     "next": "16.4.2",
