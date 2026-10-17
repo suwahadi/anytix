@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonClass } from "@/components/ui/button";
 import { Field, Select } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AdminOrderRow } from "@/lib/admin/order-admin-service";
@@ -88,6 +88,14 @@ export function OrdersTable() {
         <Button type="submit" variant="secondary" loading={loading}>
           Cari
         </Button>
+        <a
+          href={`/api/admin/reports/sales.csv?${new URLSearchParams({ ...(filter.status && { status: filter.status }), ...(filter.eventId && { eventId: filter.eventId }) })}`}
+          download
+          className={buttonClass("ghost")}
+          title={filter.eventId ? "Termasuk jawaban form event ini. Nomor identitas disamarkan." : "Pilih satu event untuk menyertakan jawaban form. Nomor identitas disamarkan."}
+        >
+          Ekspor CSV
+        </a>
       </form>
 
       {error && (
