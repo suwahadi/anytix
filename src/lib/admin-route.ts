@@ -42,7 +42,8 @@ export function validationResponse(issues: Array<{ path: PropertyKey[]; message:
   return NextResponse.json({ error: "Periksa kembali isian yang ditandai.", fields: errorFields(issues) }, { status: 422 });
 }
 
-function foreignOrigin(req: NextRequest): boolean {
+/** True for a state-changing request whose Origin is not this site (Route Handlers get no CSRF check from Next). */
+export function foreignOrigin(req: NextRequest): boolean {
   const origin = req.headers.get("origin");
   if (!origin || req.method === "GET" || req.method === "HEAD") return false;
   try {
@@ -50,6 +51,10 @@ function foreignOrigin(req: NextRequest): boolean {
   } catch {
     return true;
   }
+}
+
+export function userErrorResponse(e: UserError): NextResponse {
+  return NextResponse.json({ error: e.message, ...(e.fields ? { fields: e.fields } : {}) }, { status: e.status });
 }
 
 export function adminRoute<T = undefined>(
@@ -77,9 +82,7 @@ export function adminRoute<T = undefined>(
     try {
       return await handler({ admin, req, params: await route.params, body });
     } catch (e) {
-      if (e instanceof UserError) {
-        return NextResponse.json({ error: e.message, ...(e.fields ? { fields: e.fields } : {}) }, { status: e.status });
-      }
+      if (e instanceof UserError) return userErrorResponse(e);
       throw e;
     }
   }
