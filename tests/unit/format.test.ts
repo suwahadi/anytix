@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toIsoFromLocal, toLocalInput } from "@/lib/format";
+import { formatRupiah, toIsoFromLocal, toLocalInput } from "@/lib/format";
 
 describe("timezone conversion for datetime-local inputs", () => {
   it("adds the fixed Indonesian offset", () => {
@@ -14,5 +14,13 @@ describe("timezone conversion for datetime-local inputs", () => {
 
   it("round trips", () => {
     expect(toLocalInput(toIsoFromLocal("2026-03-05T08:15", "Asia/Jayapura"), "Asia/Jayapura")).toBe("2026-03-05T08:15");
+  });
+});
+
+describe("formatRupiah", () => {
+  it("uses Indonesian thousand separators without a space", () => {
+    expect(formatRupiah(135000)).toBe("Rp135.000");
+    expect(formatRupiah(1000)).toBe("Rp1.000");
+    expect(formatRupiah(0)).toBe("Rp0");
   });
 });

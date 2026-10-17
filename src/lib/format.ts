@@ -15,3 +15,7 @@ export function toLocalInput(value: string | Date, tz: Timezone): string {
   const shifted = new Date(new Date(value).getTime() + TIMEZONES[tz].hours * 3_600_000);
   return shifted.toISOString().slice(0, 16);
 }
+
+export function formatRupiah(amount: number): string {
+  return `Rp${new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(amount)}`;
+}

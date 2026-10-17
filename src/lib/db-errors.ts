@@ -10,3 +10,7 @@ export function parseEngineError(e: unknown): { code: string; args: string[] } |
 export function isUniqueViolation(e: unknown): boolean {
   return typeof e === "object" && e !== null && (e as { code?: unknown }).code === "23505";
 }
+
+export function isCheckViolation(e: unknown): boolean {
+  return typeof e === "object" && e !== null && (e as { code?: unknown }).code === "23514";
+}

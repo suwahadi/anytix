@@ -88,3 +88,30 @@ export const eventInput = z
     message: "Waktu selesai harus sama atau setelah waktu mulai.",
   });
 export type EventValues = z.infer<typeof eventInput>;
+
+export const ticketCategoryInput = z
+  .object({
+    name: z.string().trim().min(2, "Nama minimal 2 karakter.").max(80, "Nama maksimal 80 karakter."),
+    description: z.string().max(20_000, "Deskripsi terlalu panjang.").default(""),
+    price: z
+      .number({ message: "Isi harga dalam rupiah." })
+      .int("Harga harus bilangan bulat.")
+      .min(1000, "Harga minimal Rp1.000.")
+      .max(100_000_000, "Harga maksimal Rp100.000.000."),
+    capacity: z
+      .number({ message: "Isi kuota." })
+      .int("Kuota harus bilangan bulat.")
+      .min(0, "Kuota tidak boleh negatif.")
+      .max(1_000_000, "Kuota maksimal 1.000.000."),
+    saleStartsAt: isoDate("Mulai penjualan"),
+    saleEndsAt: isoDate("Akhir penjualan"),
+    maxPerOrder: z.number().int().min(1, "Minimal 1 per transaksi.").max(50, "Maksimal 50 per transaksi.").default(5),
+    admitsPerUnit: z.number().int().min(1, "Minimal 1 orang.").max(20, "Maksimal 20 orang per tiket.").default(1),
+    hasMerchandise: z.boolean().default(false),
+    status: z.enum(["draft", "active", "hidden"]).default("draft"),
+  })
+  .refine((v) => new Date(v.saleEndsAt) > new Date(v.saleStartsAt), {
+    path: ["saleEndsAt"],
+    message: "Akhir penjualan harus setelah mulai penjualan.",
+  });
+export type TicketCategoryValues = z.infer<typeof ticketCategoryInput>;

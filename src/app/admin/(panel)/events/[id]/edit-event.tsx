@@ -8,7 +8,7 @@ export function EditEvent() {
   const { id } = useParams<{ id: string }>();
   return (
     <>
-      <EventTabs />
+      <EventTabs active="detail" />
       <h1 className="mt-4 text-2xl font-bold text-text">Detail event</h1>
       <EventForm eventId={Number(id)} />
     </>
