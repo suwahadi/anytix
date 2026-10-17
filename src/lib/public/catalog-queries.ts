@@ -5,8 +5,8 @@ import { getSettingsGroup, type SiteView } from "@/lib/settings-service";
 import { ticketBadge, type TicketBadge } from "@/lib/ticket-status";
 import type { Timezone } from "@/lib/validation/catalog";
 
-/** Gives `s-maxage=60` on public pages, as PRD §17 asks. */
-export const PUBLIC_CACHE = { stale: 30, revalidate: 60, expire: 3600 };
+/** `revalidate` gives `s-maxage=60` (PRD §17); `stale` under 5 minutes would keep this data out of the App Shell, so navigations would block. */
+export const PUBLIC_CACHE = { stale: 300, revalidate: 60, expire: 3600 };
 export const SEARCH_PAGE_SIZE = 12;
 
 export type PublicEventCard = {
