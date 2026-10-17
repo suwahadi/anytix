@@ -30,3 +30,9 @@ export function formatEventSchedule(startsAt: Date, endsAt: Date, tz: Timezone):
     time: `${clock.format(startsAt)} – ${clock.format(endsAt)} ${TIMEZONES[tz].label}`,
   };
 }
+
+export function formatDateTime(at: Date, tz: Timezone): string {
+  const day = new Intl.DateTimeFormat("id-ID", { timeZone: tz, weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const clock = new Intl.DateTimeFormat("id-ID", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  return `${day.format(at)} pukul ${clock.format(at)} ${TIMEZONES[tz].label}`;
+}
