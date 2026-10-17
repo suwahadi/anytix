@@ -36,7 +36,13 @@ const nextConfig: NextConfig = {
   async headers() {
     // Dev needs eval and websocket HMR, so the policy only applies to production builds.
     if (process.env.NODE_ENV !== "production") return [];
-    return [{ source: "/:path*", headers: securityHeaders }];
+    // Order URLs carry the access UUID, so they must never leak through Referer; later rules win for the same key.
+    const noReferrer = [{ key: "Referrer-Policy", value: "no-referrer" }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      { source: "/orders/:path*", headers: noReferrer },
+      { source: "/api/orders/:path*", headers: noReferrer },
+    ];
   },
   cacheComponents: true,
   partialPrefetching: true,
