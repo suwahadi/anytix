@@ -1,6 +1,6 @@
 import { claimJobs, completeJob, failJob } from "@/lib/jobs";
 
-export type JobHandlers = Record<string, (payload: any) => Promise<void>>;
+export type JobHandlers = Record<string, (payload: Record<string, unknown>) => Promise<void>>;
 
 export async function runOnce(handlers: JobHandlers, limit = 10): Promise<number> {
   const jobs = await claimJobs(limit);

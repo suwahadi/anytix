@@ -1,6 +1,6 @@
 import { sql } from "@/lib/db";
 
-export type Job = { id: number; type: string; payload: any; attempts: number };
+export type Job = { id: number; type: string; payload: Record<string, unknown>; attempts: number };
 
 const MAX_ATTEMPTS = 5;
 
