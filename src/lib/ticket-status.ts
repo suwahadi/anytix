@@ -13,11 +13,12 @@ export type TicketBadgeInput = {
   saleStartsAt: Date;
   saleEndsAt: Date;
   eventSaleStatus: string;
+  eventEndsAt: Date;
 };
 
 export function ticketBadge(input: TicketBadgeInput, now: Date): TicketBadge {
   const remaining = Math.max(0, input.capacity - input.sold - input.held);
-  if (input.status !== "active" || input.eventSaleStatus === "closed" || now > input.saleEndsAt) {
+  if (input.status !== "active" || input.eventSaleStatus === "closed" || now > input.saleEndsAt || now > input.eventEndsAt) {
     return { label: "Penjualan ditutup", tone: "muted", buyable: false, remaining };
   }
   if (input.eventSaleStatus === "paused" || now < input.saleStartsAt) {

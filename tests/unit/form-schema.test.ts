@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAnswersSchema, fieldKeyFromLabel, type FormFieldDef } from "@/lib/form-schema";
+import { buildAnswersSchema, FIELD_KEY_PATTERN, fieldKeyFromLabel, type FormFieldDef } from "@/lib/form-schema";
 
 let nextId = 1;
 function field(over: Partial<FormFieldDef>): FormFieldDef {
@@ -116,5 +116,20 @@ describe("fieldKeyFromLabel", () => {
 
   it("falls back to field", () => {
     expect(fieldKeyFromLabel("!!!", [])).toBe("field");
+  });
+
+  it("never starts with a digit, so the admin key rule accepts it on edit", () => {
+    const key = fieldKeyFromLabel("1. Ukuran Baju", []);
+    expect(key).toBe("f_1_ukuran_baju");
+    expect(key).toMatch(FIELD_KEY_PATTERN);
+  });
+
+  it("stays within 40 characters including the suffix", () => {
+    const label = "Nama lengkap sesuai kartu identitas yang berlaku saat acara";
+    const first = fieldKeyFromLabel(label, []);
+    const second = fieldKeyFromLabel(label, [first]);
+    expect(first).toMatch(FIELD_KEY_PATTERN);
+    expect(second).toMatch(FIELD_KEY_PATTERN);
+    expect(second).not.toBe(first);
   });
 });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { FACILITY_KEYS } from "@/lib/facilities";
-import { FIELD_TYPES, IDENTITY_TYPES, OPTION_TYPES } from "@/lib/form-schema";
+import { FIELD_KEY_PATTERN, FIELD_TYPES, IDENTITY_TYPES, OPTION_TYPES } from "@/lib/form-schema";
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const emptyToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
@@ -127,7 +127,7 @@ export const formFieldInput = z
       z
         .string()
         .trim()
-        .regex(/^[a-z][a-z0-9_]{0,39}$/, "Key hanya huruf kecil, angka, dan garis bawah, diawali huruf.")
+        .regex(FIELD_KEY_PATTERN, "Key hanya huruf kecil, angka, dan garis bawah, diawali huruf.")
         .optional(),
     ),
     label: z.string().trim().min(2, "Label minimal 2 karakter.").max(120, "Label maksimal 120 karakter."),

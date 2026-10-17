@@ -11,10 +11,10 @@ const MEMO_MS = 3000;
 
 async function loadAvailability(eventId: number): Promise<Availability> {
   const rows = await sql<
-    { id: number; inventoryId: number; status: string; capacity: number; sold: number; held: number; saleStartsAt: Date; saleEndsAt: Date; eventSaleStatus: string }[]
+    { id: number; inventoryId: number; status: string; capacity: number; sold: number; held: number; saleStartsAt: Date; saleEndsAt: Date; eventSaleStatus: string; eventEndsAt: Date }[]
   >`
     select tc.id, i.id as "inventoryId", tc.status, i.capacity, i.sold, i.held,
-           tc.sale_starts_at as "saleStartsAt", tc.sale_ends_at as "saleEndsAt", e.sale_status as "eventSaleStatus"
+           tc.sale_starts_at as "saleStartsAt", tc.sale_ends_at as "saleEndsAt", e.sale_status as "eventSaleStatus", e.ends_at as "eventEndsAt"
       from ticket_categories tc
       join ticket_inventory i on i.ticket_category_id = tc.id
       join events e on e.id = tc.event_id

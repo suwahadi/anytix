@@ -78,6 +78,18 @@ describe("ticket categories", () => {
     expect(ok).toMatchObject({ capacity: 3, held: 3, available: 0, name: "Reguler Baru" });
   });
 
+  it("locks people per ticket once reserved, since issued QR codes are counted from it", async () => {
+    const ev = await createTestEvent({ categories: [] });
+    const cat = await createTicketCategory(adminId, ev.eventId, values({ name: "Bundling Couple", admitsPerUnit: 2 }));
+    await updateTicketCategory(adminId, ev.eventId, cat.id, values({ name: "Bundling Couple", admitsPerUnit: 3 }));
+    await reserve(ev.eventId, cat.inventoryId, 1);
+    const err = await userError(updateTicketCategory(adminId, ev.eventId, cat.id, values({ name: "Bundling Couple", admitsPerUnit: 1 })));
+    expect(err.status).toBe(409);
+    expect(err.fields?.admitsPerUnit).toBeDefined();
+    const ok = await updateTicketCategory(adminId, ev.eventId, cat.id, values({ name: "Couple", admitsPerUnit: 3 }));
+    expect(ok).toMatchObject({ name: "Couple", admitsPerUnit: 3 });
+  });
+
   it("refuses delete when used", async () => {
     const ev = await createTestEvent({ categories: [] });
     const used = await createTicketCategory(adminId, ev.eventId, values());

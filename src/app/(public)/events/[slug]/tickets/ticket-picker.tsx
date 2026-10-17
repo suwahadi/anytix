@@ -18,6 +18,8 @@ type Category = {
 };
 
 const REFRESH_MS = 15_000;
+/** The availability endpoint lists active categories only, so one missing from it was hidden or removed. */
+const CLOSED: TicketBadge = { label: "Penjualan ditutup", tone: "muted", buyable: false, remaining: 0 };
 /** aria-disabled instead of disabled so keyboard focus stays on the stepper at its limits. */
 const stepClass = "w-11 px-0 aria-disabled:cursor-not-allowed aria-disabled:opacity-60";
 
@@ -32,7 +34,8 @@ export function TicketPicker({ slug, categories }: { slug: string; categories: C
         const res = await fetch(`/api/events/${slug}/availability`);
         if (!res.ok) return;
         const body: { categories: Array<{ id: number; badge: TicketBadge }> } = await res.json();
-        setBadges(Object.fromEntries(body.categories.map((c) => [c.id, c.badge])));
+        const fresh = new Map(body.categories.map((c) => [c.id, c.badge]));
+        setBadges((prev) => Object.fromEntries(Object.keys(prev).map((id) => [id, fresh.get(Number(id)) ?? CLOSED])));
       } catch {}
     }
     function sync() {

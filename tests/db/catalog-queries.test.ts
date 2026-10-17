@@ -72,6 +72,12 @@ describe("public catalog queries", () => {
     expect((await searchPublicEvents({ q: "%", page: 1 })).items.every((e) => e.title.includes("%") || e.city.includes("%") || e.venue.includes("%"))).toBe(true);
   });
 
+  it("a page number from the URL far past the end gives an empty page, not an error", async () => {
+    const res = await searchPublicEvents({ page: 1e20 });
+    expect(res.items).toEqual([]);
+    expect(res.total).toBeGreaterThanOrEqual(0);
+  });
+
   it("ended events are excluded from search and upcoming", async () => {
     const token = `zq${randomUUID().slice(0, 6)}`;
     const { eventId } = await createTestEvent();

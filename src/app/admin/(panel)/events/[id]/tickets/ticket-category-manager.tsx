@@ -28,6 +28,7 @@ type Draft = {
   admitsPerUnit: string;
   hasMerchandise: boolean;
   status: string;
+  everReserved: boolean;
 };
 
 const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
@@ -108,6 +109,7 @@ export function TicketCategoryManager() {
             admitsPerUnit: String(c.admitsPerUnit),
             hasMerchandise: c.hasMerchandise,
             status: c.status,
+            everReserved: c.everReserved,
           }
         : {
             name: "",
@@ -120,6 +122,7 @@ export function TicketCategoryManager() {
             admitsPerUnit: "1",
             hasMerchandise: false,
             status: "active",
+            everReserved: false,
           },
     );
   }
@@ -259,7 +262,7 @@ export function TicketCategoryManager() {
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="tc-max" label="Maks. per transaksi" type="number" inputMode="numeric" min={1} max={50} value={draft.maxPerOrder} error={errors.maxPerOrder} onChange={(e) => setDraft({ ...draft, maxPerOrder: e.target.value })} />
-              <Field id="tc-admits" label="Orang per tiket" hint="Isi 2 untuk Bundle Couple: 1 tiket = 2 QR." type="number" inputMode="numeric" min={1} max={20} value={draft.admitsPerUnit} error={errors.admitsPerUnit} onChange={(e) => setDraft({ ...draft, admitsPerUnit: e.target.value })} />
+              <Field id="tc-admits" label="Orang per tiket" hint={draft.everReserved ? "Dikunci karena kategori ini sudah pernah dipesan." : "Isi 2 untuk Bundle Couple: 1 tiket = 2 QR."} disabled={draft.everReserved} type="number" inputMode="numeric" min={1} max={20} value={draft.admitsPerUnit} error={errors.admitsPerUnit} onChange={(e) => setDraft({ ...draft, admitsPerUnit: e.target.value })} />
             </div>
             <Select
               id="tc-status"

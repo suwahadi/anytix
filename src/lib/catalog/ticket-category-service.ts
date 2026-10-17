@@ -111,6 +111,15 @@ export async function updateTicketCategory(
   const before = await getOwned(eventId, categoryId);
   try {
     await transaction(async (tx) => {
+      if (input.admitsPerUnit !== before.admitsPerUnit) {
+        // Locking the inventory row first (engine lock order) makes a concurrent reserve wait for this check.
+        await tx`select 1 from ticket_inventory where id = ${before.inventoryId} for update`;
+        const [used] = await tx`select 1 from hold_items where inventory_id = ${before.inventoryId} limit 1`;
+        if (used) {
+          const message = "Jumlah orang per tiket tidak bisa diubah karena kategori ini sudah pernah dipesan.";
+          throw new UserError(message, 409, { admitsPerUnit: message });
+        }
+      }
       await tx`update ticket_categories set ${tx(columns(input) as Record<string, unknown>)} where id = ${categoryId}`;
       await tx`update ticket_inventory set capacity = ${input.capacity} where id = ${before.inventoryId}`;
       await writeAudit(tx, {

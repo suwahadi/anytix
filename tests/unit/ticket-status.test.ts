@@ -10,6 +10,7 @@ const base = {
   saleStartsAt: new Date("2026-11-01T00:00:00Z"),
   saleEndsAt: new Date("2026-12-20T00:00:00Z"),
   eventSaleStatus: "on_sale",
+  eventEndsAt: new Date("2026-12-25T00:00:00Z"),
 };
 
 describe("ticketBadge", () => {
@@ -42,5 +43,10 @@ describe("ticketBadge", () => {
 
   it("inactive category is not buyable", () => {
     expect(ticketBadge({ ...base, status: "hidden" }, now)).toMatchObject({ label: "Penjualan ditutup", buyable: false });
+  });
+
+  it("closes sale once the event has ended, even inside the category's sale window", () => {
+    const afterEvent = new Date("2026-12-10T00:00:00Z");
+    expect(ticketBadge({ ...base, eventEndsAt: new Date("2026-12-09T00:00:00Z") }, afterEvent)).toMatchObject({ label: "Penjualan ditutup", buyable: false });
   });
 });

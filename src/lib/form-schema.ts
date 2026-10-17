@@ -167,18 +167,19 @@ export function buildAnswersSchema(fields: FormFieldDef[], now: Date = new Date(
   return z.object(shape);
 }
 
+export const FIELD_KEY_PATTERN = /^[a-z][a-z0-9_]{0,39}$/;
+
 export function fieldKeyFromLabel(label: string, taken: string[]): string {
-  const base =
-    label
-      .normalize("NFKD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 40)
-      .replace(/_+$/, "") || "field";
-  if (!taken.includes(base)) return base;
+  const slug = label
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  const full = /^[0-9]/.test(slug) ? `f_${slug}` : slug || "field";
+  const fit = (suffix: string) => full.slice(0, 40 - suffix.length).replace(/_+$/, "") + suffix;
+  if (!taken.includes(fit(""))) return fit("");
   let n = 2;
-  while (taken.includes(`${base}_${n}`)) n++;
-  return `${base}_${n}`;
+  while (taken.includes(fit(`_${n}`))) n++;
+  return fit(`_${n}`);
 }

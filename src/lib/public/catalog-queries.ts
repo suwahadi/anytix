@@ -108,7 +108,7 @@ export async function searchPublicEvents(params: {
   cacheTag(TAG_EVENTS);
   const q = params.q?.trim();
   const pattern = q ? `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%` : null;
-  const page = Math.max(1, Math.floor(params.page) || 1);
+  const page = Math.min(Math.max(1, Math.floor(params.page) || 1), 10_000);
   const matches = () => sql`
     from events e join event_categories c on c.id = e.event_category_id
    where e.status = 'published' and e.ends_at > now()
@@ -144,7 +144,7 @@ export async function getPublicEvent(eventId: number): Promise<PublicEvent | nul
      where tc.event_id = ${eventId} and tc.status = 'active'
      order by tc.position, tc.id`;
   const now = new Date();
-  const ticketCategories = rows.map((c) => ({ ...c, badge: ticketBadge({ ...c, eventSaleStatus: event.saleStatus }, now) }));
+  const ticketCategories = rows.map((c) => ({ ...c, badge: ticketBadge({ ...c, eventSaleStatus: event.saleStatus, eventEndsAt: event.endsAt }, now) }));
   return { ...event, ticketCategories };
 }
 
