@@ -32,7 +32,6 @@ Check every file you touched:
 1. No annotation, tag-style, or divider comments are left.
 2. Section markers such as `<!-- ABOUT US -->` or `// --- API Routes ---` are still in place.
 3. The code behaves exactly as before, apart from the change you were asked to make.
-<!-- BEGIN:nextjs-agent-rules -->
 
 ## Rule 2: Owner workflow
 
@@ -40,6 +39,8 @@ Check every file you touched:
 - Commits and pull requests never include AI attribution: no `Co-Authored-By: Claude`/Anthropic trailer and no "Generated with Claude Code" line.
 - Work on `main`. At the end of every phase, commit and push to `origin main` (https://github.com/suwahadi/anytix.git) without asking.
 - Explain and report to the owner in Indonesian. Code, comments and commit messages stay in English.
+
+<!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
 
