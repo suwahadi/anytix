@@ -17,7 +17,7 @@ export function MobileMenu({ children }: { children: ReactNode }) {
   }
 
   return (
-    <details ref={ref} className="relative md:hidden" onKeyDown={onKeyDown}>
+    <details ref={ref} className="relative lg:hidden" onKeyDown={onKeyDown}>
       <summary className="inline-flex h-11 cursor-pointer list-none items-center rounded-md px-3 text-sm font-medium text-text hover:bg-surface-muted [&::-webkit-details-marker]:hidden">
         Menu
       </summary>

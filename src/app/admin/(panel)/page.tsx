@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { pageAdmin } from "@/lib/admin-page";
 import { countLatePaid } from "@/lib/admin/order-admin-service";
 import { getSalesSummary, type SalesSummary } from "@/lib/admin/sales-report";
 import { formatDateTime, formatRupiah } from "@/lib/format";
@@ -12,6 +13,7 @@ export const metadata: Metadata = { title: "Dasbor admin", robots: { index: fals
 const SALE_STATUS: Record<string, string> = { on_sale: "Dijual", paused: "Dijeda", closed: "Ditutup" };
 
 async function LatePaidBanner() {
+  await pageAdmin();
   const n = await countLatePaid();
   if (n === 0) return null;
   return (
@@ -86,6 +88,7 @@ function EventSales({ e }: { e: SalesSummary }) {
 }
 
 async function SalesOverview() {
+  await pageAdmin();
   const events = await getSalesSummary();
   if (events.length === 0) {
     return (
