@@ -127,7 +127,8 @@ export function TicketPicker({ slug, eventId, siteKey, categories }: { slug: str
     }
     setBuying(false);
     setBuyError(res.error);
-    idempotencyKey.current = "";
+    // A network failure may have reached the server, so the retry keeps the key and gets that hold back instead of a second one.
+    if (res.status !== 0) idempotencyKey.current = "";
     setToken("");
     turnstile.current?.reset();
     if (res.body?.code === "SOLD_OUT") {

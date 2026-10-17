@@ -6,6 +6,10 @@ describe("normalizePhone", () => {
     expect(normalizePhone("62", "0812-3456-7890")).toBe("6281234567890");
   });
 
+  it("leading zero after country code is dropped", () => {
+    expect(normalizePhone("62", "+62 0812 3456 7890")).toBe("6281234567890");
+  });
+
   it("accepts a number typed with the country code", () => {
     expect(normalizePhone("62", "+62 812 3456 7890")).toBe("6281234567890");
     expect(normalizePhone("62", "6281234567890")).toBe("6281234567890");

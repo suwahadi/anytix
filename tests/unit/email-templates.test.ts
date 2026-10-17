@@ -31,6 +31,12 @@ describe("email templates", () => {
     expect(fillPlaceholders("Halo {{nama}}", { nama: "<b>Budi</b>" }, false)).toBe("Halo <b>Budi</b>");
   });
 
+  it("template body is escaped", () => {
+    const templates = { ...DEFAULT_EMAIL_TEMPLATES, paid: { subject: "Lunas", body: "Diskon <50% & gratis" } };
+    const m = renderOrderEmail("paid", data, templates);
+    expect(m.html).toContain("Diskon &lt;50% &amp; gratis");
+  });
+
   it("awaiting payment email lists items, total and the deadline", () => {
     const m = renderOrderEmail("awaiting_payment", data, DEFAULT_EMAIL_TEMPLATES);
     expect(m.to).toBe("budi@example.com");

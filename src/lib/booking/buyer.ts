@@ -15,7 +15,7 @@ export function normalizePhone(countryCode: string, input: string): string | nul
   const digits = input.replace(/\D/g, "");
   let rest = digits;
   if (digits.startsWith(countryCode) && digits.length - countryCode.length >= 8) rest = digits.slice(countryCode.length);
-  else if (digits.startsWith("0")) rest = digits.slice(1);
+  if (rest.startsWith("0")) rest = rest.slice(1);
   const phone = countryCode + rest;
   return phone.length >= 10 && phone.length <= 15 ? phone : null;
 }

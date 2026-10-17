@@ -103,6 +103,15 @@ describe("apply_payment_status", () => {
     expect(await inventoryRow(ev.inventoryIds[0])).toMatchObject({ sold: 1, held: 0 });
   });
 
+  it("expire after settlement keeps payment settled", async () => {
+    const ev = await createTestEvent({ categories: [{ capacity: 10 }] });
+    const o = await checkoutTestOrder({ eventId: ev.eventId, items: [{ inventoryId: ev.inventoryIds[0], qty: 1 }] });
+    await apply(o.midtransOrderId, "settlement");
+    await apply(o.midtransOrderId, "expire");
+    const [p] = await sql<{ status: string }[]>`select status from payments where midtrans_order_id = ${o.midtransOrderId}`;
+    expect(p.status).toBe("settlement");
+  });
+
   it("late settlement with quota honored", async () => {
     const ev = await createTestEvent({ categories: [{ capacity: 10 }] });
     const inv = ev.inventoryIds[0];

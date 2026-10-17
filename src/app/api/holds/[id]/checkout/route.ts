@@ -6,6 +6,7 @@ import { sql } from "@/lib/db";
 import { ensureSnapToken } from "@/lib/payments/payment-service";
 import { visitorRoute } from "@/lib/public-route";
 import { clientIp } from "@/lib/rate-limit";
+import { singleFlight } from "@/lib/single-flight";
 import { verifyTurnstile } from "@/lib/turnstile";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -27,19 +28,21 @@ export const POST = visitorRoute(checkoutInput, async ({ visitorId, req, params,
 
   const ip = clientIp(req.headers);
   const knownIp = ip === "local" ? null : ip;
-  if (!(await verifyTurnstile(body.turnstileToken, knownIp))) {
-    return NextResponse.json({ error: "Verifikasi keamanan gagal. Coba lagi." }, { status: 403 });
-  }
-
-  const order = await checkoutHold({
-    holdId: params.id,
-    visitorId,
-    buyer: body.buyer,
-    answers: body.answers,
-    paymentMethod: body.paymentMethod,
-    consents: body.consents,
-    ip: knownIp,
+  const res = await singleFlight(`checkout:${visitorId}:${params.id}`, async () => {
+    if (!(await verifyTurnstile(body.turnstileToken, knownIp))) {
+      return NextResponse.json({ error: "Verifikasi keamanan gagal. Coba lagi." }, { status: 403 });
+    }
+    const order = await checkoutHold({
+      holdId: params.id,
+      visitorId,
+      buyer: body.buyer,
+      answers: body.answers,
+      paymentMethod: body.paymentMethod,
+      consents: body.consents,
+      ip: knownIp,
+    });
+    await ensureSnapToken(order.orderId);
+    return NextResponse.json({ orderUuid: order.orderUuid }, { status: 201 });
   });
-  await ensureSnapToken(order.orderId);
-  return NextResponse.json({ orderUuid: order.orderUuid }, { status: 201 });
+  return res.clone();
 });

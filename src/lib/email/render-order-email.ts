@@ -42,7 +42,7 @@ export function renderOrderEmail(type: EmailType, data: OrderEmailData, template
   };
   const template = templates[type];
   const subject = fillPlaceholders(template.subject, vars, false);
-  const intro = fillPlaceholders(template.body, vars, true);
+  const intro = fillPlaceholders(escapeHtml(template.body), vars, true);
   const introText = fillPlaceholders(template.body, vars, false);
   const schedule = formatEventSchedule(data.event.startsAt, data.event.endsAt, tz);
   const place = [data.event.venue, data.event.city].filter(Boolean).join(", ");

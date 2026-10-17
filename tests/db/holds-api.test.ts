@@ -38,6 +38,22 @@ async function hold(vid: string, eventId: number, inventoryId: number, qty: numb
 }
 
 describe("holds API", () => {
+  it("simultaneous identical requests both get the hold", async () => {
+    const ev = await createTestEvent({ categories: [{ name: "Reguler", capacity: 10 }] });
+    let calls = 0;
+    vi.mocked(verifyTurnstile).mockImplementation(async () => {
+      const first = ++calls === 1;
+      if (first) await new Promise((r) => setTimeout(r, 300));
+      return first;
+    });
+    const vid = newVisitorCookie().value;
+    const key = randomUUID();
+    const [a, b] = await Promise.all([hold(vid, ev.eventId, ev.inventoryIds[0], 1, key), hold(vid, ev.eventId, ev.inventoryIds[0], 1, key)]);
+    expect(a.status).toBe(201);
+    expect([200, 201]).toContain(b.status);
+    expect((await a.json()).holdId).toBe((await b.json()).holdId);
+  });
+
   it("creates a hold", async () => {
     const ev = await createTestEvent({ categories: [{ name: "Reguler", capacity: 10 }] });
     const res = await hold(newVisitorCookie().value, ev.eventId, ev.inventoryIds[0], 2);

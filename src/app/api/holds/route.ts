@@ -6,6 +6,7 @@ import { sql } from "@/lib/db";
 import { HoldError, reserveTickets } from "@/lib/hold-service";
 import { visitorRoute } from "@/lib/public-route";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { singleFlight } from "@/lib/single-flight";
 import { verifyTurnstile } from "@/lib/turnstile";
 
 const holdInput = z.object({
@@ -35,18 +36,20 @@ export const POST = visitorRoute(holdInput, async ({ visitorId, req, body }) => 
     return NextResponse.json({ holdId: existing.id, expiresAt: existing.expires_at.toISOString(), serverNow: await databaseNow() });
   }
 
-  if (!(await verifyTurnstile(body.turnstileToken, ip === "local" ? null : ip))) {
-    return NextResponse.json({ error: "Verifikasi keamanan gagal. Coba lagi." }, { status: 403 });
-  }
-
-  try {
-    const hold = await reserveTickets({ visitorId, eventId: body.eventId, items: body.items, idempotencyKey: key });
-    return NextResponse.json({ holdId: hold.id, expiresAt: hold.expiresAt.toISOString(), serverNow: await databaseNow() }, { status: 201 });
-  } catch (e) {
-    if (!(e instanceof HoldError)) throw e;
-    const ids = body.items.map((i) => i.inventoryId);
-    const rows = await sql<{ id: number; name: string }[]>`
-      select i.id, c.name from ticket_inventory i join ticket_categories c on c.id = i.ticket_category_id where i.id = any(${ids})`;
-    return holdErrorResponse(e, new Map(rows.map((r) => [r.id, r.name])));
-  }
+  const res = await singleFlight(`hold:${visitorId}:${key}`, async () => {
+    if (!(await verifyTurnstile(body.turnstileToken, ip === "local" ? null : ip))) {
+      return NextResponse.json({ error: "Verifikasi keamanan gagal. Coba lagi." }, { status: 403 });
+    }
+    try {
+      const hold = await reserveTickets({ visitorId, eventId: body.eventId, items: body.items, idempotencyKey: key });
+      return NextResponse.json({ holdId: hold.id, expiresAt: hold.expiresAt.toISOString(), serverNow: await databaseNow() }, { status: 201 });
+    } catch (e) {
+      if (!(e instanceof HoldError)) throw e;
+      const ids = body.items.map((i) => i.inventoryId);
+      const rows = await sql<{ id: number; name: string }[]>`
+        select i.id, c.name from ticket_inventory i join ticket_categories c on c.id = i.ticket_category_id where i.id = any(${ids})`;
+      return holdErrorResponse(e, new Map(rows.map((r) => [r.id, r.name])));
+    }
+  });
+  return res.clone();
 });
