@@ -1,6 +1,43 @@
 import type { NextConfig } from "next";
 
+const MIDTRANS = "https://app.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://api.sandbox.midtrans.com";
+const TURNSTILE = "https://challenges.cloudflare.com";
+
+function mediaOrigin(): string {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_MEDIA_BASE_URL ?? "").origin;
+  } catch {
+    return "";
+  }
+}
+
+// shortcut: inline scripts are allowed because Next.js inlines its bootstrap without a nonce; move to a nonce-based CSP when a security audit asks for it.
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline' ${MIDTRANS} ${TURNSTILE}`,
+  `frame-src ${MIDTRANS} ${TURNSTILE}`,
+  `connect-src 'self' ${MIDTRANS} ${TURNSTILE}`,
+  `img-src 'self' data: blob: ${mediaOrigin()} ${MIDTRANS}`,
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+
+const securityHeaders = [
+  { key: "Content-Security-Policy", value: csp },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  ...(process.env.APP_URL?.startsWith("https://") ? [{ key: "Strict-Transport-Security", value: "max-age=31536000" }] : []),
+];
+
 const nextConfig: NextConfig = {
+  async headers() {
+    // Dev needs eval and websocket HMR, so the policy only applies to production builds.
+    if (process.env.NODE_ENV !== "production") return [];
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
   cacheComponents: true,
   partialPrefetching: true,
   images: {
