@@ -89,6 +89,11 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState("");
   const [releasing, setReleasing] = useState(false);
+  const [promoOpen, setPromoOpen] = useState(false);
+  const [promoInput, setPromoInput] = useState("");
+  const [promoCode, setPromoCode] = useState<string | null>(null);
+  const [promoError, setPromoError] = useState("");
+  const [applying, setApplying] = useState(false);
   const turnstile = useRef<TurnstileHandle>(null);
   const form = useRef<HTMLFormElement>(null);
 
@@ -135,9 +140,37 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
     setConfirmOpen(false);
     setStep(3);
     window.scrollTo({ top: 0 });
-    const res = await requestJson<Quote>(`/api/holds/${view.id}/quote`, { body: {} });
+    const res = await requote(promoCode);
     if (res.ok) setQuote(res.data);
-    else if (res.status === 410) setExpired(true);
+  }
+
+  async function requote(voucherCode: string | null) {
+    const res = await requestJson<Quote>(`/api/holds/${view.id}/quote`, { body: voucherCode ? { voucherCode } : {} });
+    if (!res.ok && res.status === 410) setExpired(true);
+    return res;
+  }
+
+  async function applyPromo(e: FormEvent) {
+    e.preventDefault();
+    const code = promoInput.trim();
+    if (!code) return setPromoError("Masukkan kode promo.");
+    setApplying(true);
+    setPromoError("");
+    const res = await requote(code);
+    setApplying(false);
+    if (!res.ok) return setPromoError(res.error);
+    if (res.data.voucherError) return setPromoError(res.data.voucherError);
+    setQuote(res.data);
+    setPromoCode(res.data.voucherCode);
+    setPayError("");
+    setPromoOpen(false);
+  }
+
+  async function removePromo() {
+    setPromoCode(null);
+    setPromoInput("");
+    const res = await requote(null);
+    if (res.ok) setQuote(res.data);
   }
 
   async function release() {
@@ -150,7 +183,7 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
     setPaying(true);
     setPayError("");
     const res = await requestJson<{ orderUuid: string }>(`/api/holds/${view.id}/checkout`, {
-      body: { turnstileToken: token, buyer: draft.buyer, answers: draft.answers, paymentMethod: method, consents },
+      body: { turnstileToken: token, buyer: draft.buyer, answers: draft.answers, paymentMethod: method, consents, voucherCode: promoCode ?? undefined },
     });
     if (res.ok) {
       try {
@@ -164,6 +197,10 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
     setToken("");
     turnstile.current?.reset();
     if (res.status === 410) return setExpired(true);
+    if (res.body?.code === "VOUCHER") {
+      await removePromo();
+      return setPayError("Kode promo tidak bisa dipakai lagi. Total sudah diperbarui.");
+    }
     const fields = res.fields ?? {};
     const formFields = Object.fromEntries(
       Object.entries(fields)
@@ -310,7 +347,7 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
               </div>
               {totals.discount > 0 && (
                 <div className="flex justify-between">
-                  <dt className="text-muted">Diskon</dt>
+                  <dt className="text-muted">Diskon{promoCode && ` (${promoCode})`}</dt>
                   <dd className="text-text">−{formatRupiah(totals.discount)}</dd>
                 </div>
               )}
@@ -325,6 +362,27 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
             </dl>
             {step === 3 && (
               <div className="flex flex-col gap-3 border-t border-border pt-4">
+                {promoCode ? (
+                  <div className="flex items-center justify-between gap-3 text-sm">
+                    <span className="text-text">
+                      Promo <strong>{promoCode}</strong> dipakai.
+                    </span>
+                    <Button variant="ghost" size="sm" onClick={removePromo}>
+                      Hapus promo
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => {
+                      setPromoError("");
+                      setPromoOpen(true);
+                    }}
+                  >
+                    Lebih hemat pakai promo
+                  </Button>
+                )}
                 <Consent
                   id={`${uid}-terms`}
                   checked={consents.terms}
@@ -368,6 +426,30 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
           </div>
         </aside>
       </div>
+
+      <Dialog open={promoOpen} onClose={() => setPromoOpen(false)} title="Kode Promo">
+        <form onSubmit={applyPromo} className="flex flex-col gap-3" noValidate>
+          <Field
+            id={`${uid}-promo`}
+            label="Kode promo"
+            value={promoInput}
+            onChange={(e) => setPromoInput(e.target.value)}
+            error={promoError || undefined}
+            autoComplete="off"
+            autoCapitalize="characters"
+            maxLength={40}
+          />
+          <p className="text-sm text-muted">Diskon berlaku untuk harga tiket. Biaya layanan tidak didiskon.</p>
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setPromoOpen(false)}>
+              Batal
+            </Button>
+            <Button type="submit" loading={applying}>
+              Pakai
+            </Button>
+          </div>
+        </form>
+      </Dialog>
 
       <Dialog
         open={confirmOpen}

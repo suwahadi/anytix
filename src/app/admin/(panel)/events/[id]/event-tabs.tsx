@@ -7,6 +7,7 @@ const TABS = [
   { key: "detail", suffix: "", label: "Detail" },
   { key: "tickets", suffix: "/tickets", label: "Kategori Tiket" },
   { key: "form", suffix: "/form", label: "Form Pemesan" },
+  { key: "vouchers", suffix: "/vouchers", label: "Voucher" },
 ] as const;
 
 export type EventTabKey = (typeof TABS)[number]["key"];

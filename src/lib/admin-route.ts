@@ -10,6 +10,7 @@ export class UserError extends Error {
     message: string,
     public status = 400,
     public fields?: Record<string, string>,
+    public code?: string,
   ) {
     super(message);
   }
@@ -55,7 +56,10 @@ export function foreignOrigin(req: NextRequest): boolean {
 }
 
 export function userErrorResponse(e: UserError): NextResponse {
-  return NextResponse.json({ error: e.message, ...(e.fields ? { fields: e.fields } : {}) }, { status: e.status });
+  return NextResponse.json(
+    { error: e.message, ...(e.fields ? { fields: e.fields } : {}), ...(e.code ? { code: e.code } : {}) },
+    { status: e.status },
+  );
 }
 
 export function adminRoute<T = undefined>(

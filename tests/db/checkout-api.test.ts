@@ -9,7 +9,7 @@ import { reserveTickets } from "@/lib/hold-service";
 import { createSnapTransaction } from "@/lib/payments/midtrans";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { newVisitorCookie } from "@/lib/visitor";
-import { cleanupTestEvents, createTestEvent } from "./helpers";
+import { checkoutTestOrder, cleanupTestEvents, createTestEvent, createTestVoucher } from "./helpers";
 
 vi.mock("@/lib/turnstile", () => ({ verifyTurnstile: vi.fn(async () => true) }));
 vi.mock("@/lib/payments/midtrans", async (importOriginal) => ({
@@ -172,5 +172,29 @@ describe("checkout API", () => {
     const res = await callPay(orderUuid);
     expect(res.status).toBe(409);
     expect((await res.json()).error).toBe("Batas bayar sudah lewat.");
+  });
+
+  it("checkout applies voucher", async () => {
+    const { ev, visitor, holdId } = await setup();
+    const voucherId = await createTestVoucher(ev.eventId, { code: "HEMAT", value: 10 });
+    const res = await call(holdId, visitor.value, { voucherCode: "hemat" });
+    expect(res.status).toBe(201);
+    const { orderUuid } = await res.json();
+    const [order] = await sql<{ discount_amount: number; voucher_id: number }[]>`
+      select discount_amount, voucher_id from orders where public_uuid = ${orderUuid}`;
+    expect(order).toMatchObject({ discount_amount: 20000, voucher_id: voucherId });
+    const [v] = await sql<{ held: number }[]>`select held from vouchers where id = ${voucherId}`;
+    expect(v.held).toBe(1);
+  });
+
+  it("checkout with exhausted voucher is 409", async () => {
+    const { ev, visitor, holdId } = await setup();
+    await createTestVoucher(ev.eventId, { code: "SEKALI", value: 10, maxUses: 1 });
+    await checkoutTestOrder({ eventId: ev.eventId, items: [{ inventoryId: ev.inventoryIds[0], qty: 1 }], voucherCode: "SEKALI" });
+    const res = await call(holdId, visitor.value, { voucherCode: "SEKALI" });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toMatchObject({ error: "Kode promo tidak bisa dipakai.", code: "VOUCHER" });
+    const [h] = await sql<{ status: string }[]>`select status from holds where id = ${holdId}`;
+    expect(h.status).toBe("held");
   });
 });

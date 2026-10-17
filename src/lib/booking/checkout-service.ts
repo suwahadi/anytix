@@ -13,6 +13,7 @@ export type CheckoutInput = {
   answers: Record<string, unknown>;
   paymentMethod: string;
   consents: { terms: boolean; privacy: boolean };
+  voucherCode?: string | null;
   ip: string | null;
 };
 
@@ -51,7 +52,7 @@ export async function checkoutHold(input: CheckoutInput): Promise<{ orderId: num
   try {
     const [order] = await sql<{ id: number; public_uuid: string }[]>`
       select id, public_uuid from checkout_hold(${input.holdId}::uuid, ${input.visitorId}::uuid, ${sql.json(input.buyer)},
-                                                ${sql.json(answers as never)}, ${input.paymentMethod}, ${null}, ${sql.json(consents)})`;
+                                                ${sql.json(answers as never)}, ${input.paymentMethod}, ${input.voucherCode ?? null}, ${sql.json(consents)})`;
     return { orderId: order.id, orderUuid: order.public_uuid };
   } catch (e) {
     const engine = parseEngineError(e);
@@ -59,7 +60,7 @@ export async function checkoutHold(input: CheckoutInput): Promise<{ orderId: num
     if (engine.code === "HOLD_EXPIRED") throw new UserError(EXPIRED, 410);
     if (engine.code === "HOLD_NOT_FOUND") throw new UserError("Pesanan tidak ditemukan.", 404);
     if (engine.code === "INVALID_BUYER") throw new UserError("Lengkapi data pemesan.", 422);
-    if (engine.code.startsWith("VOUCHER")) throw new UserError("Kode promo tidak bisa dipakai.", 409);
+    if (engine.code.startsWith("VOUCHER")) throw new UserError("Kode promo tidak bisa dipakai.", 409, undefined, "VOUCHER");
     throw e;
   }
 }

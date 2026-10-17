@@ -17,6 +17,7 @@ const checkoutInput = z.object({
   answers: z.record(z.string(), z.unknown()).default({}),
   paymentMethod: z.string().max(20),
   consents: z.object({ terms: z.boolean().default(false), privacy: z.boolean().default(false) }),
+  voucherCode: z.string().trim().max(40).optional(),
 });
 
 export const POST = visitorRoute(checkoutInput, async ({ visitorId, req, params, body }) => {
@@ -39,6 +40,7 @@ export const POST = visitorRoute(checkoutInput, async ({ visitorId, req, params,
       answers: body.answers,
       paymentMethod: body.paymentMethod,
       consents: body.consents,
+      voucherCode: body.voucherCode || null,
       ip: knownIp,
     });
     await ensureSnapToken(order.orderId);

@@ -1,4 +1,5 @@
 import { UserError } from "@/lib/admin-route";
+import { voucherErrorMessage } from "@/lib/booking/voucher-errors";
 import { sql } from "@/lib/db";
 import { parseEngineError } from "@/lib/db-errors";
 import type { FormFieldDef } from "@/lib/form-schema";
@@ -29,6 +30,7 @@ export type Quote = {
   discount: number;
   fee: number;
   total: number;
+  voucherCode: string | null;
   voucherError: string | null;
 };
 
@@ -125,6 +127,7 @@ type RawQuote = {
   discount: number;
   fee: number;
   total: number;
+  voucher_code: string | null;
   voucher_error: string | null;
 };
 
@@ -146,7 +149,8 @@ export async function quoteHold(holdId: string, visitorId: string, voucherCode: 
       discount: Number(quote.discount),
       fee: Number(quote.fee),
       total: Number(quote.total),
-      voucherError: quote.voucher_error,
+      voucherCode: quote.voucher_code ?? null,
+      voucherError: voucherErrorMessage(quote.voucher_error),
     };
   } catch (e) {
     const engine = parseEngineError(e);

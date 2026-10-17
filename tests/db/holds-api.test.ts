@@ -7,7 +7,7 @@ import { POST as quote } from "@/app/api/holds/[id]/quote/route";
 import { sql } from "@/lib/db";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { newVisitorCookie } from "@/lib/visitor";
-import { cleanupTestEvents, createTestEvent, inventoryRow } from "./helpers";
+import { cleanupTestEvents, createTestEvent, createTestVoucher, inventoryRow } from "./helpers";
 
 vi.mock("@/lib/turnstile", () => ({ verifyTurnstile: vi.fn(async () => true) }));
 
@@ -150,5 +150,31 @@ describe("holds API", () => {
     const res = await quote(request(`/api/holds/${holdId}/quote`, { vid, body: {} }), idParams(holdId));
     expect(res.status).toBe(410);
     expect((await res.json()).error).toBe("Waktu habis, slot dilepas");
+  });
+
+  it("quote returns voucher message", async () => {
+    const ev = await createTestEvent({ categories: [{ capacity: 10 }] });
+    await createTestVoucher(ev.eventId, { code: "Hemat10", value: 10 });
+    const vid = newVisitorCookie().value;
+    const { holdId } = await (await hold(vid, ev.eventId, ev.inventoryIds[0], 2)).json();
+    const bad = await quote(request(`/api/holds/${holdId}/quote`, { vid, body: { voucherCode: "SALAH" } }), idParams(holdId));
+    expect(await bad.json()).toMatchObject({ discount: 0, voucherError: "Kode promo tidak ditemukan.", voucherCode: null });
+    const good = await quote(request(`/api/holds/${holdId}/quote`, { vid, body: { voucherCode: "hemat10" } }), idParams(holdId));
+    expect(await good.json()).toMatchObject({ discount: 20000, total: 185000, voucherError: null, voucherCode: "Hemat10" });
+  });
+
+  it("voucher quote is rate limited", async () => {
+    const ev = await createTestEvent({ categories: [{ capacity: 10 }] });
+    const vid = newVisitorCookie().value;
+    const { holdId } = await (await hold(vid, ev.eventId, ev.inventoryIds[0], 1)).json();
+    const statuses: number[] = [];
+    for (let i = 0; i < 11; i++) {
+      statuses.push((await quote(request(`/api/holds/${holdId}/quote`, { vid, body: { voucherCode: `TEBAK${i}` } }), idParams(holdId))).status);
+    }
+    expect(statuses.slice(0, 10).every((s) => s === 200)).toBe(true);
+    const last = await quote(request(`/api/holds/${holdId}/quote`, { vid, body: { voucherCode: "TEBAK" } }), idParams(holdId));
+    expect(last.status).toBe(429);
+    expect((await last.json()).error).toBe("Terlalu banyak percobaan kode promo. Coba lagi sebentar lagi.");
+    expect((await quote(request(`/api/holds/${holdId}/quote`, { vid, body: {} }), idParams(holdId))).status).toBe(200);
   });
 });
