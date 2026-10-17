@@ -2,6 +2,7 @@ import { UserError } from "@/lib/admin-route";
 import { diffFields, writeAudit } from "@/lib/audit";
 import { sql } from "@/lib/db";
 import { isUniqueViolation } from "@/lib/db-errors";
+import { discardReplacedMedia } from "@/lib/media-cleanup";
 import { invalidatePublic, TAG_CATEGORIES, TAG_EVENTS } from "@/lib/public-cache";
 import { slugify } from "@/lib/slug";
 import type { EventCategoryValues } from "@/lib/validation/catalog";
@@ -81,6 +82,7 @@ export async function updateEventCategory(
     diff: diffFields(before, after),
   });
   changed();
+  await discardReplacedMedia([before.icon], [after.icon]);
   return getEventCategory(id);
 }
 
@@ -104,4 +106,5 @@ export async function removeEventCategory(adminId: number, id: number): Promise<
   await sql`delete from event_categories where id = ${id}`;
   await writeAudit(sql, { adminId, action: "delete", entity: "event_category", entityId: id, diff: category });
   changed();
+  await discardReplacedMedia([category.icon], []);
 }

@@ -1,14 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { NextRequest } from "next/server";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { POST as createRoute } from "@/app/api/admin/events/route";
 import { ADMIN_COOKIE, createSessionValue } from "@/lib/admin-session";
 import { createAdmin } from "@/lib/admin-service";
 import { createEvent, getAdminEvent, resolveSlug, updateEvent } from "@/lib/catalog/event-service";
 import { sql } from "@/lib/db";
 import { parseEngineError } from "@/lib/db-errors";
+import { deleteObjects } from "@/lib/storage";
 import { eventInput } from "@/lib/validation/catalog";
 import { cleanupTestEvents } from "./helpers";
+
+vi.mock("@/lib/storage", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/storage")>()),
+  deleteObjects: vi.fn(async () => {}),
+}));
 
 let adminId = 0;
 let categoryId = 0;
@@ -53,6 +59,16 @@ async function engineCode(p: Promise<unknown>) {
 }
 
 describe("events", () => {
+  it("replaced poster deletes the old files", async () => {
+    const ev = await createEvent(adminId, values({ posterPath: "poster/2026/OldOldOldOld" }));
+    vi.mocked(deleteObjects).mockClear();
+    await updateEvent(adminId, ev.id, values({ slug: ev.slug, posterPath: "poster/2026/NewNewNewNew" }));
+    expect(vi.mocked(deleteObjects)).toHaveBeenCalledWith(["poster/2026/OldOldOldOld-lg.webp", "poster/2026/OldOldOldOld-md.webp", "poster/2026/OldOldOldOld-thumb.webp"]);
+    vi.mocked(deleteObjects).mockClear();
+    await updateEvent(adminId, ev.id, values({ slug: ev.slug, posterPath: "poster/2026/NewNewNewNew" }));
+    expect(vi.mocked(deleteObjects)).not.toHaveBeenCalled();
+  });
+
   it("create makes a default session with the sale status", async () => {
     const event = await createEvent(adminId, values({ saleStatus: "on_sale" }));
     const [session] = await sql`select status, starts_at, ends_at from event_sessions where event_id = ${event.id}`;

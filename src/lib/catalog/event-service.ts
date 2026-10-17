@@ -2,6 +2,7 @@ import { UserError } from "@/lib/admin-route";
 import { diffFields, writeAudit } from "@/lib/audit";
 import { sql, transaction, type Sql } from "@/lib/db";
 import { isUniqueViolation } from "@/lib/db-errors";
+import { discardReplacedMedia } from "@/lib/media-cleanup";
 import { eventTag, invalidatePublic, TAG_EVENTS } from "@/lib/public-cache";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { slugify } from "@/lib/slug";
@@ -168,6 +169,7 @@ export async function updateEvent(adminId: number, id: number, input: EventValue
     });
   }).catch(mapDuplicate);
   invalidatePublic(TAG_EVENTS, eventTag(id));
+  await discardReplacedMedia([before.posterPath, before.organizerLogoPath], [data.poster_path, data.organizer_logo_path]);
   return (await getAdminEvent(id))!;
 }
 

@@ -3,9 +3,10 @@ import { requireAdmin } from "@/lib/admin-service";
 import { randomToken } from "@/lib/crypto";
 import { detectImageType, toWebpVariants, VARIANT_WIDTHS, type VariantSize } from "@/lib/image-service";
 import { mediaUrl, uploadObject } from "@/lib/storage";
+import { MEDIA_KINDS } from "@/lib/validation/catalog";
 
 const MAX_BYTES = 10 * 1024 * 1024;
-const KINDS = new Set(["poster", "logo", "icon"]);
+const KINDS = new Set<string>(MEDIA_KINDS);
 const tooBig = () => NextResponse.json({ error: "Ukuran file maksimal 10 MB." }, { status: 413 });
 
 export async function POST(req: NextRequest) {

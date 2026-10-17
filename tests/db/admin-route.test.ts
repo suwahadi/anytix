@@ -68,6 +68,16 @@ describe("adminRoute", () => {
     expect(await res.json()).toEqual({ error: "Tidak bisa", fields: { name: "Sudah dipakai." } });
   });
 
+  it("foreign key violation is 409", async () => {
+    const fk = adminRoute(null, async () => {
+      await sql`insert into event_sessions (event_id, starts_at, ends_at) values (-1, now(), now())`;
+      return Response.json({});
+    });
+    const res = await fk(req({}), ctx());
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toBe("Data terkait sudah berubah. Muat ulang halaman lalu coba lagi.");
+  });
+
   it("rejects a foreign origin on writes", async () => {
     const res = await route(req({ name: "Budi" }, { origin: "https://evil.example" }), ctx());
     expect(res.status).toBe(403);

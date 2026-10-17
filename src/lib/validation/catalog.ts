@@ -17,7 +17,11 @@ export function slugField(max: number) {
   );
 }
 
-export const mediaPath = z.string().trim().max(200).nullable().optional();
+export const MEDIA_KINDS = ["poster", "logo", "icon"] as const;
+
+const MEDIA_PATH = new RegExp(`^(${MEDIA_KINDS.join("|")})/\\d{4}/[A-Za-z0-9_-]{12}$`);
+
+export const mediaPath = z.string().trim().regex(MEDIA_PATH, "Unggah ulang gambar.").nullable().optional();
 
 export const eventCategoryInput = z.object({
   name: z.string().trim().min(2, "Nama minimal 2 karakter.").max(60, "Nama maksimal 60 karakter."),

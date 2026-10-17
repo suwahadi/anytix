@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { getPublicSite } from "@/lib/public/catalog-queries";
 import { THEME_SCRIPT } from "@/lib/theme";
 import "./globals.css";
 
@@ -9,10 +10,13 @@ const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
 });
 
-export const metadata: Metadata = {
-  title: { default: "Anytix", template: "%s · Anytix" },
-  description: "Beli tiket event tanpa perlu daftar akun.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { name } = await getPublicSite();
+  return {
+    title: { default: name, template: `%s · ${name}` },
+    description: "Beli tiket event tanpa perlu daftar akun.",
+  };
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

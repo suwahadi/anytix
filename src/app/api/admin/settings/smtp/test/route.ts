@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { adminRoute } from "@/lib/admin-route";
 import { getEmailProvider } from "@/lib/email/email-provider";
+import { escapeHtml } from "@/lib/email/templates";
 import { getSettingsGroup } from "@/lib/settings-service";
 import { smtpTestInput } from "@/lib/validation/settings";
 
@@ -13,7 +14,7 @@ export const POST = adminRoute(smtpTestInput, async ({ body }) => {
       to: body.to,
       subject: `Uji SMTP ${site.name}`,
       text: `Email uji dari panel ${site.name}, dikirim ${sentAt} WIB. Kalau email ini sampai, pengaturan SMTP sudah benar.`,
-      html: `<p>Email uji dari panel <strong>${site.name}</strong>, dikirim ${sentAt} WIB.</p><p>Kalau email ini sampai, pengaturan SMTP sudah benar.</p>`,
+      html: `<p>Email uji dari panel <strong>${escapeHtml(site.name)}</strong>, dikirim ${sentAt} WIB.</p><p>Kalau email ini sampai, pengaturan SMTP sudah benar.</p>`,
     });
     return NextResponse.json({ messageId });
   } catch (e) {

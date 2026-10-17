@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { ZodType } from "zod";
 import { requireAdmin, type Admin } from "@/lib/admin-service";
+import { isForeignKeyViolation } from "@/lib/db-errors";
 import { getEnv } from "@/lib/env";
 import { readJson } from "@/lib/http";
 
@@ -83,6 +84,7 @@ export function adminRoute<T = undefined>(
       return await handler({ admin, req, params: await route.params, body });
     } catch (e) {
       if (e instanceof UserError) return userErrorResponse(e);
+      if (isForeignKeyViolation(e)) return NextResponse.json({ error: "Data terkait sudah berubah. Muat ulang halaman lalu coba lagi." }, { status: 409 });
       throw e;
     }
   }

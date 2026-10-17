@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formFieldInput } from "@/lib/validation/catalog";
+import { formFieldInput, mediaPath } from "@/lib/validation/catalog";
 
 function fieldErrors(input: Record<string, unknown>): Record<string, string> {
   const res = formFieldInput.safeParse({ label: "Isian", ...input });
@@ -28,5 +28,17 @@ describe("formFieldInput min/max rules", () => {
   it("rejects a pattern that is too long or does not compile", () => {
     expect(fieldErrors({ type: "short_text", validation: { pattern: "a".repeat(201) } })["validation.pattern"]).toBe("Pola regex tidak valid.");
     expect(fieldErrors({ type: "short_text", validation: { pattern: "([" } })["validation.pattern"]).toBe("Pola regex tidak valid.");
+  });
+});
+
+describe("mediaPath", () => {
+  it("media path must come from upload", () => {
+    expect(mediaPath.safeParse("poster/2026/BjogafyCpWrI").success).toBe(true);
+    expect(mediaPath.safeParse(null).success).toBe(true);
+    for (const bad of ["https://evil.example/x.png", "poster/2026/../../secret", "avatar/2026/BjogafyCpWrI", "poster/26/BjogafyCpWrI"]) {
+      const res = mediaPath.safeParse(bad);
+      expect(res.success).toBe(false);
+      if (!res.success) expect(res.error.issues[0].message).toBe("Unggah ulang gambar.");
+    }
   });
 });

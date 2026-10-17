@@ -11,6 +11,10 @@ export function isUniqueViolation(e: unknown): boolean {
   return typeof e === "object" && e !== null && (e as { code?: unknown }).code === "23505";
 }
 
+export function isForeignKeyViolation(e: unknown): boolean {
+  return typeof e === "object" && e !== null && (e as { code?: unknown }).code === "23503";
+}
+
 export function isCheckViolation(e: unknown): boolean {
   return typeof e === "object" && e !== null && (e as { code?: unknown }).code === "23514";
 }
