@@ -74,6 +74,7 @@ export async function cleanupTestEvents(): Promise<void> {
       await tx`delete from jobs where (payload->>'order_id')::bigint = any(${orderIds})`;
       await tx`delete from orders where id = any(${orderIds})`;
     }
+    await tx`delete from checkin_events where event_id = any(${ids})`;
     await tx`delete from hold_items where hold_id in (select id from holds where event_id = any(${ids}))`;
     await tx`delete from holds where event_id = any(${ids})`;
     await tx`delete from vouchers where event_id = any(${ids})`;
