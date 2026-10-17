@@ -82,6 +82,16 @@ body {
   outline-offset: 2px;
 }
 
+@layer base {
+  a[href],
+  button:not(:disabled),
+  [role="button"],
+  [role="tab"],
+  summary {
+    cursor: pointer;
+  }
+}
+
 .rich-text > * + * {
   margin-top: 0.75em;
 }
