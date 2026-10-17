@@ -18,14 +18,14 @@ Ruang lingkup yang disepakati adalah Fase 0–3. Pengerjaan berhenti di akhir ti
 |---|---|
 | Fase 0 (fondasi, engine anti-oversell, worker) | Selesai, sudah di-review dan di-push |
 | Fase 1 Task 1–9 | Selesai, semua test lulus, sudah dicek di browser |
-| Fase 1 Task 10 (halaman publik) | Kode selesai: `npm run build`, `tsc` dan `lint` bersih. **Langkah 4 dan 5 belum dikerjakan** |
+| Fase 1 Task 10 (halaman publik) | Langkah 4 (curl) selesai dan lulus setelah perbaikan `ensureStatic`. **Langkah 5 belum dikerjakan** |
 | Fase 1 Task 11 (checkpoint) | Belum |
 
 Hasil test terakhir: `npm test` 74 lulus (ditambah 2 test `toPlainText` di Task 10), dan `npm run test:db` 112 lulus sebelum Task 9 ditambah 7 test `catalog-queries`.
 
 ## Langkah berikutnya, berurutan
 
-### 1. Task 10 langkah 4: uji dengan curl ke server produksi
+### 1. Task 10 langkah 4: uji dengan curl ke server produksi (selesai)
 
 Matikan dulu dev server (port 3000). Lalu jalankan `npm run build && npm run start`.
 
@@ -83,6 +83,7 @@ Buat plan baru dari PRD (§8–§15 dan §23). Jalankan task per task dengan TDD
 ## Keputusan Task 10 yang belum tercatat di ledger
 
 - Tidak ada `loading.tsx` di bawah `src/app/(public)/events/`. File itu membungkus segmen `[slug]` dengan Suspense, dan `notFound()` / `permanentRedirect()` di dalam Suspense berubah jadi 404 "soft" berstatus 200. Resolusi slug (`load-event.ts`) harus tetap berjalan di luar Suspense. Skeleton `/events` memakai `<Suspense>` inline.
+- Halaman `/events/[slug]` dan `/events/[slug]/tickets` mengekspor `ensureStatic = "navigation"`. Tanpa itu, slug yang tidak ada di `generateStaticParams` (slug lama, slug salah, event yang dipublikasikan setelah build) langsung dikirimi fallback shell berstatus 200, sehingga redirect dan 404 hanya terjadi di sisi klien. Dengan `'navigation'`, request pertama menunggu render lengkap. Akibatnya semua data di dua halaman itu wajib di-cache (`use cache` dengan `stale` ≥ 30 detik dan `expire` ≥ 5 menit).
 - Cukup satu `error.tsx` di `(public)` dan satu `not-found.tsx` global di `src/app`.
 - `MediaImage` tidak dibuat. `next/image` langsung memakai `images.loaderFile` global (`src/lib/image-loader.ts`) yang memilih varian WebP thumb/md/lg.
 - Badge tiket di halaman detail dihitung di dalam `getPublicEvent` (scope `'use cache'`), karena `new Date()` di luar cache gagal saat prerender. Halaman tiket memperbarui badge dari `/api/events/{slug}/availability`.

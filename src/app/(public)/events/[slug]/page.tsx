@@ -15,6 +15,8 @@ import { loadEvent, publishedSlugParams } from "./load-event";
 import { RefundDialog } from "./refund-dialog";
 
 export const generateStaticParams = publishedSlugParams;
+/** Unlisted slugs would otherwise get the fallback shell, committing a 200 before notFound()/permanentRedirect() run. */
+export const ensureStatic = "navigation";
 
 export async function generateMetadata({ params }: PageProps<"/events/[slug]">): Promise<Metadata> {
   const event = await loadEvent((await params).slug);

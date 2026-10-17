@@ -5,6 +5,8 @@ import { loadEvent, publishedSlugParams } from "../load-event";
 import { TicketPicker } from "./ticket-picker";
 
 export const generateStaticParams = publishedSlugParams;
+/** Unlisted slugs would otherwise get the fallback shell, committing a 200 before notFound()/permanentRedirect() run. */
+export const ensureStatic = "navigation";
 
 export async function generateMetadata({ params }: PageProps<"/events/[slug]/tickets">): Promise<Metadata> {
   const event = await loadEvent((await params).slug, "/tickets");
