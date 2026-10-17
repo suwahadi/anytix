@@ -22,7 +22,7 @@ export default async function TicketsPage({ params }: PageProps<"/events/[slug]/
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:py-10">
       <div className="flex flex-col gap-1">
-        <Link href={`/events/${event.slug}`} className="self-start py-2 text-sm font-semibold text-accent-text underline-offset-4 hover:underline">
+        <Link href={`/events/${event.slug}`} className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-accent-text underline-offset-4 hover:underline">
           ← Kembali ke detail event
         </Link>
         <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-text sm:text-3xl">{event.title}</h1>

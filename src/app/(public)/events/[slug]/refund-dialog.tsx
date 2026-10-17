@@ -10,7 +10,7 @@ export function RefundDialog({ policy }: { policy: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="self-start py-2 text-sm font-semibold text-accent-text underline underline-offset-4"
+        className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-accent-text underline underline-offset-4"
       >
         Kebijakan Refund
       </button>

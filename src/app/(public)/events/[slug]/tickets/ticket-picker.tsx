@@ -122,7 +122,7 @@ export function TicketPicker({ slug, categories }: { slug: string; categories: C
               )}
               {c.description && (
                 <details className="group border-t border-border pt-3">
-                  <summary className="cursor-pointer py-1 text-sm font-semibold text-text">Lihat deskripsi</summary>
+                  <summary className="cursor-pointer py-3 text-sm font-semibold text-text">Lihat deskripsi</summary>
                   <div className="rich-text pt-2 text-sm text-text" dangerouslySetInnerHTML={{ __html: c.description }} />
                 </details>
               )}

@@ -69,7 +69,7 @@ export default async function Home() {
             Event terdekat
           </h2>
           {upcoming.length > 0 && (
-            <Link href="/events" className="py-2 text-sm font-semibold text-accent-text underline-offset-4 hover:underline">
+            <Link href="/events" className="inline-flex min-h-11 items-center text-sm font-semibold text-accent-text underline-offset-4 hover:underline">
               Lihat semua
             </Link>
           )}

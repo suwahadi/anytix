@@ -125,7 +125,7 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
               className="aspect-video w-full rounded-lg bg-surface-muted object-cover"
             />
           )}
-          <Link href={`/events?category=${event.categorySlug}`} className="self-start py-1">
+          <Link href={`/events?category=${event.categorySlug}`} className="inline-flex min-h-11 items-center self-start">
             <Badge tone="accent">{event.categoryName}</Badge>
           </Link>
           <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-text sm:text-3xl">{event.title}</h1>
@@ -181,7 +181,7 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
                       href={event.mapUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-1 inline-block py-1 font-semibold text-accent-text underline-offset-4 hover:underline"
+                      className="inline-flex min-h-11 items-center font-semibold text-accent-text underline-offset-4 hover:underline"
                     >
                       Buka peta
                     </a>
