@@ -79,6 +79,11 @@ export function OrderDetail() {
   const [to, setTo] = useState("");
   const [toError, setToError] = useState("");
   const [updateEmail, setUpdateEmail] = useState(false);
+  const [revealOpen, setRevealOpen] = useState(false);
+  const [revealed, setRevealed] = useState<Record<string, string> | null>(null);
+
+  // Next keeps a left page alive in the background; a revealed identity number must not survive navigation.
+  useEffect(() => () => setRevealed(null), []);
 
   useEffect(() => {
     let active = true;
@@ -106,6 +111,16 @@ export function OrderDetail() {
     setOrder(res.data.order);
     setOpen(null);
     setNotice(done);
+  }
+
+  async function reveal() {
+    setBusy(true);
+    setActionError("");
+    const res = await requestJson<{ identities: Array<{ label: string; number: string }> }>(`/api/admin/orders/${id}/reveal-identity`, { method: "POST", body: {} });
+    setBusy(false);
+    if (!res.ok) return setActionError(res.error);
+    setRevealed(Object.fromEntries(res.data.identities.map((i) => [i.label, i.number])));
+    setRevealOpen(false);
   }
 
   if (error) return <Alert>{error}</Alert>;
@@ -222,12 +237,30 @@ export function OrderDetail() {
               <dt className="text-muted">WhatsApp</dt>
               <dd className="text-text">+{order.buyer.phone}</dd>
             </div>
-            {order.answers.map((a) => (
-              <div key={a.label}>
-                <dt className="text-muted">{a.label}</dt>
-                <dd className="text-text">{answerText(a) || "Tidak diisi"}</dd>
-              </div>
-            ))}
+            {order.answers.map((a) => {
+              const identity = a.type === "identity" ? (a.value as { type?: string; number?: string }) : null;
+              return (
+                <div key={a.label}>
+                  <dt className="text-muted">{a.label}</dt>
+                  {identity && !identity.number ? (
+                    <dd className="text-muted">{identity.type} · dihapus otomatis 60 hari setelah acara</dd>
+                  ) : identity ? (
+                    <dd className="flex flex-wrap items-center gap-2 text-text">
+                      <span className="font-mono">
+                        {identity.type} {revealed?.[a.label] ?? identity.number}
+                      </span>
+                      {!revealed?.[a.label] && (
+                        <Button variant="ghost" size="sm" onClick={() => (setActionError(""), setRevealOpen(true))}>
+                          Tampilkan nomor lengkap
+                        </Button>
+                      )}
+                    </dd>
+                  ) : (
+                    <dd className="text-text">{answerText(a) || "Tidak diisi"}</dd>
+                  )}
+                </div>
+              );
+            })}
           </dl>
         </section>
 
@@ -298,6 +331,29 @@ export function OrderDetail() {
         }
       >
         <p className="text-sm text-text">{confirm?.body}</p>
+        {actionError && (
+          <div className="mt-3">
+            <Alert>{actionError}</Alert>
+          </div>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={revealOpen}
+        onClose={() => setRevealOpen(false)}
+        title="Tampilkan nomor identitas?"
+        footer={
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="secondary" onClick={() => setRevealOpen(false)}>
+              Batal
+            </Button>
+            <Button loading={busy} onClick={reveal}>
+              Tampilkan
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-sm text-text">Tindakan ini tercatat di audit log. Nomor lengkap hanya tampil di halaman ini dan hilang saat Anda pindah halaman.</p>
         {actionError && (
           <div className="mt-3">
             <Alert>{actionError}</Alert>
