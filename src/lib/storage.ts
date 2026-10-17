@@ -16,7 +16,7 @@ function storageUrl(path: string): string {
 export async function uploadObject(path: string, body: Buffer, contentType: string): Promise<void> {
   const res = await fetch(storageUrl(`object/${BUCKET}/${path}`), {
     method: "POST",
-    headers: storageHeaders({ "content-type": contentType, "cache-control": "31536000", "x-upsert": "false" }),
+    headers: storageHeaders({ "content-type": contentType, "cache-control": "max-age=31536000", "x-upsert": "false" }),
     body: new Uint8Array(body),
   });
   if (!res.ok) throw new Error(`Storage upload failed (${res.status}): ${await res.text()}`);

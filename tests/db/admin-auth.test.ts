@@ -3,8 +3,9 @@ import { NextRequest } from "next/server";
 import { afterAll, describe, expect, it } from "vitest";
 import { POST as login } from "@/app/api/admin/auth/login/route";
 import { POST as verify2fa } from "@/app/api/admin/auth/2fa/route";
-import { ADMIN_2FA_COOKIE, ADMIN_COOKIE } from "@/lib/admin-session";
-import { createAdmin, setTotpSecret } from "@/lib/admin-service";
+import { POST as setup2fa } from "@/app/api/admin/auth/2fa/setup/route";
+import { ADMIN_2FA_COOKIE, ADMIN_COOKIE, createSessionValue } from "@/lib/admin-session";
+import { createAdmin, getTotpSecret, setTotpSecret } from "@/lib/admin-service";
 import { sql } from "@/lib/db";
 import { generateTotpSecret, totpCode } from "@/lib/totp";
 
@@ -72,6 +73,28 @@ describe("admin auth", () => {
       });
     for (let i = 0; i < 5; i++) expect((await login(req())).status).toBe(401);
     expect((await login(req())).status).toBe(429);
+  });
+
+  it("rate limits an email even when the client rotates its IP header", async () => {
+    const { email } = await newAdmin();
+    for (let i = 0; i < 20; i++) {
+      const res = await login(post("/api/admin/auth/login", { email, password: `salah-${i}` }));
+      expect(res.status).toBe(401);
+    }
+    const res = await login(post("/api/admin/auth/login", { email, password: PASSWORD }));
+    expect(res.status).toBe(429);
+  });
+
+  it("2fa setup does not replace an existing secret", async () => {
+    const { id } = await newAdmin();
+    const current = generateTotpSecret();
+    await setTotpSecret(id, current);
+    const attacker = generateTotpSecret();
+    const res = await setup2fa(
+      post("/api/admin/auth/2fa/setup", { secret: attacker, code: totpCode(attacker, Date.now()) }, `${ADMIN_COOKIE}=${createSessionValue(id)}`),
+    );
+    expect(res.status).toBe(409);
+    expect(await getTotpSecret(id)).toBe(current);
   });
 
   it("login with 2fa needs code", async () => {

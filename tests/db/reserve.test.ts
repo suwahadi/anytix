@@ -99,6 +99,35 @@ describe("reserve_tickets", () => {
     expect((await inventoryRow(ev.inventoryIds[0])).held).toBe(3);
   });
 
+  it("does not release a hold that checkout is moving to pending_payment", async () => {
+    const ev = await createTestEvent({ categories: [{ capacity: 10 }] });
+    const inv = ev.inventoryIds[0];
+    const visitor = randomUUID();
+    const first = await reserve(visitor, ev.eventId, [{ inventoryId: inv, qty: 2 }]);
+    const tx = await sql.reserve();
+    try {
+      await tx`begin`;
+      await tx`update holds set status = 'pending_payment', expires_at = now() + interval '20 minutes' where id = ${first.id}`;
+      const second = reserve(visitor, ev.eventId, [{ inventoryId: inv, qty: 1 }]).catch((e) => e);
+      for (let i = 0; i < 100; i++) {
+        const [w] = await sql<{ n: number }[]>`
+          select count(*)::int8 as n from pg_stat_activity
+          where wait_event_type = 'Lock' and query like '%reserve_tickets%'`;
+        if (w.n > 0) break;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      await tx`commit`;
+      await second;
+    } finally {
+      tx.release();
+    }
+    expect(await holdStatus(first.id)).toBe("pending_payment");
+    const items = await sql`select counted from hold_items where hold_id = ${first.id}`;
+    expect(items.map((i) => i.counted)).toEqual([true]);
+    expect((await inventoryRow(inv)).held).toBe(3);
+    expect(await countedSum(inv)).toBe(3);
+  });
+
   it("lazy reclaim frees expired holds", async () => {
     const ev = await createTestEvent({ categories: [{ capacity: 2 }] });
     const inv = ev.inventoryIds[0];

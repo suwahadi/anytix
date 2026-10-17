@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
   const body = await readJson(req);
   const email = str(body.email).trim().toLowerCase();
   const password = str(body.password);
-  if (!rateLimit(`login:${clientIp(req.headers)}|${email}`, 5, 60_000)) {
+  // The per-email limit also holds when a client rotates X-Forwarded-For to dodge the per-IP limit.
+  if (!rateLimit(`login:${clientIp(req.headers)}|${email}`, 5, 60_000) || !rateLimit(`login-email:${email}`, 20, 15 * 60_000)) {
     return NextResponse.json({ error: "Terlalu banyak percobaan. Coba lagi sebentar lagi." }, { status: 429 });
   }
 

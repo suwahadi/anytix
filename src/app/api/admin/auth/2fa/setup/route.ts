@@ -22,6 +22,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const admin = await requireAdmin(req);
   if (!admin) return unauthorized();
+  if (await getTotpSecret(admin.id)) {
+    return NextResponse.json(
+      { error: "Verifikasi dua langkah sudah aktif. Matikan dulu dengan kode yang berlaku sebelum memasang yang baru." },
+      { status: 409 },
+    );
+  }
   const body = await readJson(req);
   const secret = str(body.secret);
   const code = str(body.code).replace(/\s/g, "");

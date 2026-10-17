@@ -52,6 +52,7 @@ describe("POST /api/admin/uploads", () => {
     const thumb = await fetch(body.urls.thumb);
     expect(thumb.status).toBe(200);
     expect(thumb.headers.get("content-type")).toBe("image/webp");
+    expect(thumb.headers.get("cache-control")).toContain("max-age=31536000");
   });
 
   it("rejects big file", async () => {
