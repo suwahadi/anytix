@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db";
-import { createSnapTransaction, MidtransError } from "@/lib/payments/midtrans";
+import { createSnapTransaction, getTransactionStatus, MidtransError, toEngineStatus, type EngineStatus } from "@/lib/payments/midtrans";
 import { buildSnapPayload } from "@/lib/payments/snap-payload";
 
 type PaymentRow = {
@@ -75,4 +75,24 @@ export async function ensureSnapToken(orderId: number): Promise<{ token: string 
     console.error(`snap token failed for order ${orderId}: HTTP ${e.status}`);
     return { error: NOT_READY };
   }
+}
+
+export type ApplyResult = { found: boolean; orderId?: number; publicUuid?: string; status?: string; changed?: boolean };
+
+export async function applyPaymentStatus(midtransOrderId: string, status: EngineStatus, payload: object): Promise<ApplyResult> {
+  const [{ result }] = await sql<{ result: { found: boolean; order_id?: number; public_uuid?: string; status?: string; changed?: boolean } }[]>`
+    select apply_payment_status(${midtransOrderId}, ${status}, ${sql.json(payload as never)}) as result`;
+  return { found: result.found, orderId: result.order_id, publicUuid: result.public_uuid, status: result.status, changed: result.changed };
+}
+
+/** Get Status is the source of truth (PRD §12): a notification only tells us which payment to look at. */
+export async function syncPaymentStatus(midtransOrderId: string): Promise<{ midtrans: "missing" | "pending" | "applied"; result?: ApplyResult }> {
+  const status = await getTransactionStatus(midtransOrderId);
+  if (!status) return { midtrans: "missing" };
+  const engine = toEngineStatus(status);
+  if (!engine) {
+    await sql`update payments set raw_last = ${sql.json(status as never)}, updated_at = now() where midtrans_order_id = ${midtransOrderId}`;
+    return { midtrans: "pending" };
+  }
+  return { midtrans: "applied", result: await applyPaymentStatus(midtransOrderId, engine, status) };
 }
