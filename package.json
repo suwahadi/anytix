@@ -24,6 +24,7 @@
     "@tiptap/starter-kit": "^3.32.0",
     "next": "16.4.2",
     "nodemailer": "^10.1.2",
+    "pdf-lib": "^1.17.1",
     "postgres": "^3.4.9",
     "qrcode": "^1.5.4",
     "react": "19.3.0",

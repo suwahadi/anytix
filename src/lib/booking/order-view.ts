@@ -1,5 +1,7 @@
 import { displayStatus, type DisplayStatus } from "@/lib/booking/order-status";
 import { sql } from "@/lib/db";
+import { qrPng, qrSvgDataUrl } from "@/lib/tickets/qr";
+import type { TicketsPdfData } from "@/lib/tickets/ticket-pdf";
 import { PAYMENT_METHODS } from "@/lib/validation/settings";
 
 export type OrderView = {
@@ -18,7 +20,7 @@ export type OrderView = {
   total: number;
   event: { slug: string; title: string; startsAt: string; endsAt: string; timezone: string; venue: string; city: string };
   hasSnapToken: boolean;
-  tickets: Array<{ seq: number; categoryName: string }>;
+  tickets: Array<{ seq: number; categoryName: string; token: string | null; checkedInAt: string | null; qr: string | null }>;
 };
 
 export const ORDER_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -66,8 +68,9 @@ export async function getOrderView(uuid: string): Promise<OrderView | null> {
        where hi.hold_id = ${o.hold_id}
        order by c.position, c.id`,
     o.status === "paid"
-      ? sql<{ seq: number; categoryName: string }[]>`
-          select t.seq, c.name as "categoryName" from tickets t join ticket_categories c on c.id = t.ticket_category_id
+      ? sql<{ seq: number; categoryName: string; token: string; checkedInAt: Date | null }[]>`
+          select t.seq, c.name as "categoryName", t.token, t.checked_in_at as "checkedInAt"
+            from tickets t join ticket_categories c on c.id = t.ticket_category_id
            where t.order_id = ${o.id} and t.status = 'valid' order by t.seq`
       : Promise.resolve([]),
   ]);
@@ -96,6 +99,35 @@ export async function getOrderView(uuid: string): Promise<OrderView | null> {
       city: o.city ?? "",
     },
     hasSnapToken: o.has_snap_token,
-    tickets: tickets.map((t) => ({ seq: t.seq, categoryName: t.categoryName })),
+    tickets: await Promise.all(
+      tickets.map(async (t) => ({
+        seq: t.seq,
+        categoryName: t.categoryName,
+        token: t.token,
+        checkedInAt: t.checkedInAt?.toISOString() ?? null,
+        qr: await qrSvgDataUrl(t.token),
+      })),
+    ),
+  };
+}
+
+/** Everything the PDF needs for a paid order, or null; reachable by the access UUID only, like the order page. */
+export async function getTicketsPdfData(uuid: string): Promise<TicketsPdfData | null> {
+  if (!ORDER_UUID.test(uuid)) return null;
+  const [o] = await sql<{ id: number; invoice_code: string; buyer_name: string; title: string; starts_at: Date; ends_at: Date; timezone: string; venue: string | null; city: string | null }[]>`
+    select o.id, o.invoice_code, o.buyer_name, e.title, e.starts_at, e.ends_at, e.timezone, e.venue, e.city
+      from orders o join events e on e.id = o.event_id
+     where o.public_uuid = ${uuid} and o.status = 'paid'`;
+  if (!o) return null;
+  const rows = await sql<{ seq: number; categoryName: string; token: string }[]>`
+    select t.seq, c.name as "categoryName", t.token
+      from tickets t join ticket_categories c on c.id = t.ticket_category_id
+     where t.order_id = ${o.id} and t.status = 'valid' order by t.seq`;
+  if (rows.length === 0) return null;
+  return {
+    invoice: o.invoice_code,
+    buyerName: o.buyer_name,
+    event: { title: o.title, startsAt: o.starts_at, endsAt: o.ends_at, timezone: o.timezone, venue: o.venue ?? "", city: o.city ?? "" },
+    tickets: await Promise.all(rows.map(async (t) => ({ ...t, total: rows.length, qrPng: await qrPng(t.token) }))),
   };
 }

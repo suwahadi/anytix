@@ -196,6 +196,18 @@ export async function issueLateTickets(adminId: number, id: number): Promise<voi
   await writeAudit(sql, { adminId, action: "issue_late", entity: "order", entityId: id });
 }
 
+export async function reissueTickets(adminId: number, id: number): Promise<number> {
+  let count: number;
+  try {
+    [{ count }] = await sql<{ count: number }[]>`select reissue_ticket_tokens(${id}) as count`;
+  } catch (e) {
+    if (parseEngineError(e)?.code === "INVALID_STATE") throw new UserError("QR hanya bisa diterbitkan ulang untuk pesanan yang lunas.", 409);
+    throw e;
+  }
+  await writeAudit(sql, { adminId, action: "reissue_tickets", entity: "order", entityId: id, diff: { count } });
+  return count;
+}
+
 export async function markOrderRefunded(adminId: number, id: number): Promise<void> {
   const rows = await sql`update orders set status = 'refunded', updated_at = now() where id = ${id} and status = 'late_paid_review' returning id`;
   if (rows.length === 0) throw new UserError("Hanya pesanan yang perlu tindak lanjut yang bisa ditandai sudah direfund.", 409);

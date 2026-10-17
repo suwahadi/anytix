@@ -16,7 +16,7 @@ import { formatRupiah } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/validation/settings";
 import { formatAdminTime, ORDER_STATUS } from "../order-labels";
 
-type Action = "cancel" | "resend" | "issue" | "refund";
+type Action = "cancel" | "resend" | "issue" | "refund" | "reissue";
 
 const PAYMENT_STATUS: Record<string, string> = {
   pending: "Menunggu",
@@ -41,6 +41,13 @@ const CONFIRM: Record<Exclude<Action, "resend">, { title: string; body: string; 
     button: "Terbitkan tiket",
     path: "issue-tickets",
     done: "Tiket diterbitkan.",
+  },
+  reissue: {
+    title: "Terbitkan ulang QR?",
+    body: "QR lama tidak bisa dipakai lagi. Tiket yang sudah check-in tidak diubah. Pembeli melihat QR baru di tautan pesanan yang sama.",
+    button: "Terbitkan ulang QR",
+    path: "reissue-tickets",
+    done: "QR baru diterbitkan.",
   },
   refund: {
     title: "Tandai sudah direfund?",
@@ -132,6 +139,11 @@ export function OrderDetail() {
         {canResend && (
           <Button variant="secondary" onClick={() => (setActionError(""), setTo(order.buyer.email), setUpdateEmail(false), setOpen("resend"))}>
             Kirim ulang email
+          </Button>
+        )}
+        {order.status === "paid" && (
+          <Button variant="secondary" onClick={() => (setActionError(""), setOpen("reissue"))}>
+            Terbitkan ulang QR
           </Button>
         )}
         {order.status === "late_paid_review" && (

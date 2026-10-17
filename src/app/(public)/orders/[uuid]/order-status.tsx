@@ -188,21 +188,34 @@ export function OrderStatus({ initial, cs }: { initial: OrderView; cs: { whatsap
       </section>
 
       {view.displayStatus === "LUNAS" && (
-        <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:p-6">
-          <h2 className="text-lg font-bold text-text">E-ticket</h2>
-          <ul className="flex flex-col gap-2">
+        <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-lg font-bold text-text">E-ticket</h2>
+            <a href={`/api/orders/${view.uuid}/tickets.pdf`} download className={buttonClass("secondary")}>
+              Unduh PDF
+            </a>
+          </div>
+          <p className="text-sm text-muted">Satu QR untuk satu orang. Tunjukkan di pintu masuk, dari layar atau cetakan.</p>
+          <ul className="grid gap-3 sm:grid-cols-2">
             {view.tickets.map((t) => (
-              <li key={t.seq} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2.5 text-sm">
+              <li key={t.seq} className="flex flex-col items-center gap-2 rounded-md border border-border p-4 text-center">
                 <span className="font-semibold text-text">
                   Tiket {t.seq} dari {view.tickets.length}
                 </span>
-                <span className="text-muted">
+                <span className="text-sm text-muted">
                   {t.categoryName} · {view.buyerName}
                 </span>
+                {t.qr && (
+                  // eslint-disable-next-line @next/next/no-img-element -- a data: URL needs no optimisation and the custom image loader would rewrite it
+                  <img src={t.qr} alt={`QR Tiket ${t.seq} dari ${view.tickets.length}`} width={208} height={208} className="rounded-md bg-white p-2" />
+                )}
+                {t.token && <code className="break-all font-mono text-sm text-text">{t.token}</code>}
+                {t.checkedInAt && (
+                  <Badge tone="muted">Sudah dipakai {formatDateTime(new Date(t.checkedInAt), tz)}</Badge>
+                )}
               </li>
             ))}
           </ul>
-          <p className="text-sm text-muted">QR e-ticket tampil di sini sebelum hari acara.</p>
         </section>
       )}
 

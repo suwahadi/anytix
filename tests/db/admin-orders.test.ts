@@ -9,6 +9,7 @@ import {
   issueLateTickets,
   listAdminOrders,
   markOrderRefunded,
+  reissueTickets,
   resendOrderEmail,
 } from "@/lib/admin/order-admin-service";
 import { UserError } from "@/lib/admin-route";
@@ -174,5 +175,26 @@ describe("admin orders", () => {
   it("list route needs an admin session", async () => {
     const res = await listRoute(new NextRequest("http://localhost/api/admin/orders"), { params: Promise.resolve({}) });
     expect(res.status).toBe(401);
+  });
+
+  it("reissue replaces unused tokens only", async () => {
+    const ev = await createTestEvent({ categories: [{ capacity: 10 }] });
+    const o = await checkoutTestOrder({ eventId: ev.eventId, items: [{ inventoryId: ev.inventoryIds[0], qty: 2 }] });
+    await applyPaymentStatus(o.midtransOrderId, "settlement", { transaction_id: randomUUID() });
+    const before = await sql<{ id: number; token: string }[]>`select id, token from tickets where order_id = ${o.orderId} order by seq`;
+    await sql`update tickets set checked_in_at = now() where id = ${before[0].id}`;
+    expect(await reissueTickets(adminId, o.orderId)).toBe(1);
+    const after = await sql<{ token: string }[]>`select token from tickets where order_id = ${o.orderId} order by seq`;
+    expect(after[0].token).toBe(before[0].token);
+    expect(after[1].token).not.toBe(before[1].token);
+    expect(after[1].token).toMatch(/^[A-Za-z0-9_-]{22}$/);
+    const [audit] = await sql<{ diff: unknown }[]>`
+      select diff from audit_logs where admin_id = ${adminId} and action = 'reissue_tickets' and entity_id = ${String(o.orderId)}`;
+    expect(audit.diff).toEqual({ count: 1 });
+  });
+
+  it("reissue of unpaid order is 409", async () => {
+    const o = await order();
+    expect((await userError(reissueTickets(adminId, o.orderId))).status).toBe(409);
   });
 });
