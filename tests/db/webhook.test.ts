@@ -32,8 +32,7 @@ function notification(orderId: string, transactionStatus: string, statusCode = "
 }
 
 function midtransSays(n: ReturnType<typeof notification>): MidtransStatus {
-  const { signature_key: _sig, ...status } = n;
-  return status;
+  return { order_id: n.order_id, transaction_status: n.transaction_status, status_code: n.status_code, gross_amount: n.gross_amount, transaction_id: n.transaction_id };
 }
 
 function post(body: unknown) {

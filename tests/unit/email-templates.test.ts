@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderOrderEmail, type OrderEmailData } from "@/lib/email/order-emails";
+import { renderOrderEmail, type OrderEmailData } from "@/lib/email/render-order-email";
 import { DEFAULT_EMAIL_TEMPLATES, fillPlaceholders } from "@/lib/email/templates";
 
 const data: OrderEmailData = {

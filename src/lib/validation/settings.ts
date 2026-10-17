@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EMAIL_TYPES, unknownPlaceholders } from "@/lib/email/templates";
 import { mediaPath } from "@/lib/validation/catalog";
 
 /** Snap `enabled_payments` codes; all seven verified active in the Midtrans sandbox on 17 Oct 2026. */
@@ -74,9 +75,29 @@ export type SmtpSettingsValues = z.infer<typeof smtpSettingsInput>;
 
 export const smtpTestInput = z.object({ to: z.string().trim().email("Email penerima tidak valid.") });
 
+const templateText = (label: string, max: number) =>
+  z
+    .string()
+    .trim()
+    .min(1, `${label} wajib diisi.`)
+    .max(max, `${label} maksimal ${max} karakter.`)
+    .superRefine((v, ctx) => {
+      const unknown = unknownPlaceholders(v)[0];
+      if (unknown) ctx.addIssue({ code: "custom", message: `Placeholder {{${unknown}}} tidak dikenal.` });
+    });
+
+export const emailTemplatesInput = z.object(
+  Object.fromEntries(EMAIL_TYPES.map((t) => [t, z.object({ subject: templateText("Subjek", 150), body: templateText("Paragraf", 2000) })])) as Record<
+    (typeof EMAIL_TYPES)[number],
+    z.ZodObject<{ subject: ReturnType<typeof templateText>; body: ReturnType<typeof templateText> }>
+  >,
+);
+export type EmailTemplatesValues = z.infer<typeof emailTemplatesInput>;
+
 export const SETTINGS_SCHEMAS = {
   transaction: transactionSettings,
   site: siteSettings,
   smtp: smtpSettingsInput,
+  email_templates: emailTemplatesInput,
 } as const;
 export type SettingsGroup = keyof typeof SETTINGS_SCHEMAS;

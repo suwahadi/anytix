@@ -1,5 +1,3 @@
-import { sql } from "@/lib/db";
-
 export const EMAIL_TYPES = ["awaiting_payment", "paid", "expired", "late_paid"] as const;
 export type EmailType = (typeof EMAIL_TYPES)[number];
 export type EmailTemplate = { subject: string; body: string };
@@ -50,8 +48,6 @@ export function unknownPlaceholders(text: string): string[] {
   return [...text.matchAll(/\{\{\s*([a-z_]+)\s*\}\}/g)].map((m) => m[1]).filter((n) => !known.includes(n));
 }
 
-export async function getEmailTemplates(): Promise<EmailTemplates> {
-  const [row] = await sql<{ value: Partial<EmailTemplates> }[]>`select value from settings where key = 'email_templates'`;
-  const stored = row?.value ?? {};
-  return Object.fromEntries(EMAIL_TYPES.map((t) => [t, { ...DEFAULT_EMAIL_TEMPLATES[t], ...stored[t] }])) as EmailTemplates;
+export function mergeEmailTemplates(stored: Partial<Record<EmailType, Partial<EmailTemplate>>> | null | undefined): EmailTemplates {
+  return Object.fromEntries(EMAIL_TYPES.map((t) => [t, { ...DEFAULT_EMAIL_TEMPLATES[t], ...stored?.[t] }])) as EmailTemplates;
 }

@@ -4,7 +4,8 @@ import { encrypt } from "@/lib/crypto";
 import { sql, transaction } from "@/lib/db";
 import { invalidatePublic, TAG_SITE } from "@/lib/public-cache";
 import { sanitizeRichText } from "@/lib/rich-text";
-import type { SiteSettingsValues, SmtpSettingsValues, TransactionSettingsValues } from "@/lib/validation/settings";
+import { mergeEmailTemplates, type EmailTemplates } from "@/lib/email/templates";
+import type { EmailTemplatesValues, SiteSettingsValues, SmtpSettingsValues, TransactionSettingsValues } from "@/lib/validation/settings";
 
 export type SiteView = {
   name: string;
@@ -37,7 +38,11 @@ async function rows(keys: string[]) {
 export async function getSettingsGroup(group: "transaction"): Promise<TransactionSettingsValues>;
 export async function getSettingsGroup(group: "site"): Promise<SiteView>;
 export async function getSettingsGroup(group: "smtp"): Promise<SmtpView>;
-export async function getSettingsGroup(group: "transaction" | "site" | "smtp") {
+export async function getSettingsGroup(group: "email_templates"): Promise<EmailTemplates>;
+export async function getSettingsGroup(group: "transaction" | "site" | "smtp" | "email_templates") {
+  if (group === "email_templates") {
+    return mergeEmailTemplates((await rows(["email_templates"])).email_templates?.value as Partial<EmailTemplates> | undefined);
+  }
   if (group === "transaction") {
     const r = await rows(["hold_minutes", "pay_minutes", "pay_grace_minutes", "service_fee", "payment_methods"]);
     return {
@@ -80,11 +85,24 @@ async function setValue(tx: Parameters<Parameters<typeof transaction>[0]>[0], ke
 export async function putSettingsGroup(adminId: number, group: "transaction", input: TransactionSettingsValues): Promise<void>;
 export async function putSettingsGroup(adminId: number, group: "site", input: SiteSettingsValues): Promise<void>;
 export async function putSettingsGroup(adminId: number, group: "smtp", input: SmtpSettingsValues): Promise<void>;
+export async function putSettingsGroup(adminId: number, group: "email_templates", input: EmailTemplatesValues): Promise<void>;
 export async function putSettingsGroup(
   adminId: number,
-  group: "transaction" | "site" | "smtp",
-  input: TransactionSettingsValues | SiteSettingsValues | SmtpSettingsValues,
+  group: "transaction" | "site" | "smtp" | "email_templates",
+  input: TransactionSettingsValues | SiteSettingsValues | SmtpSettingsValues | EmailTemplatesValues,
 ): Promise<void> {
+  if (group === "email_templates") {
+    const before = await getSettingsGroup("email_templates");
+    const next = input as EmailTemplatesValues;
+    const changed = (Object.keys(next) as Array<keyof EmailTemplatesValues>).filter(
+      (t) => next[t].subject !== before[t].subject || next[t].body !== before[t].body,
+    );
+    await transaction(async (tx) => {
+      await setValue(tx, "email_templates", next);
+      await writeAudit(tx, { adminId, action: "update", entity: "settings", entityId: "email_templates", diff: { changed } });
+    });
+    return;
+  }
   if (group === "transaction") {
     const t = input as TransactionSettingsValues;
     const before = await getSettingsGroup("transaction");

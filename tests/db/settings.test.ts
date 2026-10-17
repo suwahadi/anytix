@@ -20,6 +20,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  await sql`delete from settings where not (key = any(${snapshot.map((r) => r.key)}))`;
   for (const row of snapshot) {
     await sql`update settings set value = ${sql.json(row.value as never)}, secret_enc = ${row.secret_enc} where key = ${row.key}`;
   }
@@ -117,5 +118,28 @@ describe("settings", () => {
     expect((await getSettingsGroup("site")).privacyUpdatedAt).toBe(first);
     await putSettingsGroup(adminId, "site", siteSettings.parse({ ...site, privacy: "<p>Privasi v2</p>" }));
     expect((await getSettingsGroup("site")).privacyUpdatedAt).not.toBe(first);
+  });
+
+  it("email templates round trip and reject unknown placeholders", async () => {
+    const put = (body: unknown) =>
+      putRoute(
+        new NextRequest("http://localhost/api/admin/settings/email_templates", {
+          method: "PUT",
+          body: JSON.stringify(body),
+          headers: { "content-type": "application/json", cookie: `${ADMIN_COOKIE}=${createSessionValue(adminId)}` },
+        }),
+        { params: Promise.resolve({ group: "email_templates" }) },
+      );
+    const defaults = await getSettingsGroup("email_templates");
+    expect(defaults.paid.subject).toBe("Pembayaran berhasil: {{event}}");
+
+    const edited = { ...defaults, paid: { subject: "Tiket {{event}} siap", body: "Terima kasih {{nama}}." } };
+    const ok = await put(edited);
+    expect(ok.status).toBe(200);
+    expect((await getSettingsGroup("email_templates")).paid).toEqual({ subject: "Tiket {{event}} siap", body: "Terima kasih {{nama}}." });
+
+    const bad = await put({ ...defaults, expired: { subject: "Halo {{namaa}}", body: "x" } });
+    expect(bad.status).toBe(422);
+    expect((await bad.json()).fields["expired.subject"]).toBe("Placeholder {{namaa}} tidak dikenal.");
   });
 });

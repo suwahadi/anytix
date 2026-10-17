@@ -7,7 +7,7 @@ export function hourKey(now = new Date()): string {
 }
 
 /** Hourly: fix held/sold drift (PRD §10.4 layer 4) and re-poll payments Midtrans never told us about. */
-export async function reconcileJob(_payload: Record<string, unknown>): Promise<void> {
+export async function reconcileJob(): Promise<void> {
   const hour = hourKey();
   const drift = await sql`select * from reconcile_inventory(true)`;
   if (drift.length > 0) await enqueueJob("admin-alert", { kind: "drift", rows: drift }, `admin-alert:drift:${hour}`);

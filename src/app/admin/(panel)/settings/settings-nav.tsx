@@ -4,6 +4,7 @@ const TABS = [
   { key: "transaction", href: "/admin/settings", label: "Transaksi" },
   { key: "site", href: "/admin/settings/site", label: "Situs" },
   { key: "email", href: "/admin/settings/email", label: "Email" },
+  { key: "templates", href: "/admin/settings/templates", label: "Templat email" },
 ] as const;
 
 export function SettingsNav({ active }: { active: (typeof TABS)[number]["key"] }) {

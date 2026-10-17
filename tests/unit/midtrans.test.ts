@@ -12,7 +12,7 @@ import {
 const cfg: MidtransConfig = { serverKey: "Mid-server-TEST", clientKey: "Mid-client-TEST", production: false, notificationUrl: "https://tunnel.example/api/webhooks/midtrans" };
 
 function stubFetch(status: number, body: unknown) {
-  const fn = vi.fn(async (_url: string, _init?: RequestInit) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
+  const fn = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
   vi.stubGlobal("fetch", fn);
   return fn;
 }

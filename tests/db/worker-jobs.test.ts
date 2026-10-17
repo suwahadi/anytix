@@ -12,7 +12,7 @@ import { expireTransaction, getTransactionStatus } from "@/lib/payments/midtrans
 import { applyPaymentStatus } from "@/lib/payments/payment-service";
 import { checkoutTestOrder, cleanupTestEvents, createTestEvent, inventoryRow } from "./helpers";
 
-const send = vi.fn(async (_m: { to: string; subject: string }) => ({ messageId: `<${randomUUID()}@test>` }));
+const send = vi.fn<(m: { to: string; subject: string }) => Promise<{ messageId: string }>>(async () => ({ messageId: `<${randomUUID()}@test>` }));
 
 vi.mock("@/lib/email/email-provider", () => ({ getEmailProvider: vi.fn(async () => ({ send })) }));
 vi.mock("@/lib/payments/midtrans", async (importOriginal) => ({
@@ -149,7 +149,7 @@ describe("worker jobs", () => {
   it("reconcile fixes drift and alerts", async () => {
     const ev = await createTestEvent({ categories: [{ capacity: 10 }] });
     await sql`update ticket_inventory set held = held + 1 where id = ${ev.inventoryIds[0]}`;
-    await reconcileJob({});
+    await reconcileJob();
     expect((await inventoryRow(ev.inventoryIds[0])).held).toBe(0);
     const hour = new Date().toISOString().slice(0, 13);
     expect(await sql`select 1 from jobs where dedupe_key = ${`admin-alert:drift:${hour}`}`).toHaveLength(1);
@@ -158,7 +158,7 @@ describe("worker jobs", () => {
   it("reconcile re-polls stale pending payments", async () => {
     const o = await order();
     await sql`update orders set created_at = now() - interval '40 minutes' where id = ${o.orderId}`;
-    await reconcileJob({});
+    await reconcileJob();
     const hour = new Date().toISOString().slice(0, 13);
     expect(await sql`select 1 from jobs where dedupe_key = ${`payment-check:${o.orderId}:recon:${hour}`}`).toHaveLength(1);
   });
