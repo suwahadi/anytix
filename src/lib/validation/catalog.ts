@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { FACILITY_KEYS } from "@/lib/facilities";
+import { FIELD_TYPES, IDENTITY_TYPES, OPTION_TYPES } from "@/lib/form-schema";
 
 const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const emptyToUndefined = (v: unknown) => (v === "" || v === null ? undefined : v);
@@ -115,3 +116,63 @@ export const ticketCategoryInput = z
     message: "Akhir penjualan harus setelah mulai penjualan.",
   });
 export type TicketCategoryValues = z.infer<typeof ticketCategoryInput>;
+
+const optionalInt = (label: string) => z.preprocess(emptyToUndefined, z.number({ message: `${label} harus angka.` }).int().optional());
+const optionalDate = z.preprocess(emptyToUndefined, z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal YYYY-MM-DD.").optional());
+
+export const formFieldInput = z
+  .object({
+    key: z.preprocess(
+      emptyToUndefined,
+      z
+        .string()
+        .trim()
+        .regex(/^[a-z][a-z0-9_]{0,39}$/, "Key hanya huruf kecil, angka, dan garis bawah, diawali huruf.")
+        .optional(),
+    ),
+    label: z.string().trim().min(2, "Label minimal 2 karakter.").max(120, "Label maksimal 120 karakter."),
+    type: z.enum(FIELD_TYPES, { message: "Pilih tipe field." }),
+    options: z
+      .array(
+        z.object({
+          label: z.string().trim().min(1, "Label opsi wajib diisi.").max(80),
+          value: z.string().trim().min(1, "Nilai opsi wajib diisi.").max(80),
+        }),
+      )
+      .default([]),
+    validation: z
+      .object({
+        minLength: optionalInt("Panjang minimal"),
+        maxLength: optionalInt("Panjang maksimal"),
+        pattern: z.preprocess(emptyToUndefined, z.string().max(200).optional()),
+        min: z.preprocess(emptyToUndefined, z.number().optional()),
+        max: z.preprocess(emptyToUndefined, z.number().optional()),
+        minDate: optionalDate,
+        maxDate: optionalDate,
+        minAge: optionalInt("Usia minimal"),
+        minSelected: optionalInt("Minimal pilihan"),
+        maxSelected: optionalInt("Maksimal pilihan"),
+        identityTypes: z.array(z.enum(IDENTITY_TYPES.map((t) => t.value) as [string, ...string[]])).optional(),
+      })
+      .default({}),
+    helpText: z.preprocess(emptyToUndefined, z.string().trim().max(300, "Teks bantuan maksimal 300 karakter.").optional()),
+    placeholder: z.preprocess(emptyToUndefined, z.string().trim().max(120, "Placeholder maksimal 120 karakter.").optional()),
+    required: z.boolean().default(false),
+    isActive: z.boolean().default(true),
+  })
+  .superRefine((v, ctx) => {
+    if (OPTION_TYPES.includes(v.type)) {
+      if (v.options.length === 0) ctx.addIssue({ code: "custom", path: ["options"], message: "Tambahkan minimal satu opsi." });
+      if (new Set(v.options.map((o) => o.value)).size !== v.options.length) {
+        ctx.addIssue({ code: "custom", path: ["options"], message: "Nilai opsi tidak boleh sama." });
+      }
+    }
+    if (v.validation.pattern) {
+      try {
+        new RegExp(v.validation.pattern);
+      } catch {
+        ctx.addIssue({ code: "custom", path: ["validation", "pattern"], message: "Pola regex tidak valid." });
+      }
+    }
+  });
+export type FormFieldValues = z.infer<typeof formFieldInput>;

@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 const TABS = [
   { key: "detail", suffix: "", label: "Detail" },
   { key: "tickets", suffix: "/tickets", label: "Kategori Tiket" },
+  { key: "form", suffix: "/form", label: "Form Pemesan" },
 ] as const;
 
 export type EventTabKey = (typeof TABS)[number]["key"];
