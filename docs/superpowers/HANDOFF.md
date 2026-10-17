@@ -1,127 +1,89 @@
 # Serah terima pengerjaan Anytix
 
-Terakhir diperbarui: 17 Oktober 2026. Dokumen ini untuk agent AI berikutnya yang melanjutkan pekerjaan di mesin lain. Baca seluruhnya sebelum menulis kode.
+Terakhir diperbarui: 17 Oktober 2026, di akhir Fase 1. Dokumen ini untuk agent AI berikutnya. Baca seluruhnya sebelum menulis kode.
 
 ## Sumber kebenaran
 
 - `PRD.md`: kebutuhan produk.
-- `docs/superpowers/specs/2026-10-17-anytix-mvp-design.md`: keputusan desain yang sudah disetujui pemilik.
-- `docs/superpowers/plans/2026-10-17-fase-0-fondasi.md`: Fase 0 (selesai).
-- `docs/superpowers/plans/2026-10-17-fase-1-katalog-admin.md`: Fase 1 (sedang berjalan). Kotak centang di file plan **tidak** diperbarui. Status sebenarnya ada di dokumen ini.
-- `AGENTS.md`: aturan proyek untuk semua agent, termasuk aturan pemilik.
+- `docs/superpowers/specs/2026-10-17-anytix-mvp-design.md`: keputusan desain yang disetujui pemilik, termasuk arah visual dan dial `ENERGY 1 / RHYTHM 2 / MOTION 1`.
+- `docs/superpowers/plans/2026-10-17-fase-0-fondasi.md` dan `docs/superpowers/plans/2026-10-17-fase-1-katalog-admin.md`: dua fase yang sudah selesai. Kotak centang di file plan tidak diperbarui; status sebenarnya ada di dokumen ini.
+- `anti-slop/audit-001-2026-10-17.md`: audit antislop halaman publik (Delivery Gate bersih).
+- `AGENTS.md`: aturan proyek dan aturan pemilik.
 
-Ruang lingkup yang disepakati adalah Fase 0–3. Pengerjaan berhenti di akhir tiap fase. Fase 2 dan 3 belum punya plan, jadi buat plan baru dengan format yang sama seperti plan Fase 1.
+Ruang lingkup yang disepakati adalah Fase 0–3. Pengerjaan berhenti di akhir tiap fase.
 
 ## Status
 
 | Bagian | Status |
 |---|---|
-| Fase 0 (fondasi, engine anti-oversell, worker) | Selesai, sudah di-review dan di-push |
-| Fase 1 Task 1–9 | Selesai, semua test lulus, sudah dicek di browser |
-| Fase 1 Task 10 (halaman publik) | Selesai. Langkah 4 (curl) lulus setelah perbaikan `ensureStatic`, langkah 5 (browser) lulus tanpa perubahan kode |
-| Fase 1 Task 11 (checkpoint) | Belum |
+| Fase 0 (fondasi, engine anti-oversell, worker) | Selesai dan di-push |
+| Fase 1 (katalog, admin, halaman publik) | Selesai: checkpoint Task 11, review menyeluruh dan audit antislop sudah dikerjakan, lalu di-push |
+| Fase 2 | Belum ada plan |
+| Fase 3 | Belum ada plan |
 
-Hasil test terakhir: `npm test` 74 lulus (ditambah 2 test `toPlainText` di Task 10), dan `npm run test:db` 112 lulus sebelum Task 9 ditambah 7 test `catalog-queries`.
+Hasil test terakhir: `npm test` 79 lulus, `npm run test:db` 121 lulus, `lint`, `tsc` dan `build` bersih.
 
-## Langkah berikutnya, berurutan
+## Langkah berikutnya
 
-### 1. Task 10 langkah 4: uji dengan curl ke server produksi (selesai)
+1. Buat plan Fase 2 dari PRD (§8–§15 dan §23) dengan format yang sama seperti plan Fase 1, lalu jalankan task per task dengan TDD.
+2. Masukkan "Bawaan untuk Fase 2" di bawah ke plan itu.
+3. Di akhir fase: checkpoint seperti Task 11 Fase 1, lalu commit dan push ke `main`.
 
-Matikan dulu dev server (port 3000). Lalu jalankan `npm run build && npm run start`.
+## Bawaan untuk Fase 2
 
-Buat slug lama sementara untuk menguji redirect, lalu hapus lagi setelah selesai:
+Sisa temuan review akhir Fase 1 (Minor), ditambah hal yang ditemukan saat checkpoint. Belum dikerjakan:
 
-```sql
-insert into slug_redirects (old_slug, event_id) values ('jazz-taman-lama', 645);
-delete from slug_redirects where old_slug = 'jazz-taman-lama';
-```
+- Engine `reserve_tickets` tidak menolak event yang sudah berakhir. Ia hanya memeriksa status terbit, status sesi dan jendela jual kategori. Badge UI sudah menutup penjualan setelah `ends_at`, tetapi penjagaan sebenarnya harus ada di engine atau di endpoint reserve.
+- Checkout harus memeriksa ulang ketersediaan di server. Data publik memakai `stale: 300`, jadi navigasi di sisi klien bisa menampilkan badge sampai 5 menit lebih lama.
+- `settings-service.ts`: mengganti host SMTP tanpa mengisi ulang password tetap memakai password lama. Sesi admin yang dibajak bisa mengarahkannya ke server sendiri. Wajibkan password diisi ulang saat host berubah.
+- `smtp/test/route.ts`: `site.name` masuk ke HTML email tanpa di-escape.
+- `mediaPath` di `validation/catalog.ts` menerima string apa saja. Validasi dengan format hasil upload (`^(poster|logo|icon)/\d{4}/[A-Za-z0-9_-]+$`).
+- FK violation masih menjadi 500: `eventCategoryId` yang tidak ada, dan reserve yang masuk di antara cek `everReserved` dan delete di `removeTicketCategory`. Petakan SQLSTATE 23503 ke 422/409.
+- Pengaturan transaksi membolehkan semua metode bayar dimatikan. Wajibkan minimal satu sebelum checkout dibuat.
+- `formFieldInput` menerima min > max (panjang, pilihan, angka, tanggal). `pattern` dari admin akan dijalankan ke input pembeli: waspadai regex yang bisa membuat event loop macet.
+- `src/app/layout.tsx` memakai template judul tetap `%s · Anytix`, bukan nama situs dari pengaturan.
+- Rename slug kategori tidak punya redirect, dan event di kategori tersembunyi tetap muncul di beranda dan pencarian. Spec belum mengatur keduanya; tanyakan ke pemilik bila relevan.
+- Gambar yang diganti atau dihapus tetap tersimpan di Supabase Storage. File poster uji E2E dari checkpoint juga masih ada di sana.
+- Di `next dev` (bukan produksi), setiap halaman 404 memuat ulang dirinya sendiri terus-menerus, termasuk 404 global. Di `next start` hanya satu request. Belum diselidiki.
 
-Yang harus terbukti:
+## Keputusan Fase 1 di luar teks plan
 
-- `/events/jazz-taman-lama` memberi 308 dengan `location: /events/jazz-taman-2026`.
-- `/events/jazz-taman-lama/tickets` memberi 308 ke `/events/jazz-taman-2026/tickets`.
-- `/events/tidak-ada` dan `/events/tidak-ada/tickets` memberi 404 asli, bukan 200.
-- `/events/jazz-taman-2026` punya `cache-control` yang mengandung `s-maxage=60`.
-- `/`, `/events` dan `/events/<slug>` tidak mengirim `set-cookie`.
-- `/robots.txt` dan `/sitemap.xml` berisi URL dari `APP_URL`.
+- Tidak ada `loading.tsx` di bawah `src/app/(public)/events/`. Resolusi slug (`load-event.ts`) harus berjalan di luar Suspense agar 404 dan 308 punya status HTTP asli.
+- `/events/[slug]` dan `/events/[slug]/tickets` mengekspor `ensureStatic = "navigation"`, karena tanpa itu slug di luar `generateStaticParams` mendapat fallback shell berstatus 200. Keduanya juga mengekspor `instant = false`, karena `params` sengaja dibaca sebelum Suspense.
+- `PUBLIC_CACHE` memakai `stale: 300`. Nilai di bawah 5 menit membuat data `use cache` keluar dari App Shell, sehingga navigasi publik menunggu server. Validator dev menandainya sebagai "URL data". `revalidate: 60` tetap menghasilkan `s-maxage=60`. Jangan turunkan `stale` di bawah 300.
+- Cukup satu `error.tsx` di `(public)` dan satu `not-found.tsx` global.
+- `MediaImage` tidak dibuat; `next/image` memakai `images.loaderFile` global (`src/lib/image-loader.ts`).
+- Badge tiket di halaman detail dihitung di dalam `getPublicEvent` (`'use cache'`). Halaman tiket memperbarui badge dari `/api/events/{slug}/availability` tiap 15 detik. Kategori yang hilang dari respons itu dianggap tutup.
+- Stepper memakai `aria-disabled` agar fokus keyboard tidak hilang di batas jumlah.
+- "Orang per tiket" terkunci setelah kategori pernah dipesan, karena `issue_tickets` menghitung QR dari nilai saat itu.
+- Key field form yang dibuat otomatis diberi awalan `f_` bila diawali angka. Pola key ada di satu tempat, yaitu `FIELD_KEY_PATTERN` di `src/lib/form-schema.ts`.
+- Semua tautan, tombol dan tab memakai `cursor: pointer` lewat `@layer base` di `globals.css` (permintaan pemilik). Aturan kursor jangan ditaruh di luar layer, karena akan mengalahkan `cursor-not-allowed`.
+- Target sentuh minimal 44 px (`inline-flex min-h-11 items-center` untuk tautan teks).
 
-### 2. Task 10 langkah 5: cek di browser (selesai)
+## Lingkungan dan jebakan
 
-Hasil: 8 halaman × 375/1280 px × terang/gelap tanpa overflow horizontal, gambar rusak, atau error konsol (kecuali laporan 404 bawaan browser di `/events/tidak-ada`). Kontras terendah 4.84 (`#b45309` di atas `#fffbeb`, badge "Hampir habis"). Badge berubah tanpa reload setelah 20 hold dari skrip, lalu kembali setelah hold dilepas. Request prefetch RSC yang tampak "menggantung" di Playwright adalah stream yang sengaja dibatalkan router Next (`ERR_ABORTED` setelah 200), jadi pakai `waitUntil: 'load'`, bukan `networkidle`.
-
-
-Gunakan Playwright di 375 px dan 1280 px, dalam mode terang dan gelap. Yang dicek:
-
-- Beranda, lalu `/events` dengan pencarian dan filter kategori, termasuk empty state "Hapus filter".
-- Tab di halaman detail dioperasikan dengan keyboard (panah kiri/kanan, Home, End).
-- Dialog Kebijakan Refund terbuka, lalu tertutup dengan Escape. Isi dulu kebijakan refund event 645 di admin, karena tautan hanya tampil kalau isinya ada.
-- Batas stepper di halaman tiket.
-- Badge berubah setelah reserve dari skrip uji (`reserveTickets` di `src/lib/hold-service.ts`), dengan refresh tiap 15 detik.
-- Setiap pasangan teks dan latar dicek dengan contrast checker antislop.
-- Konsol tanpa error.
-
-### 3. Commit Task 10 (selesai)
-
-Perbaikan dari langkah 1 ada di commit `fix(public): real 404 and 308 for unlisted event slugs`.
-
-### 4. Task 11: checkpoint Fase 1
-
-Ikuti plan.
-
-1. Jalankan `npm test`, `npm run test:db`, `npm run lint` dan `npm run build`.
-2. Uji end-to-end sebagai admin.
-3. Cek komentar sesuai `AGENTS.md` dan jalankan Delivery Gate antislop.
-4. Minta review menyeluruh oleh reviewer baru, lalu perbaiki temuan Critical/Important dengan test RED→GREEN.
-5. Commit dan **langsung push ke `main`**, lalu lapor ke pemilik dalam Bahasa Indonesia.
-
-Bersih-bersih di checkpoint:
-
-- Hapus admin sementara `verify-temp@anytix.test` dari tabel `admins`, termasuk baris `audit_logs` miliknya.
-- Hapus dokumen ini, atau perbarui untuk fase berikutnya.
-
-### 5. Fase 2 dan Fase 3
-
-Buat plan baru dari PRD (§8–§15 dan §23). Jalankan task per task dengan TDD.
-
-## Keputusan Task 10 yang belum tercatat di ledger
-
-- Tidak ada `loading.tsx` di bawah `src/app/(public)/events/`. File itu membungkus segmen `[slug]` dengan Suspense, dan `notFound()` / `permanentRedirect()` di dalam Suspense berubah jadi 404 "soft" berstatus 200. Resolusi slug (`load-event.ts`) harus tetap berjalan di luar Suspense. Skeleton `/events` memakai `<Suspense>` inline.
-- Halaman `/events/[slug]` dan `/events/[slug]/tickets` mengekspor `ensureStatic = "navigation"`. Tanpa itu, slug yang tidak ada di `generateStaticParams` (slug lama, slug salah, event yang dipublikasikan setelah build) langsung dikirimi fallback shell berstatus 200, sehingga redirect dan 404 hanya terjadi di sisi klien. Dengan `'navigation'`, request pertama menunggu render lengkap. Akibatnya semua data di dua halaman itu wajib di-cache (`use cache` dengan `stale` ≥ 30 detik dan `expire` ≥ 5 menit).
-- Cukup satu `error.tsx` di `(public)` dan satu `not-found.tsx` global di `src/app`.
-- `MediaImage` tidak dibuat. `next/image` langsung memakai `images.loaderFile` global (`src/lib/image-loader.ts`) yang memilih varian WebP thumb/md/lg.
-- Badge tiket di halaman detail dihitung di dalam `getPublicEvent` (scope `'use cache'`), karena `new Date()` di luar cache gagal saat prerender. Halaman tiket memperbarui badge dari `/api/events/{slug}/availability`.
-- Stepper memakai `aria-disabled` agar fokus keyboard tidak hilang di batas jumlah. Setelah "Pilih", stepper tetap tampil walau jumlahnya 0.
-- Daftar media sosial dipindah ke `src/lib/social-links.ts` dan dipakai oleh form admin serta halaman publik.
-- `toPlainText()` di `src/lib/rich-text.ts` dipakai untuk meta description dan JSON-LD.
-- Beranda punya kotak cari (GET ke `/events`). Sitemap juga memuat `/terms` dan `/privacy`.
-
-## Lingkungan dan jebakan yang sudah ditemui
-
-- `.env.local` tidak ada di repo dan harus disalin pemilik secara aman. Variabel yang dibutuhkan ada di `.env.example`. Turnstile memakai kunci uji Cloudflare.
-- Database adalah Supabase dev bersama dan dipakai juga oleh test DB. `DATABASE_URL` memakai pooler `aws-0-ap-southeast-1:6543`, karena host direct hanya IPv6.
-- Supavisor membuang query yang di-pipeline, sehingga `max_pipeline: 0` diperlukan. Transaksi memakai helper `transaction()` (berbasis `sql.reserve()`), bukan `sql.begin`.
-- Test DB wajib lewat `npm run test:db` (`--no-file-parallelism`). Kalau dijalankan paralel, cleanup `test-admin-%` antar file saling bentrok di FK `audit_logs`.
-- Di Windows, dev server Turbopack kadang memakai modul lama setelah file lib bersama diubah, misalnya muncul `... is not a function` atau hydration mismatch. Restart dev server. Hindari `sed -i` saat dev server jalan.
-- Skrip `tsx` dengan top-level await harus berekstensi `.mts`.
-- Setelah memindah halaman, error `tsc` dari `.next/types` hilang sendiri setelah `npm run build`.
-- `npm run start` gagal kalau port 3000 masih dipakai dev server.
-- Next.js 16.4 dengan `cacheComponents` dan `partialPrefetching`. Baca `node_modules/next/dist/docs/` sebelum menulis kode. Poin pentingnya:
-  - `proxy.ts` menggantikan middleware.
-  - Data runtime harus berada di dalam `<Suspense>`.
-  - Invalidasi dari Route Handler memakai `revalidateTag(tag, { expire: 0 })`.
-  - `generateStaticParams` minimal harus mengembalikan satu entri.
-  - `priority` pada image sudah diganti `preload`.
+- `.env.local` tidak ada di repo dan disalin pemilik. Pastikan namanya `.env.local` (dengan titik), karena `env.local` tidak dibaca Next dan tidak di-gitignore. `NEXT_PUBLIC_MEDIA_BASE_URL` = `SUPABASE_URL` + `/storage/v1/object/public/media`.
+- Jam Windows harus sinkron. Selisih 30 detik membuat 3 test DB gagal (`reserve`, `checkout`, `jobs`), karena test membandingkan `Date.now()` dengan waktu database. Cek dengan `curl -sI https://www.google.com | grep -i date` lalu bandingkan dengan `date -u`. Perbaikannya di PowerShell Administrator: `Start-Service w32time; w32tm /resync /force`.
+- `next dev` menulis ulang semua isi blok `<!-- BEGIN:nextjs-agent-rules -->` di `AGENTS.md`. Aturan proyek harus berada di luar blok itu.
+- Database adalah Supabase dev bersama, dipakai juga oleh test DB. `DATABASE_URL` memakai pooler `aws-0-ap-southeast-1:6543`.
+- Supavisor membuang query yang di-pipeline (`max_pipeline: 0`). Transaksi memakai helper `transaction()`; untuk SQL ad hoc, `npx tsx --env-file=.env.local scripts/apply-sql.ts <file.sql>` menjalankan file dalam satu transaksi.
+- Test DB wajib lewat `npm run test:db` (`--no-file-parallelism`). `schema.test.ts` mengharapkan kategori seed yang persis, jadi kategori uji harus dihapus setelah dipakai.
+- Hapus data event uji dengan urutan FK: `hold_items` → `holds` → `slug_redirects` → `form_fields` → `ticket_inventory` → `ticket_categories` → `event_sessions` → `events`. Admin uji: `audit_logs` dulu, baru `admins`.
+- Skrip yang mengimpor `@/…` harus berada di dalam folder proyek (misalnya `scripts/_x.mts`, lalu hapus). Dari folder lain, modul tidak ditemukan. Skrip dengan top-level await harus `.mts`.
+- Di Windows, menghentikan `npm run start`/`next dev` dari task latar belakang bisa menyisakan proses `node` yang tetap memegang port. Cek port dan matikan prosesnya sebelum build ulang, karena build saat server lama masih jalan menghasilkan uji yang menyesatkan.
+- Di Windows, dev server Turbopack kadang memakai modul lama setelah file lib diubah. Restart dev server.
+- Playwright: request prefetch RSC tampak menggantung karena router Next sengaja membatalkannya (`ERR_ABORTED` setelah 200). Pakai `waitUntil: 'load'`, bukan `networkidle`. Screenshot dan log disimpan di `.playwright-mcp/` (di-gitignore).
+- Next.js 16.4 dengan `cacheComponents` dan `partialPrefetching`. Baca `node_modules/next/dist/docs/` sebelum menulis kode: `proxy.ts` menggantikan middleware, data runtime harus di dalam `<Suspense>`, invalidasi dari Route Handler memakai `revalidateTag(tag, { expire: 0 })`, `generateStaticParams` minimal satu entri, `priority` diganti `preload`, dan lihat `ensureStatic`, `instant` serta ambang `cacheLife`.
 
 ## Data di database dev
 
-- Event contoh: "Jazz di Taman 2026" (id 645, slug `jazz-taman-2026`, published, on sale). Isinya 3 kategori tiket (Reguler, VIP, Bundling Couple) dan 4 field form.
-- `admin@admin.com` milik pemilik dan 2FA-nya aktif. Jangan diubah.
-- Admin sementara `verify-temp@anytix.test` dipakai untuk uji browser. Kata sandinya tidak dicatat di repo: buat ulang dengan `npm run admin:create` bila perlu, lalu hapus di checkpoint.
-- Pengaturan SMTP sudah tersimpan di tabel `settings` (password terenkripsi) dengan nilai sama seperti `.env.local`. Pengaturan transaksi dan situs ada di nilai default.
+- Event contoh: "Jazz di Taman 2026" (id 645, slug `jazz-taman-2026`, published, on sale) dengan 3 kategori tiket dan 4 field form.
+- Admin hanya `admin@admin.com` milik pemilik, dengan 2FA aktif. Jangan diubah. Untuk uji browser, buat admin sementara dengan `ADMIN_PASSWORD=… npm run admin:create -- nama@anytix.test`, lalu hapus setelah selesai.
+- Pengaturan SMTP tersimpan di tabel `settings` (password terenkripsi). Pengaturan transaksi bernilai default (kunci slot 3 menit, batas bayar 15 menit, cadangan 5 menit, biaya layanan Rp5.000, semua metode aktif).
 
 ## Ledger Fase 1 (Task 1–9)
 
-Salinan dari `.superpowers/sdd/2026-10-17-fase-1-katalog-admin/progress.md`. Folder itu di-gitignore. Isinya keputusan ("Ruling") yang menyimpang dari teks plan dan hasil cek browser per task.
+Salinan dari `.superpowers/sdd/2026-10-17-fase-1-katalog-admin/progress.md` (di-gitignore).
 
 ```text
 Setup: work directly on main; no worktree.
