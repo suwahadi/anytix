@@ -2,6 +2,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { sql } from "@/lib/db";
 import { eventTag, TAG_CATEGORIES, TAG_EVENTS, TAG_SITE } from "@/lib/public-cache";
 import { getSettingsGroup, type SiteView } from "@/lib/settings-service";
+import { ticketBadge, type TicketBadge } from "@/lib/ticket-status";
 import type { Timezone } from "@/lib/validation/catalog";
 
 /** Gives `s-maxage=60` on public pages, as PRD §17 asks. */
@@ -39,6 +40,8 @@ export type PublicTicketCategory = {
   capacity: number;
   sold: number;
   held: number;
+  /** Computed when the cache entry was filled; the tickets page refreshes it from the availability endpoint. */
+  badge: TicketBadge;
 };
 
 export type PublicEvent = PublicEventCard & {
@@ -132,7 +135,7 @@ export async function getPublicEvent(eventId: number): Promise<PublicEvent | nul
       from events e join event_categories c on c.id = e.event_category_id
      where e.id = ${eventId} and e.status = 'published'`;
   if (!event) return null;
-  const ticketCategories = await sql<PublicTicketCategory[]>`
+  const rows = await sql<Omit<PublicTicketCategory, "badge">[]>`
     select tc.id, i.id as "inventoryId", tc.name, tc.description, tc.price, tc.max_per_order as "maxPerOrder",
            tc.admits_per_unit as "admitsPerUnit", tc.has_merchandise as "hasMerchandise",
            tc.sale_starts_at as "saleStartsAt", tc.sale_ends_at as "saleEndsAt", tc.status,
@@ -140,6 +143,8 @@ export async function getPublicEvent(eventId: number): Promise<PublicEvent | nul
       from ticket_categories tc join ticket_inventory i on i.ticket_category_id = tc.id
      where tc.event_id = ${eventId} and tc.status = 'active'
      order by tc.position, tc.id`;
+  const now = new Date();
+  const ticketCategories = rows.map((c) => ({ ...c, badge: ticketBadge({ ...c, eventSaleStatus: event.saleStatus }, now) }));
   return { ...event, ticketCategories };
 }
 

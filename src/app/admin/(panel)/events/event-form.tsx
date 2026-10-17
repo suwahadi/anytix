@@ -14,16 +14,8 @@ import { requestJson } from "@/lib/client-fetch";
 import { FACILITIES } from "@/lib/facilities";
 import { TIMEZONES, toIsoFromLocal, toLocalInput } from "@/lib/format";
 import { slugify } from "@/lib/slug";
+import { SOCIAL_LINKS } from "@/lib/social-links";
 import { TIMEZONE_KEYS, type Timezone } from "@/lib/validation/catalog";
-
-const SOCIALS = [
-  { key: "instagram", label: "Instagram" },
-  { key: "tiktok", label: "TikTok" },
-  { key: "x", label: "X (Twitter)" },
-  { key: "facebook", label: "Facebook" },
-  { key: "youtube", label: "YouTube" },
-  { key: "website", label: "Situs web" },
-] as const;
 
 type State = {
   title: string;
@@ -348,7 +340,7 @@ export function EventForm({ eventId }: { eventId?: number }) {
 
       <Section title="Media sosial" description="Opsional. Isi alamat lengkap, diawali https://.">
         <div className="grid gap-4 sm:grid-cols-2">
-          {SOCIALS.map((s) => (
+          {SOCIAL_LINKS.map((s) => (
             <Field
               key={s.key}
               id={`social-${s.key}`}

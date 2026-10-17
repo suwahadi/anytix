@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeRichText } from "@/lib/rich-text";
+import { sanitizeRichText, toPlainText } from "@/lib/rich-text";
 
 describe("sanitizeRichText", () => {
   it("strips active content", () => {
@@ -22,5 +22,15 @@ describe("sanitizeRichText", () => {
   it("returns empty string for empty editor output", () => {
     expect(sanitizeRichText("<p></p>")).toBe("");
     expect(sanitizeRichText("")).toBe("");
+  });
+});
+
+describe("toPlainText", () => {
+  it("strips tags, decodes entities and separates blocks", () => {
+    expect(toPlainText("<h2>Jazz</h2><p>Musik &amp; kuliner<br>di taman</p>")).toBe("Jazz Musik & kuliner di taman");
+  });
+
+  it("cuts long text with an ellipsis", () => {
+    expect(toPlainText("<p>" + "a".repeat(200) + "</p>", 10)).toBe("aaaaaaaaa…");
   });
 });
