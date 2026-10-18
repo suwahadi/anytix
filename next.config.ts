@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const MIDTRANS = "https://app.midtrans.com https://app.sandbox.midtrans.com https://api.midtrans.com https://api.sandbox.midtrans.com";
 const TURNSTILE = "https://challenges.cloudflare.com";
+/** Cloudflare Web Analytics: the proxy injects the beacon script, which reports back to cloudflareinsights.com. */
+const CF_ANALYTICS_SCRIPT = "https://static.cloudflareinsights.com";
+const CF_ANALYTICS_REPORT = "https://cloudflareinsights.com";
 
 function mediaOrigin(): string {
   try {
@@ -14,9 +17,9 @@ function mediaOrigin(): string {
 // shortcut: inline scripts are allowed because Next.js inlines its bootstrap without a nonce; move to a nonce-based CSP when a security audit asks for it.
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' ${MIDTRANS} ${TURNSTILE}`,
+  `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' ${MIDTRANS} ${TURNSTILE} ${CF_ANALYTICS_SCRIPT}`,
   `frame-src ${MIDTRANS} ${TURNSTILE}`,
-  `connect-src 'self' ${MIDTRANS} ${TURNSTILE}`,
+  `connect-src 'self' ${MIDTRANS} ${TURNSTILE} ${CF_ANALYTICS_REPORT}`,
   `img-src 'self' data: blob: ${mediaOrigin()} https://images.unsplash.com ${MIDTRANS}`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
