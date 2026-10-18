@@ -17,7 +17,7 @@ const clean: PreflightSnapshot = {
   cronJobs: ["sweep-expired-holds", "purge-identity-numbers"],
   testEventCount: 0,
   site: { name: "AnyTix", csWhatsapp: "6281234567890", csEmail: "cs@anytix.web.id", terms: "S&K", privacy: "Privasi" },
-  smtp: { host: "smtp-relay.brevo.com", from: "AnyTix <noreply@anytix.web.id>" },
+  smtp: { host: "smtp-relay.brevo.com", from: "AnyTix <no-reply@anytix.web.id>" },
   paymentMethodsEnabled: 2,
 };
 

@@ -193,7 +193,7 @@ Email transaksional (menunggu pembayaran, e-ticket, kedaluwarsa, pembayaran terl
    - Untuk record CNAME di Cloudflare, matikan proxy (awan abu-abu, **DNS only**).
    - DMARC bila Brevo tidak memberikannya: TXT `_dmarc` = `v=DMARC1; p=none; rua=mailto:dmarc@anytix.web.id`. Ganti alamat `rua` dengan kotak masuk yang Anda baca.
    - Berhasil bila: di Brevo → Domains, `anytix.web.id` berstatus **Authenticated**. Propagasi bisa butuh beberapa menit sampai beberapa jam.
-3. **Tambahkan alamat pengirim.** Buka tab **Senders** → Add a sender: nama `AnyTix`, email `noreply@anytix.web.id`.
+3. **Tambahkan alamat pengirim.** Buka tab **Senders** → Add a sender: nama `AnyTix`, email `no-reply@anytix.web.id`.
    - Berhasil bila: sender tampil aktif. Domain yang sudah terautentikasi tidak perlu verifikasi kotak masuk.
 4. **Izinkan IP VPS.** Buka Brevo → Security → **Authorised IPs** dan tambahkan IP publik VPS. Cek IP-nya dengan `curl -4 ifconfig.me` di VPS.
    - Bila langkah ini terlewat, pengiriman gagal dengan `525 5.7.1 Unauthorized IP address`. Penyebab ini juga yang paling umum bila email tiba-tiba berhenti.
@@ -201,12 +201,21 @@ Email transaksional (menunggu pembayaran, e-ticket, kedaluwarsa, pembayaran terl
 6. **Atur di panel.** Buka Panel → Pengaturan → Email:
    - Host `smtp-relay.brevo.com`, port `587`.
    - User dan password SMTP dari Brevo → SMTP & API → SMTP.
-   - Pengirim `AnyTix <noreply@anytix.web.id>`.
+   - Pengirim `AnyTix <no-reply@anytix.web.id>`.
 
    Simpan, lalu tekan **Kirim email uji** ke alamat Anda sendiri.
    - Berhasil bila: email uji masuk ke Inbox (bukan Spam), dan `npm run preflight` baris **SMTP** menjadi PASS.
 7. **Cek skor pengiriman.** Buka `mail-tester.com`, salin alamat yang ditampilkan, kirim email uji dari panel ke alamat itu, lalu klik "Then check your score".
    - Berhasil bila: skor ≥ 9/10. Bila lebih rendah, bagian DKIM dan DMARC di laporan itu menunjukkan record yang kurang.
+
+8. **Siapkan kotak masuk `cs@anytix.web.id`.** Email ke pembeli dikirim dari `no-reply@anytix.web.id` dengan Reply-To `cs@anytix.web.id`, dan alamat CS itu juga tampil di situs. Brevo hanya mengirim, tidak menerima. Pilih salah satu:
+   - **Cloudflare Email Routing** (gratis, bila DNS di Cloudflare): Email → Email Routing → aktifkan → rule `cs@anytix.web.id` diteruskan ke kotak masuk yang Anda baca.
+   - **Email hosting** (Zoho Mail, Google Workspace, atau email dari penyedia domain).
+
+   Ikuti record MX yang diminta layanan itu. Record MX tidak mengganggu record Brevo.
+   - Berhasil bila: email dari alamat pribadi ke `cs@anytix.web.id` masuk, dan membalas email uji dari panel juga tiba di sana.
+
+Pengirim `no-reply@anytix.web.id` baru bisa dipakai setelah domain berstatus Authenticated di Brevo (langkah 2–3). Sebelum itu Brevo bisa menolak atau menahan email dari alamat tersebut.
 
 Kabari agent setelah langkah 2 selesai. Agent akan memastikan record DKIM dan DMARC terbaca dari internet.
 

@@ -31,6 +31,11 @@ describe("email templates", () => {
     expect(fillPlaceholders("Halo {{nama}}", { nama: "<b>Budi</b>" }, false)).toBe("Halo <b>Budi</b>");
   });
 
+  it("replies go to the CS address", () => {
+    expect(renderOrderEmail("paid", data, DEFAULT_EMAIL_TEMPLATES).replyTo).toBe("cs@anytix.web.id");
+    expect(renderOrderEmail("paid", { ...data, site: { ...data.site, csEmail: "" } }, DEFAULT_EMAIL_TEMPLATES).replyTo).toBeUndefined();
+  });
+
   it("template body is escaped", () => {
     const templates = { ...DEFAULT_EMAIL_TEMPLATES, paid: { subject: "Lunas", body: "Diskon <50% & gratis" } };
     const m = renderOrderEmail("paid", data, templates);

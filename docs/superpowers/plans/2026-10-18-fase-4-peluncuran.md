@@ -24,7 +24,7 @@ The owner performs every dashboard, DNS and server action; the agent prepares fi
 
 | Topik | Keputusan |
 |---|---|
-| Domain | `anytix.web.id` (APP_URL `https://anytix.web.id`, email pengirim `noreply@anytix.web.id`) |
+| Domain | `anytix.web.id` (APP_URL `https://anytix.web.id`, email pengirim `no-reply@anytix.web.id`) |
 | Hosting | VPS Singapura dengan aaPanel |
 | Database | Project Supabase yang sekarang (dev) dipakai juga untuk produksi |
 | Eksekusi | Agent menyiapkan file dan langkah; pemilik menjalankan langkah server, DNS dan dashboard |
@@ -45,7 +45,7 @@ The owner performs every dashboard, DNS and server action; the agent prepares fi
   - `APP_URL=https://anytix.web.id`.
   - `MIDTRANS_IS_PRODUCTION=true`.
   - Real Turnstile keys, since the hostname check then applies.
-  - `SMTP_FROM="AnyTix <noreply@anytix.web.id>"`.
+  - `SMTP_FROM="AnyTix <no-reply@anytix.web.id>"`.
 - **Single instance:** one web process (rate limits and `singleFlight` are in memory) and one worker process.
 - **Port 3000 is private:** the app listens on `127.0.0.1:3000` only, and Nginx is the only public entry.
 - **Owner-run steps:** every owner-run step is written as an Indonesian checklist with the exact menu path, value and a way to confirm it worked.
@@ -269,10 +269,10 @@ docs/runbook.md                            Indonesian runbook
 
 - [ ] **Step 1: Write the owner checklist.**
   - Brevo → Senders, Domains & Dedicated IPs → Domains → add `anytix.web.id`, then add the DKIM, Brevo code and DMARC (`v=DMARC1; p=none; rua=mailto:…`) records at the DNS host and wait for "Authenticated".
-  - Senders: add `noreply@anytix.web.id`.
+  - Senders: add `no-reply@anytix.web.id`.
   - Security → Authorised IPs: add the VPS public IP.
   - Choose a paid plan sized for the pilot (PRD §18: 2–3 emails per order).
-  - Panel → Pengaturan → Email: From `AnyTix <noreply@anytix.web.id>`, then "Kirim email uji".
+  - Panel → Pengaturan → Email: From `AnyTix <no-reply@anytix.web.id>`, then "Kirim email uji".
   - Check the message at mail-tester.com: score ≥ 9.
 - [ ] **Step 2: Agent verification after the owner reports done:**
   - `dig TXT mail._domainkey.anytix.web.id` (selector from Brevo) and `dig TXT _dmarc.anytix.web.id` show the records;
@@ -370,6 +370,6 @@ Owner-run with agent guidance. Nothing is committed until Step 6.
   - Record the numbers in the runbook.
 - [ ] **Step 6: Production smoke test.**
   - Buy one ticket for a real event with a real small payment (QRIS).
-  - Expected: LUNAS on `/orders/{uuid}`, the "Pembayaran berhasil" email in the inbox from `noreply@anytix.web.id`, the PDF opens, and a scan at `/admin/check-in` turns green.
+  - Expected: LUNAS on `/orders/{uuid}`, the "Pembayaran berhasil" email in the inbox from `no-reply@anytix.web.id`, the PDF opens, and a scan at `/admin/check-in` turns green.
   - Refund it from the Midtrans dashboard and mark the order in the panel per the runbook.
 - [ ] **Step 7: Checkpoint.** `npm test` and `npm run test:db` (on a machine with opt-in pointing at a non-production database, or skipped with a ledgered ruling), `lint`, `tsc`, `build`, AGENTS.md comment check, whole-phase review by a fresh reviewer, HANDOFF updated for operations, commit, push, report to the owner in Indonesian.

@@ -4,7 +4,7 @@ import { decrypt } from "@/lib/crypto";
 import { sql } from "@/lib/db";
 import { getEnv, type Env } from "@/lib/env";
 
-export type EmailMessage = { to: string; subject: string; html: string; text: string };
+export type EmailMessage = { to: string; replyTo?: string; subject: string; html: string; text: string };
 
 export interface EmailProvider {
   send(message: EmailMessage): Promise<{ messageId: string }>;
