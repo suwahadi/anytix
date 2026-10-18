@@ -1,5 +1,8 @@
 import { randomUUID } from "node:crypto";
+import { NextRequest } from "next/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { POST as scanRoute } from "@/app/api/admin/check-ins/route";
+import { ADMIN_COOKIE, createSessionValue } from "@/lib/admin-session";
 import { reissueTickets } from "@/lib/admin/order-admin-service";
 import { createAdmin } from "@/lib/admin-service";
 import { checkIn, checkinHistory, checkinStats } from "@/lib/checkin/checkin-service";
@@ -79,6 +82,23 @@ describe("check-in", () => {
     const ev = await createTestEvent();
     expect(await scan("https://example.com/not-a-ticket?x=1", ev.eventId)).toEqual({ result: "invalid" });
     expect(await scan("  ab cd  ", ev.eventId)).toEqual({ result: "invalid" });
+  });
+
+  it("long non-ticket QR is invalid through the API", async () => {
+    const ev = await createTestEvent();
+    const qris = `00020101021226670016COM.NOBUBANK.WWW01189360050300000879140214${"8".repeat(120)}5204581253033605802ID6304ABCD`;
+    const res = await scanRoute(
+      new NextRequest("http://localhost/api/admin/check-ins", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: `${ADMIN_COOKIE}=${createSessionValue(adminId)}` },
+        body: JSON.stringify({ token: qris, eventId: ev.eventId, gate: "A" }),
+      }),
+      { params: Promise.resolve({}) },
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ result: "invalid" });
+    const rows = await sql<{ result: string; token: string }[]>`select result, token from checkin_events where event_id = ${ev.eventId}`;
+    expect(rows).toEqual([{ result: "invalid", token: qris.slice(0, 64) }]);
   });
 
   it("unpaid order ticket is invalid", async () => {

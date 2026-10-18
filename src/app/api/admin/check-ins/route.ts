@@ -5,7 +5,7 @@ import { checkIn } from "@/lib/checkin/checkin-service";
 import { rateLimit } from "@/lib/rate-limit";
 
 const scanInput = z.object({
-  token: z.string().trim().min(1, "Isi kode tiket.").max(64, "Kode tiket tidak valid."),
+  token: z.string().trim().min(1, "Isi kode tiket.").max(2048, "Kode tiket tidak valid."),
   eventId: z.number().int().positive(),
   gate: z.string().trim().min(1, "Isi nama gate.").max(40, "Nama gate maksimal 40 karakter."),
 });

@@ -4,6 +4,7 @@ import type { BarcodeDetector as Detector } from "barcode-detector/ponyfill";
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import type { CheckInResult } from "@/lib/checkin/checkin-service";
+import { openCamera, ScanGate } from "@/lib/checkin/scan-gate";
 import { requestJson } from "@/lib/client-fetch";
 
 const WASM = "/vendor/zxing_reader-3.1.3.wasm";
@@ -97,8 +98,7 @@ export function Scanner({
 }) {
   const uid = useId();
   const video = useRef<HTMLVideoElement>(null);
-  const busy = useRef(false);
-  const last = useRef({ code: "", at: 0 });
+  const scanGate = useRef(new ScanGate(SAME_CODE_MS));
   const [shown, setShown] = useState<Shown | null>(null);
   const [cameraError, setCameraError] = useState("");
   const [manual, setManual] = useState("");
@@ -108,16 +108,13 @@ export function Scanner({
   const dismiss = useCallback(() => {
     clearTimeout(dismissTimer.current);
     setShown(null);
-    busy.current = false;
+    scanGate.current.resume(Date.now());
   }, []);
 
   const submit = useCallback(
     async (code: string) => {
       const token = code.trim();
-      const now = Date.now();
-      if (!token || busy.current || (token === last.current.code && now - last.current.at < SAME_CODE_MS)) return;
-      busy.current = true;
-      last.current = { code: token, at: now };
+      if (!scanGate.current.accept(token, Date.now())) return;
       const res = await requestJson<CheckInResult>("/api/admin/check-ins", { body: { token, eventId, gate } });
       const next: Shown = res.ok ? res.data : { result: "offline", message: res.status === 0 ? "Koneksi gagal. Scan ulang." : res.error };
       feedback(audio, next.result === "valid");
@@ -143,15 +140,18 @@ export function Scanner({
     (async () => {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error("unsupported");
       const detector = await createDetector();
-      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
-      if (stopped || !video.current) return;
+      stream = await openCamera(
+        () => navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }),
+        () => stopped || !video.current,
+      );
+      if (!stream || !video.current) return;
       video.current.srcObject = stream;
       await video.current.play();
       setCameraError("");
       let detecting = false;
       timer = setInterval(async () => {
         const v = video.current;
-        if (detecting || busy.current || !v || v.readyState < 2) return;
+        if (detecting || !v || v.readyState < 2) return;
         detecting = true;
         try {
           const [code] = await detector.detect(v);
@@ -181,7 +181,7 @@ export function Scanner({
 
   function manualSubmit(e: FormEvent) {
     e.preventDefault();
-    last.current = { code: "", at: 0 };
+    scanGate.current.forget();
     void submit(manual.replace(/\s+/g, ""));
     setManual("");
   }
@@ -218,7 +218,7 @@ export function Scanner({
             autoComplete="off"
             autoCapitalize="none"
             spellCheck={false}
-            maxLength={80}
+            maxLength={2048}
             className="h-11 rounded-md border border-stone-600 bg-stone-900 px-3 font-mono text-base text-white"
           />
         </div>
