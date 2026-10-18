@@ -28,7 +28,7 @@ export function PageForm({ page }: { page: keyof PagesView }) {
   }
 
   return (
-    <form onSubmit={submit} noValidate className="mt-6 flex max-w-3xl flex-col gap-5">
+    <form onSubmit={submit} noValidate className="mt-6 flex flex-col gap-5">
       <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5">
         <RichTextEditor
           id={`page-${page}`}
