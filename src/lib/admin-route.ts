@@ -49,7 +49,10 @@ export function foreignOrigin(req: NextRequest): boolean {
   const origin = req.headers.get("origin");
   if (!origin || req.method === "GET" || req.method === "HEAD") return false;
   try {
-    return new URL(origin).host !== new URL(getEnv().APP_URL).host;
+    const host = new URL(origin).host;
+    /** Dev is reached as localhost, 127.0.0.1 or a LAN IP; same-origin with the Host header still blocks other sites. */
+    if (process.env.NODE_ENV !== "production" && host === req.headers.get("host")) return false;
+    return host !== new URL(getEnv().APP_URL).host;
   } catch {
     return true;
   }
