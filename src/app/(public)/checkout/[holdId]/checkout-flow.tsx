@@ -41,7 +41,8 @@ function issuesToFields(issues: Array<{ path: PropertyKey[]; message: string }>,
   return out;
 }
 
-const TIMER_BOX = "items-center justify-between gap-3 rounded-md bg-accent-soft px-3 py-2.5 text-accent-text";
+/** Solid accent with white text (5.2:1; the deeper accent in dark mode is 7.3:1), turning red in the last minute. */
+const TIMER_BOX = "items-center gap-x-3 bg-accent text-on-accent dark:bg-accent-hover has-[[data-urgent]]:bg-toast-error";
 
 function TimerLabel() {
   return (
@@ -241,11 +242,6 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
               </div>
             </div>
 
-            <div className={`flex ${TIMER_BOX} lg:hidden`}>
-              <TimerLabel />
-              <Countdown expiresAt={view.expiresAt} serverNow={view.serverNow} receivedAt={receivedAt} onExpire={() => setExpired(true)} />
-            </div>
-
             {step === 2 ? (
               <form ref={form} id={`${uid}-details`} onSubmit={continueToConfirm} noValidate className="flex flex-col gap-5">
                 <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5">
@@ -329,9 +325,9 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
 
           <aside className="lg:col-start-2 lg:row-start-1">
             <div id={`${uid}-summary`} className="flex scroll-mt-24 flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5 lg:sticky lg:top-22 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto">
-              <div className={`hidden ${TIMER_BOX} lg:flex`}>
+              <div className={`hidden ${TIMER_BOX} justify-between rounded-md px-3 py-2.5 lg:flex`}>
                 <TimerLabel />
-                <Countdown expiresAt={view.expiresAt} serverNow={view.serverNow} receivedAt={receivedAt} onExpire={() => setExpired(true)} />
+                <Countdown inverse expiresAt={view.expiresAt} serverNow={view.serverNow} receivedAt={receivedAt} onExpire={() => setExpired(true)} />
               </div>
               <h2 className="text-lg font-bold text-text">Rincian Pesanan</h2>
               <ul className="flex flex-col gap-2 text-sm">
@@ -413,7 +409,11 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
           </aside>
         </div>
 
-        <div data-buy-bar className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgb(0_0_0/0.08)] lg:hidden">
+        <div data-buy-bar data-buy-bar-timer className="fixed inset-x-0 bottom-0 z-30 bg-surface px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgb(0_0_0/0.08)] lg:hidden">
+          <div role="timer" className={`-mx-4 mb-3 flex justify-center px-4 py-2 text-center ${TIMER_BOX}`}>
+            <TimerLabel />
+            <Countdown inverse expiresAt={view.expiresAt} serverNow={view.serverNow} receivedAt={receivedAt} onExpire={() => setExpired(true)} />
+          </div>
           <div className="mx-auto flex w-full max-w-6xl items-center gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-xs text-muted">Total Bayar</p>

@@ -2,9 +2,10 @@ import Link from "next/link";
 import { Carousel } from "@/components/carousel";
 import { CategoryRow } from "@/components/category-row";
 import { EventCard } from "@/components/event-card";
+import { FaqAccordion } from "@/components/faq-accordion";
 import { PosterBanner } from "@/components/poster-banner";
 import { buttonClass } from "@/components/ui/button";
-import { getHomeEvents, getPublicCategories, getPublicSite } from "@/lib/public/catalog-queries";
+import { getHomeEvents, getPublicCategories, getPublicFaqs, getPublicSite } from "@/lib/public/catalog-queries";
 import { buildHeroSlides, type EventSlide } from "@/lib/public/hero-slides";
 
 /** Below this many open events the extra rows would only repeat the same cards. */
@@ -21,7 +22,7 @@ function SectionTitle({ id, children }: { id: string; children: string }) {
 }
 
 export default async function Home() {
-  const [{ featured, bestSellers, upcoming }, categories, site] = await Promise.all([getHomeEvents(), getPublicCategories(), getPublicSite()]);
+  const [{ featured, bestSellers, upcoming }, categories, site, faqs] = await Promise.all([getHomeEvents(), getPublicCategories(), getPublicSite(), getPublicFaqs()]);
   const hero = buildHeroSlides(featured, { siteName: site.name });
   const fullCatalogue = upcoming.length >= MIN_EVENTS_FOR_ROWS;
   const recommended = !fullCatalogue ? [] : featured.length > 0 ? featured : upcoming;
@@ -95,6 +96,15 @@ export default async function Home() {
           <p className="rounded-lg border border-dashed border-border-strong px-4 py-10 text-center text-muted">Belum ada event yang dibuka. Cek lagi nanti.</p>
         )}
       </section>
+
+      {faqs.length > 0 && (
+        <section aria-labelledby="faq-heading" className="mx-auto mt-14 flex w-full max-w-6xl flex-col gap-6 px-4">
+          <h2 id="faq-heading" className="text-center text-2xl font-extrabold tracking-tight text-text sm:text-3xl">
+            Pertanyaan yang Sering Diajukan
+          </h2>
+          <FaqAccordion items={faqs} />
+        </section>
+      )}
     </div>
   );
 }

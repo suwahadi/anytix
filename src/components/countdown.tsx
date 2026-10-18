@@ -9,12 +9,15 @@ export function Countdown({
   receivedAt,
   onExpire,
   className = "",
+  inverse = false,
 }: {
   expiresAt: string;
   serverNow: string;
   receivedAt: number;
   onExpire?: () => void;
   className?: string;
+  /** On a solid colored box: skip the red last-minute text and let the box react to `data-urgent` instead. */
+  inverse?: boolean;
 }) {
   const [left, setLeft] = useState(() => remainingMs(expiresAt, serverNow, receivedAt, receivedAt));
   const expired = useRef(false);
@@ -40,8 +43,8 @@ export function Countdown({
 
   const minutes = Math.ceil(left / 60_000);
   return (
-    <span className={className}>
-      <span aria-hidden className={`text-lg font-bold tabular-nums ${left < 60_000 ? "text-danger" : ""}`}>
+    <span className={className} data-urgent={left < 60_000 || undefined}>
+      <span aria-hidden className={`text-lg font-bold tabular-nums ${left < 60_000 && !inverse ? "text-danger" : ""}`}>
         {formatCountdown(left)}
       </span>
       <span className="sr-only" aria-live="polite">

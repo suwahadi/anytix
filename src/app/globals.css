@@ -103,6 +103,9 @@ body {
     body:has([data-buy-bar]:not([style*="display: none"] *)) footer {
       padding-bottom: 5.5rem;
     }
+    body:has([data-buy-bar-timer]:not([style*="display: none"] *)) footer {
+      padding-bottom: 8rem;
+    }
   }
 }
 
