@@ -92,6 +92,13 @@ body {
   summary {
     cursor: pointer;
   }
+
+  /** The fixed mobile buy bar would cover the copyright line; the footer grows so its dark band runs under the bar. */
+  @media (width < 64rem) {
+    body:has([data-buy-bar]) footer {
+      padding-bottom: 5.5rem;
+    }
+  }
 }
 
 .rich-text > * + * {

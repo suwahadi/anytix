@@ -237,14 +237,37 @@ export function TicketPicker({ slug, eventId, siteKey, categories }: { slug: str
           </dl>
           {buyError && <Alert>{buyError}</Alert>}
           {chosen.length > 0 && <TurnstileWidget ref={turnstile} siteKey={siteKey} onToken={setToken} />}
-          <Button className="w-full" onClick={buy} loading={buying} disabled={chosen.length === 0 || !token} aria-describedby="buy-note">
-            Beli Sekarang
-          </Button>
-          <p id="buy-note" className="text-sm text-muted">
-            {chosen.length === 0 ? "Pilih tiket dulu." : "Slot tiket dikunci untuk Anda selama mengisi data pemesan."}
-          </p>
+          <div className={chosen.length > 0 ? "hidden lg:block" : ""}>
+            <Button className="w-full" onClick={buy} loading={buying} disabled={chosen.length === 0 || !token} aria-describedby={chosen.length === 0 ? "buy-note" : undefined}>
+              Beli Sekarang
+            </Button>
+          </div>
+          {chosen.length === 0 && (
+            <p id="buy-note" className="text-sm text-muted">
+              Pilih tiket dulu.
+            </p>
+          )}
         </div>
       </aside>
+
+      {chosen.length > 0 && (
+        <div data-buy-bar className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgb(0_0_0/0.08)] lg:hidden">
+          <div className="mx-auto flex w-full max-w-6xl items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted">{token ? `${units} tiket · Subtotal` : "Memverifikasi keamanan…"}</p>
+              <p className="text-lg font-extrabold leading-tight text-text">{formatRupiah(subtotal)}</p>
+            </div>
+            <Button className="shrink-0 px-6" onClick={buy} loading={buying} disabled={!token}>
+              Beli Sekarang
+            </Button>
+          </div>
+          {buyError && (
+            <p aria-hidden className="mx-auto mt-2 w-full max-w-6xl text-sm text-danger">
+              {buyError}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
