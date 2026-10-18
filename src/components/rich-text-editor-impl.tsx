@@ -1,8 +1,12 @@
 "use client";
 
+import TiptapImage from "@tiptap/extension-image";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import type { ReactNode } from "react";
+import { useRef, useState, type ChangeEvent, type ReactNode } from "react";
+import { mediaUrl } from "@/lib/media";
+import { IMAGE_ACCEPT, uploadImage } from "@/lib/upload-client";
+import { Spinner } from "./ui/spinner";
 
 type Tool = {
   label: string;
@@ -51,6 +55,7 @@ export default function RichTextEditorImpl({
   onChange,
   error,
   hint,
+  imageKind,
 }: {
   id: string;
   label: string;
@@ -58,7 +63,12 @@ export default function RichTextEditorImpl({
   onChange: (html: string) => void;
   error?: string;
   hint?: string;
+  /** Turns on the image button; images upload under this media kind and only those paths survive sanitizing. */
+  imageKind?: "page";
 }) {
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -68,6 +78,7 @@ export default function RichTextEditorImpl({
         horizontalRule: false,
         link: { openOnClick: false, autolink: true, defaultProtocol: "https" },
       }),
+      ...(imageKind ? [TiptapImage.configure({ allowBase64: false })] : []),
     ],
     content: value,
     immediatelyRender: false,
@@ -83,6 +94,19 @@ export default function RichTextEditorImpl({
     },
     onUpdate: ({ editor }) => onChange(editor.isEmpty ? "" : editor.getHTML()),
   });
+
+  async function insertImage(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !editor || !imageKind) return;
+    setUploadError("");
+    setUploading(true);
+    const result = await uploadImage(file, imageKind);
+    setUploading(false);
+    if ("error" in result) return setUploadError(result.error);
+    const alt = window.prompt("Deskripsi singkat gambar untuk pembaca layar", "") ?? "";
+    editor.chain().focus().setImage({ src: mediaUrl(result.base, "lg"), alt: alt.trim() }).run();
+  }
 
   const active = useEditorState({
     editor,
@@ -114,9 +138,31 @@ export default function RichTextEditorImpl({
               {tool.content}
             </button>
           ))}
+          {imageKind && (
+            <>
+              <button
+                type="button"
+                title="Sisipkan gambar"
+                aria-label="Sisipkan gambar"
+                disabled={!editor || uploading}
+                aria-busy={uploading || undefined}
+                onClick={() => fileInput.current?.click()}
+                className="inline-flex min-h-9 min-w-9 items-center gap-1.5 rounded px-2 text-sm text-text hover:bg-surface-muted disabled:opacity-50"
+              >
+                {uploading && <Spinner />}
+                Gambar
+              </button>
+              <input ref={fileInput} type="file" accept={IMAGE_ACCEPT} onChange={insertImage} className="sr-only" tabIndex={-1} aria-hidden />
+            </>
+          )}
         </div>
         <EditorContent editor={editor} />
       </div>
+      {uploadError && (
+        <p role="alert" className="text-sm text-danger">
+          {uploadError}
+        </p>
+      )}
       {hint && (
         <p id={`${id}-hint`} className="text-sm text-muted">
           {hint}

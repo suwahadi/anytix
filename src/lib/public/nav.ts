@@ -2,17 +2,13 @@ export type NavLink = { label: string; href: string; match?: "exact" | "prefix" 
 export type NavSoon = { label: string; soon: true };
 export type NavItem = NavLink | NavSoon;
 
-type Contact = { csWhatsapp: string; csEmail: string };
-
-const hasContact = (site: Contact) => Boolean(site.csWhatsapp || site.csEmail);
-
 /** Pages that do not exist yet stay visible as "Segera" with no link, so nothing in the menu leads nowhere. */
-export function publicNav(site: Contact): NavItem[] {
+export function publicNav(): NavItem[] {
   return [
     { label: "Beranda", href: "/", match: "exact" },
     { label: "Jelajah Event", href: "/events", match: "prefix" },
-    { label: "Tentang", soon: true },
-    ...(hasContact(site) ? [{ label: "Hubungi Kami", href: "/#kontak" }] : []),
+    { label: "Tentang", href: "/about", match: "exact" },
+    { label: "Hubungi Kami", href: "/contact", match: "exact" },
   ];
 }
 
@@ -23,18 +19,18 @@ export function isActive(item: NavItem, pathname: string): boolean {
 
 export type FooterColumn = { title: string; items: NavItem[] };
 
-export function footerColumns(site: Contact, categories: ReadonlyArray<{ name: string; slug: string; eventCount: number }>): FooterColumn[] {
+export function footerColumns(categories: ReadonlyArray<{ name: string; slug: string; eventCount: number }>): FooterColumn[] {
   return [
     {
       title: "Tentang Kami",
-      items: [{ label: "Tentang", soon: true }, { label: "Biaya", soon: true }, ...(hasContact(site) ? [{ label: "Hubungi Kami", href: "/#kontak" }] : [])],
+      items: [{ label: "Tentang", href: "/about" }, { label: "Biaya", soon: true }, { label: "Hubungi Kami", href: "/contact" }],
     },
     {
       title: "Informasi",
       items: [
         { label: "Syarat & Ketentuan", href: "/terms" },
         { label: "Kebijakan Privasi", href: "/privacy" },
-        { label: "FAQ", soon: true },
+        { label: "FAQ", href: "/faq" },
       ],
     },
     {

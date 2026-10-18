@@ -8,7 +8,7 @@ import type { SiteView } from "@/lib/settings-service";
 import { MobileNav, MobileNavFallback, NavPills, PillList } from "./nav-links";
 
 export function SiteHeader({ site }: { site: SiteView }) {
-  const items = publicNav(site);
+  const items = publicNav();
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
       <div className="relative mx-auto flex h-16 w-full max-w-6xl items-center gap-2 px-4">

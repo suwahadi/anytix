@@ -17,7 +17,7 @@ export function slugField(max: number) {
   );
 }
 
-export const MEDIA_KINDS = ["poster", "logo", "icon"] as const;
+export const MEDIA_KINDS = ["poster", "logo", "icon", "page"] as const;
 
 const MEDIA_PATH = new RegExp(`^(${MEDIA_KINDS.join("|")})/\\d{4}/[A-Za-z0-9_-]{12}$`);
 

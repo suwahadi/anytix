@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 export const TAG_CATEGORIES = "categories";
 export const TAG_EVENTS = "events";
 export const TAG_SITE = "site-settings";
+export const TAG_CONTENT = "content";
 
 export function eventTag(id: number): string {
   return `event-${id}`;

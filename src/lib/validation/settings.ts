@@ -94,10 +94,24 @@ export const emailTemplatesInput = z.object(
 );
 export type EmailTemplatesValues = z.infer<typeof emailTemplatesInput>;
 
+export const pagesSettings = z.object({
+  about: z.string().max(100_000, "Teks halaman Tentang Kami terlalu panjang.").default(""),
+  contact: z.string().max(100_000, "Teks halaman Hubungi Kami terlalu panjang.").default(""),
+});
+export type PagesSettingsValues = z.infer<typeof pagesSettings>;
+
+export const faqInput = z.object({
+  question: z.string().trim().min(5, "Pertanyaan minimal 5 karakter.").max(200, "Pertanyaan maksimal 200 karakter."),
+  answer: z.string().max(20_000, "Jawaban terlalu panjang.").default(""),
+  isActive: z.boolean().default(true),
+});
+export type FaqValues = z.infer<typeof faqInput>;
+
 export const SETTINGS_SCHEMAS = {
   transaction: transactionSettings,
   site: siteSettings,
   smtp: smtpSettingsInput,
   email_templates: emailTemplatesInput,
+  pages: pagesSettings,
 } as const;
 export type SettingsGroup = keyof typeof SETTINGS_SCHEMAS;

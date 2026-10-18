@@ -24,6 +24,7 @@ Ruang lingkup yang disepakati adalah Fase 0–3, dan keempatnya sudah selesai. F
 | Fase 3 (Hari-H) | Selesai: 13 task, review menyeluruh (3 temuan Important diperbaiki dengan RED→GREEN, 7 Minor ditunda), audit antislop 003, lalu di-push |
 | Fase 4 (go-live) | Live di https://anytix.web.id dengan Midtrans sandbox; pembayaran, webhook, PDF dan email teruji end-to-end. Sisa langkah pemilik di bawah |
 | Revamp beranda | Selesai dan di-push: header pill, hero carousel, Rekomendasi, Laris Manis, Kategori, Event Terdekat, footer 4 kolom. Belum di-deploy ke server |
+| Konten (Tentang Kami, Hubungi Kami, FAQ) | Selesai dan di-push: admin /admin/content (editor dengan unggah gambar, FAQ urut-geser), publik /about, /contact, /faq (accordion satu-terbuka). Migrasi 0014 (tabel `faqs`, setting `pages` berisi lorem ipsum) sudah diterapkan ke database bersama. Isi Tentang Kami dan Hubungi Kami masih lorem ipsum |
 
 Hasil test terakhir: `npm test` 170 lulus, `lint`, `tsc` dan `build` bersih.
 

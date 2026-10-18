@@ -1,8 +1,8 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { sql } from "@/lib/db";
 import { PRICE_OPTIONS, type PriceFilter, type SortOrder, type WhenFilter } from "@/lib/public/event-filters";
-import { eventTag, TAG_CATEGORIES, TAG_EVENTS, TAG_SITE } from "@/lib/public-cache";
-import { getSettingsGroup, type SiteView } from "@/lib/settings-service";
+import { eventTag, TAG_CATEGORIES, TAG_CONTENT, TAG_EVENTS, TAG_SITE } from "@/lib/public-cache";
+import { getSettingsGroup, type PagesView, type SiteView } from "@/lib/settings-service";
 import { ticketBadge, type TicketBadge } from "@/lib/ticket-status";
 import type { Timezone } from "@/lib/validation/catalog";
 
@@ -211,6 +211,21 @@ export async function getPublicSite(): Promise<SiteView> {
   cacheLife(PUBLIC_CACHE);
   cacheTag(TAG_SITE);
   return getSettingsGroup("site");
+}
+
+export async function getPublicPages(): Promise<PagesView> {
+  "use cache";
+  cacheLife(PUBLIC_CACHE);
+  cacheTag(TAG_CONTENT);
+  return getSettingsGroup("pages");
+}
+
+export async function getPublicFaqs(): Promise<Array<{ id: number; question: string; answer: string }>> {
+  "use cache";
+  cacheLife(PUBLIC_CACHE);
+  cacheTag(TAG_CONTENT);
+  return sql<Array<{ id: number; question: string; answer: string }>>`
+    select id, question, answer from faqs where is_active order by position, id`;
 }
 
 export async function getPublishedSlugs(): Promise<string[]> {

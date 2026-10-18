@@ -1,9 +1,20 @@
 import sanitizeHtml from "sanitize-html";
 
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** Only variants the upload API wrote for page images; anything else (other hosts, traversal, other kinds) is dropped. */
+function isOwnPageImage(src: string | undefined): boolean {
+  const base = process.env.NEXT_PUBLIC_MEDIA_BASE_URL;
+  if (!base || !src) return false;
+  return new RegExp(`^${escapeRegExp(base)}/page/\\d{4}/[A-Za-z0-9_-]{12}-(lg|md|thumb)\\.webp$`).test(src);
+}
+
 const OPTIONS: sanitizeHtml.IOptions = {
-  allowedTags: ["p", "br", "strong", "em", "u", "s", "a", "ul", "ol", "li", "h2", "h3", "blockquote"],
-  allowedAttributes: { a: ["href", "rel", "target"] },
+  allowedTags: ["p", "br", "strong", "em", "u", "s", "a", "ul", "ol", "li", "h2", "h3", "blockquote", "img"],
+  allowedAttributes: { a: ["href", "rel", "target"], img: ["src", "alt"] },
   allowedSchemes: ["http", "https", "mailto"],
+  allowedSchemesByTag: { img: ["https", "http"] },
+  exclusiveFilter: (frame) => frame.tag === "img" && !isOwnPageImage(frame.attribs.src),
   transformTags: {
     a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer nofollow", target: "_blank" }),
   },

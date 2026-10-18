@@ -41,7 +41,7 @@ export async function SiteFooter({ site, categories }: { site: SiteView; categor
             </div>
           )}
         </div>
-        {footerColumns(site, categories).map((col) => (
+        {footerColumns(categories).map((col) => (
           <nav key={col.title} aria-label={col.title} className="flex flex-col gap-1">
             <p className="mb-1 font-semibold text-white">{col.title}</p>
             {col.items.map((item) =>

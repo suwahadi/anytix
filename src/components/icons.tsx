@@ -255,3 +255,11 @@ export function TicketIcon({ className }: { className?: string }) {
     </Svg>
   );
 }
+
+export function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="m6 9 6 6 6-6" />
+    </Svg>
+  );
+}

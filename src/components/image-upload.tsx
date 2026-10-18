@@ -3,11 +3,9 @@
 import Image from "next/image";
 import { useId, useState, type ChangeEvent } from "react";
 import { mediaUrl } from "@/lib/media";
+import { IMAGE_ACCEPT, uploadImage } from "@/lib/upload-client";
 import { Button } from "./ui/button";
 import { Spinner } from "./ui/spinner";
-
-const MAX_BYTES = 10 * 1024 * 1024;
-const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/avif";
 
 export function ImageUpload({
   kind,
@@ -31,24 +29,11 @@ export function ImageUpload({
     e.target.value = "";
     if (!file) return;
     setError("");
-    if (file.size > MAX_BYTES) return setError("Ukuran file maksimal 10 MB.");
-    const form = new FormData();
-    form.set("file", file);
-    form.set("kind", kind);
     setUploading(true);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 60_000);
-    try {
-      const res = await fetch("/api/admin/uploads", { method: "POST", body: form, signal: controller.signal });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) setError(data.error ?? "Unggah gagal. Coba lagi.");
-      else onChange(data.base);
-    } catch {
-      setError("Unggah terputus atau terlalu lama. Periksa koneksi lalu coba lagi.");
-    } finally {
-      clearTimeout(timer);
-      setUploading(false);
-    }
+    const result = await uploadImage(file, kind);
+    setUploading(false);
+    if ("error" in result) setError(result.error);
+    else onChange(result.base);
   }
 
   return (
@@ -78,7 +63,7 @@ export function ImageUpload({
           <input
             id={id}
             type="file"
-            accept={ACCEPT}
+            accept={IMAGE_ACCEPT}
             className="sr-only"
             disabled={uploading}
             onChange={upload}

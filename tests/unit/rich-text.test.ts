@@ -19,6 +19,14 @@ describe("sanitizeRichText", () => {
     expect(out).toBe("<h2>Judul</h2><ul><li><strong>Satu</strong></li></ul>");
   });
 
+  it("keeps images only from our own media storage", () => {
+    const own = `${process.env.NEXT_PUBLIC_MEDIA_BASE_URL}/page/2026/abcdefghijkl-lg.webp`;
+    const out = sanitizeRichText(
+      `<p>a</p><img src="${own}" alt="Panggung" onerror="x()" width="9"><img src="https://evil.example/a.webp" alt="x"><img src="${own}/../../x">`,
+    );
+    expect(out).toBe(`<p>a</p><img src="${own}" alt="Panggung" />`);
+  });
+
   it("returns empty string for empty editor output", () => {
     expect(sanitizeRichText("<p></p>")).toBe("");
     expect(sanitizeRichText("")).toBe("");

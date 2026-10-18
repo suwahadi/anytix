@@ -2,10 +2,10 @@ import { UserError } from "@/lib/admin-route";
 import { diffFields, writeAudit } from "@/lib/audit";
 import { encrypt } from "@/lib/crypto";
 import { sql, transaction } from "@/lib/db";
-import { invalidatePublic, TAG_SITE } from "@/lib/public-cache";
+import { invalidatePublic, TAG_CONTENT, TAG_SITE } from "@/lib/public-cache";
 import { sanitizeRichText } from "@/lib/rich-text";
 import { mergeEmailTemplates, type EmailTemplates } from "@/lib/email/templates";
-import type { EmailTemplatesValues, SiteSettingsValues, SmtpSettingsValues, TransactionSettingsValues } from "@/lib/validation/settings";
+import type { EmailTemplatesValues, PagesSettingsValues, SiteSettingsValues, SmtpSettingsValues, TransactionSettingsValues } from "@/lib/validation/settings";
 
 export type SiteView = {
   name: string;
@@ -18,6 +18,8 @@ export type SiteView = {
 };
 
 export type SmtpView = { host: string; port: number; user: string; from: string; hasPassword: boolean };
+
+export type PagesView = { about: string; contact: string };
 
 type StoredSite = {
   name?: string;
@@ -39,7 +41,12 @@ export async function getSettingsGroup(group: "transaction"): Promise<Transactio
 export async function getSettingsGroup(group: "site"): Promise<SiteView>;
 export async function getSettingsGroup(group: "smtp"): Promise<SmtpView>;
 export async function getSettingsGroup(group: "email_templates"): Promise<EmailTemplates>;
-export async function getSettingsGroup(group: "transaction" | "site" | "smtp" | "email_templates") {
+export async function getSettingsGroup(group: "pages"): Promise<PagesView>;
+export async function getSettingsGroup(group: "transaction" | "site" | "smtp" | "email_templates" | "pages") {
+  if (group === "pages") {
+    const pages = ((await rows(["pages"])).pages?.value ?? {}) as Partial<PagesView>;
+    return { about: pages.about ?? "", contact: pages.contact ?? "" } satisfies PagesView;
+  }
   if (group === "email_templates") {
     return mergeEmailTemplates((await rows(["email_templates"])).email_templates?.value as Partial<EmailTemplates> | undefined);
   }
@@ -86,11 +93,29 @@ export async function putSettingsGroup(adminId: number, group: "transaction", in
 export async function putSettingsGroup(adminId: number, group: "site", input: SiteSettingsValues): Promise<void>;
 export async function putSettingsGroup(adminId: number, group: "smtp", input: SmtpSettingsValues): Promise<void>;
 export async function putSettingsGroup(adminId: number, group: "email_templates", input: EmailTemplatesValues): Promise<void>;
+export async function putSettingsGroup(adminId: number, group: "pages", input: PagesSettingsValues): Promise<void>;
 export async function putSettingsGroup(
   adminId: number,
-  group: "transaction" | "site" | "smtp" | "email_templates",
-  input: TransactionSettingsValues | SiteSettingsValues | SmtpSettingsValues | EmailTemplatesValues,
+  group: "transaction" | "site" | "smtp" | "email_templates" | "pages",
+  input: TransactionSettingsValues | SiteSettingsValues | SmtpSettingsValues | EmailTemplatesValues | PagesSettingsValues,
 ): Promise<void> {
+  if (group === "pages") {
+    const p = input as PagesSettingsValues;
+    const before = await getSettingsGroup("pages");
+    const next: PagesView = { about: sanitizeRichText(p.about), contact: sanitizeRichText(p.contact) };
+    await transaction(async (tx) => {
+      await setValue(tx, "pages", next);
+      await writeAudit(tx, {
+        adminId,
+        action: "update",
+        entity: "settings",
+        entityId: "pages",
+        diff: { aboutChanged: next.about !== before.about, contactChanged: next.contact !== before.contact },
+      });
+    });
+    invalidatePublic(TAG_CONTENT);
+    return;
+  }
   if (group === "email_templates") {
     const before = await getSettingsGroup("email_templates");
     const next = input as EmailTemplatesValues;

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { requestJson } from "@/lib/client-fetch";
 
 /** Loads one settings group and saves it back through PUT /api/admin/settings/{group}. */
-export function useSettings<T>(group: "transaction" | "site" | "smtp" | "email_templates") {
+export function useSettings<T>(group: "transaction" | "site" | "smtp" | "email_templates" | "pages") {
   const [data, setData] = useState<T | null>(null);
   const [loadError, setLoadError] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});

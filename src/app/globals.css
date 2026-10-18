@@ -133,3 +133,13 @@ body {
   padding-left: 0.75rem;
   color: var(--muted);
 }
+.rich-text img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+.rich-text img.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
