@@ -42,6 +42,7 @@ next-env.d.ts
 
 catatan.txt
 !.env.example
+!.env.production.example
 
 # local notes and agent state
 catatan.txt
