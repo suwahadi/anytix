@@ -20,9 +20,9 @@ export function CheckoutSteps({ current }: { current: 1 | 2 | 3 | 4 }) {
                 >
                   {n}
                 </span>
-                <span className={`text-sm font-semibold ${isCurrent ? "" : "sr-only text-on-accent/85 md:not-sr-only"}`}>{label}</span>
+                <span className={`whitespace-nowrap text-sm font-semibold ${isCurrent ? "" : "sr-only text-on-accent/85 md:not-sr-only"}`}>{label}</span>
               </span>
-              {n < STEPS.length && <ChevronRightIcon className="size-4 shrink-0 text-on-accent/85" />}
+              {n < STEPS.length && <ChevronRightIcon className="size-4 shrink-0 text-on-accent/85 max-[359px]:hidden" />}
             </li>
           );
         })}
