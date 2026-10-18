@@ -28,12 +28,12 @@ describe("public nav", () => {
     expect(kategori?.items.at(-1)).toMatchObject({ href: "/events" });
   });
 
-  it("footer links the content pages and keeps unbuilt ones as coming soon", () => {
+  it("footer links navigation and content pages", () => {
     const cols = footerColumns([]);
-    expect(cols.map((c) => c.title)).toEqual(["Tentang Kami", "Informasi", "Kategori Event"]);
+    expect(cols.map((c) => c.title)).toEqual(["Navigasi", "Informasi", "Kategori Event"]);
     expect(cols[0].items).toEqual([
+      { label: "Home", href: "/" },
       { label: "Tentang", href: "/about" },
-      { label: "Biaya", soon: true },
       { label: "Hubungi Kami", href: "/contact" },
     ]);
     expect(cols[1].items).toEqual([

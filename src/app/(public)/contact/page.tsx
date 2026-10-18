@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { MailIcon, WhatsAppIcon } from "@/components/icons";
+import { localPhone, whatsappUrl } from "@/lib/format";
 import { getPublicPages, getPublicSite } from "@/lib/public/catalog-queries";
 
 export const metadata: Metadata = { title: "Hubungi Kami" };
@@ -9,18 +10,18 @@ const CARD = "flex min-h-20 items-center gap-4 rounded-xl border border-border b
 export default async function ContactPage() {
   const [pages, site] = await Promise.all([getPublicPages(), getPublicSite()]);
   const channels = [
-    site.csWhatsapp && { key: "wa", href: `https://wa.me/${site.csWhatsapp}`, Icon: WhatsAppIcon, label: "WhatsApp", value: `+${site.csWhatsapp}` },
+    site.csWhatsapp && { key: "wa", href: whatsappUrl(site.csWhatsapp, site.name), Icon: WhatsAppIcon, label: "WhatsApp", value: localPhone(site.csWhatsapp), external: true },
     site.csEmail && { key: "mail", href: `mailto:${site.csEmail}`, Icon: MailIcon, label: "Email", value: site.csEmail },
-  ].filter(Boolean) as Array<{ key: string; href: string; Icon: typeof MailIcon; label: string; value: string }>;
+  ].filter(Boolean) as Array<{ key: string; href: string; Icon: typeof MailIcon; label: string; value: string; external?: boolean }>;
 
   return (
     <article className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:py-10">
       <h1 className="text-2xl font-extrabold tracking-tight text-text sm:text-3xl">Hubungi Kami</h1>
       {channels.length > 0 && (
         <ul className="grid gap-3 sm:grid-cols-2">
-          {channels.map(({ key, href, Icon, label, value }) => (
+          {channels.map(({ key, href, Icon, label, value, external }) => (
             <li key={key}>
-              <a href={href} className={CARD}>
+              <a href={href} className={CARD} {...(external && { target: "_blank", rel: "noopener noreferrer" })}>
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-text">
                   <Icon className="size-6" />
                 </span>

@@ -10,7 +10,7 @@ import { Button, buttonClass } from "@/components/ui/button";
 import { isFinalizing, shouldPoll, type DisplayStatus } from "@/lib/booking/order-status";
 import type { OrderView } from "@/lib/booking/order-view";
 import { requestJson } from "@/lib/client-fetch";
-import { formatDateTime, formatEventSchedule, formatRupiah } from "@/lib/format";
+import { formatDateTime, formatEventSchedule, formatRupiah, localPhone } from "@/lib/format";
 import type { Timezone } from "@/lib/validation/catalog";
 
 type Snap = { pay: (token: string, callbacks: Record<string, () => void>) => void };
@@ -117,7 +117,7 @@ export function OrderStatus({ initial, cs }: { initial: OrderView; cs: { whatsap
     };
   }, [polling, refresh]);
 
-  const contact = [cs.whatsapp && `WhatsApp +${cs.whatsapp}`, cs.email].filter(Boolean).join(" · ");
+  const contact = [cs.whatsapp && `WhatsApp ${localPhone(cs.whatsapp)}`, cs.email].filter(Boolean).join(" · ");
 
   return (
     <>

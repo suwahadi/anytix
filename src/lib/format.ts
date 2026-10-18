@@ -50,3 +50,12 @@ export function formatDateTime(at: Date, tz: Timezone): string {
   const clock = new Intl.DateTimeFormat("id-ID", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
   return `${day.format(at)} pukul ${clock.format(at)} ${TIMEZONES[tz].label}`;
 }
+
+/** Settings store WhatsApp as 62…; people read and dial it as 0…. */
+export function localPhone(wa: string): string {
+  return wa.startsWith("62") ? `0${wa.slice(2)}` : wa;
+}
+
+export function whatsappUrl(wa: string, siteName: string): string {
+  return `https://wa.me/${wa}?text=${encodeURIComponent(`Halo ${siteName}...`)}`;
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCardDate, formatDateTime, formatEventSchedule, formatRupiah, toIsoFromLocal, toLocalInput } from "@/lib/format";
+import { formatCardDate, formatDateTime, formatEventSchedule, formatRupiah, toIsoFromLocal, toLocalInput, localPhone, whatsappUrl } from "@/lib/format";
 
 describe("timezone conversion for datetime-local inputs", () => {
   it("adds the fixed Indonesian offset", () => {
@@ -57,5 +57,15 @@ describe("formatDateTime", () => {
     expect(formatCardDate(new Date("2026-11-07T03:00:00Z"), new Date("2026-11-08T15:00:00Z"), tz)).toBe("7 – 8 November 2026");
     expect(formatCardDate(new Date("2026-11-30T03:00:00Z"), new Date("2026-12-01T15:00:00Z"), tz)).toBe("30 Nov – 1 Des 2026");
     expect(formatCardDate(new Date("2026-12-31T03:00:00Z"), new Date("2027-01-01T15:00:00Z"), tz)).toBe("31 Des 2026 – 1 Jan 2027");
+  });
+});
+
+describe("whatsapp", () => {
+  it("shows the stored 62 number in local 08 form", () => {
+    expect(localPhone("6281234567890")).toBe("081234567890");
+  });
+
+  it("links wa.me with a prefilled greeting", () => {
+    expect(whatsappUrl("6281234567890", "AnyTix")).toBe("https://wa.me/6281234567890?text=Halo%20AnyTix...");
   });
 });

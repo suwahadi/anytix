@@ -1,6 +1,6 @@
 import type { EmailMessage } from "@/lib/email/email-provider";
 import { escapeHtml, fillPlaceholders, type EmailTemplates, type EmailType } from "@/lib/email/templates";
-import { formatDateTime, formatEventSchedule, formatRupiah } from "@/lib/format";
+import { formatDateTime, formatEventSchedule, formatRupiah, localPhone } from "@/lib/format";
 import type { Timezone } from "@/lib/validation/catalog";
 
 export type OrderEmailData = {
@@ -46,7 +46,7 @@ export function renderOrderEmail(type: EmailType, data: OrderEmailData, template
   const introText = fillPlaceholders(template.body, vars, false);
   const schedule = formatEventSchedule(data.event.startsAt, data.event.endsAt, tz);
   const place = [data.event.venue, data.event.city].filter(Boolean).join(", ");
-  const contact = [data.site.csWhatsapp && `WhatsApp +${data.site.csWhatsapp}`, data.site.csEmail].filter(Boolean).join(" · ");
+  const contact = [data.site.csWhatsapp && `WhatsApp ${localPhone(data.site.csWhatsapp)}`, data.site.csEmail].filter(Boolean).join(" · ");
 
   const blocks: string[] = [`<p style="margin:0 0 16px">${intro}</p>`];
   const text: string[] = [introText];

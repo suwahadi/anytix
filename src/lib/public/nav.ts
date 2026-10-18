@@ -22,8 +22,8 @@ export type FooterColumn = { title: string; items: NavItem[] };
 export function footerColumns(categories: ReadonlyArray<{ name: string; slug: string; eventCount: number }>): FooterColumn[] {
   return [
     {
-      title: "Tentang Kami",
-      items: [{ label: "Tentang", href: "/about" }, { label: "Biaya", soon: true }, { label: "Hubungi Kami", href: "/contact" }],
+      title: "Navigasi",
+      items: [{ label: "Home", href: "/" }, { label: "Tentang", href: "/about" }, { label: "Hubungi Kami", href: "/contact" }],
     },
     {
       title: "Informasi",

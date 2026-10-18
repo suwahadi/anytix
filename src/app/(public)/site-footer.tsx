@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MailIcon, WhatsAppIcon } from "@/components/icons";
 import type { PublicCategory } from "@/lib/public/catalog-queries";
+import { localPhone, whatsappUrl } from "@/lib/format";
 import { footerColumns } from "@/lib/public/nav";
 import type { SiteView } from "@/lib/settings-service";
 
@@ -28,8 +29,15 @@ export async function SiteFooter({ site, categories }: { site: SiteView; categor
           {(site.csWhatsapp || site.csEmail) && (
             <div className="flex flex-col">
               {site.csWhatsapp && (
-                <a href={`https://wa.me/${site.csWhatsapp}`} aria-label={`WhatsApp +${site.csWhatsapp}`} className={LINK}>
-                  <WhatsAppIcon className="size-4 shrink-0" />+{site.csWhatsapp}
+                <a
+                  href={whatsappUrl(site.csWhatsapp, site.name)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`WhatsApp ${localPhone(site.csWhatsapp)} (tab baru)`}
+                  className={LINK}
+                >
+                  <WhatsAppIcon className="size-4 shrink-0" />
+                  {localPhone(site.csWhatsapp)}
                 </a>
               )}
               {site.csEmail && (
@@ -61,7 +69,7 @@ export async function SiteFooter({ site, categories }: { site: SiteView; categor
       </div>
       <div className="border-t border-stone-800">
         <p className="mx-auto w-full max-w-6xl px-4 py-5 text-center text-[0.7875rem] text-stone-400">
-          © {year} {site.name}. Hak Cipta Dilindungi.
+          Copyright © {year} {site.name}.
         </p>
       </div>
     </footer>
