@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
@@ -303,17 +304,21 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
             ) : (
               <section id={`${uid}-methods`} className="flex scroll-mt-24 flex-col gap-5 rounded-lg border border-border bg-surface p-4 sm:p-5">
                 {qris && (
-                  <fieldset className="flex flex-col gap-2">
-                    <legend className="mb-2 text-lg font-bold text-text">QRIS</legend>
-                    <MethodOption uid={uid} id={qris.key} label="QRIS (semua e-wallet dan m-banking)" checked={method === qris.key} onSelect={setMethod} />
+                  <fieldset>
+                    <legend className="mb-3 text-lg font-bold text-text">QRIS</legend>
+                    <div className={METHOD_GRID}>
+                      <MethodOption uid={uid} id={qris.key} brand="QRIS" caption="E‑wallet & m‑banking" checked={method === qris.key} onSelect={setMethod} />
+                    </div>
                   </fieldset>
                 )}
                 {banks.length > 0 && (
-                  <fieldset className="flex flex-col gap-2">
-                    <legend className="mb-2 text-lg font-bold text-text">Transfer Bank</legend>
-                    {banks.map((b) => (
-                      <MethodOption key={b.key} uid={uid} id={b.key} label={`Virtual Account ${b.label}`} checked={method === b.key} onSelect={setMethod} />
-                    ))}
+                  <fieldset>
+                    <legend className="mb-3 text-lg font-bold text-text">Transfer Bank</legend>
+                    <div className={METHOD_GRID}>
+                      {banks.map((b) => (
+                        <MethodOption key={b.key} uid={uid} id={b.key} brand={b.label} caption="Virtual Account" checked={method === b.key} onSelect={setMethod} />
+                      ))}
+                    </div>
                   </fieldset>
                 )}
               </section>
@@ -537,16 +542,48 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
   );
 }
 
-function MethodOption({ uid, id, label, checked, onSelect }: { uid: string; id: string; label: string; checked: boolean; onSelect: (key: string) => void }) {
+const METHOD_GRID = "grid grid-cols-2 gap-3 sm:grid-cols-4";
+
+/** Brand logos are drawn for a white ground, so the plate stays white in dark mode too. */
+function MethodOption({
+  uid,
+  id,
+  brand,
+  caption,
+  checked,
+  onSelect,
+}: {
+  uid: string;
+  id: string;
+  brand: string;
+  caption: string;
+  checked: boolean;
+  onSelect: (key: string) => void;
+}) {
   return (
     <label
       htmlFor={`${uid}-method-${id}`}
-      className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-md border px-3 py-2 text-sm font-medium text-text ${
-        checked ? "border-accent bg-accent-soft" : "border-border-strong hover:bg-surface-muted"
+      className={`relative flex cursor-pointer flex-col gap-2 rounded-lg border p-2 transition-colors has-focus-visible:ring-2 has-focus-visible:ring-accent ${
+        checked ? "border-accent bg-accent-soft ring-1 ring-accent" : "border-border-strong hover:bg-surface-muted"
       }`}
     >
-      <input id={`${uid}-method-${id}`} type="radio" name={`${uid}-payment-method`} checked={checked} onChange={() => onSelect(id)} className="size-5 accent-accent" />
-      {label}
+      <input
+        id={`${uid}-method-${id}`}
+        type="radio"
+        name={`${uid}-payment-method`}
+        checked={checked}
+        onChange={() => onSelect(id)}
+        className="sr-only"
+      />
+      <span className="flex h-14 items-center justify-center rounded-md bg-white px-3">
+        <Image src={`/payment-logos/${id}.svg`} alt={brand} width={120} height={40} className="h-7 w-auto max-w-full object-contain" />
+      </span>
+      <span className="px-1 pb-0.5 text-center text-xs font-medium leading-snug text-text sm:text-sm">{caption}</span>
+      {checked && (
+        <span aria-hidden className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-accent text-on-accent">
+          <CheckIcon className="size-4" />
+        </span>
+      )}
     </label>
   );
 }
