@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { CalendarIcon, ClockIcon, ExternalLinkIcon, MapPinIcon } from "@/components/icons";
+import { LinkPending } from "@/components/link-pending";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { getEnv } from "@/lib/env";
@@ -215,8 +216,9 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
                 </p>
               )}
               {buyable ? (
-                <Link href={`/events/${event.slug}/tickets`} className={`${buttonClass()} mt-4 w-full`}>
+                <Link href={`/events/${event.slug}/tickets`} className={`${buttonClass()} relative mt-4 w-full`}>
                   Pesan Sekarang
+                  <LinkPending />
                 </Link>
               ) : (
                 <p className="mt-4 rounded-md bg-surface-muted px-3 py-2.5 text-sm font-semibold text-text">{saleNote(event)}</p>

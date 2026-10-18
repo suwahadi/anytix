@@ -159,3 +159,12 @@ body {
     transform: translateY(0);
   }
 }
+
+@keyframes pending-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

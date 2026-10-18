@@ -12,6 +12,7 @@ import { CheckIcon, ClockIcon, CloseIcon } from "@/components/icons";
 import { TurnstileWidget, type TurnstileHandle } from "@/components/turnstile-widget";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonClass } from "@/components/ui/button";
+import { PendingOverlay } from "@/components/ui/pending-overlay";
 import { Dialog } from "@/components/ui/dialog";
 import { Field, Select } from "@/components/ui/field";
 import { buyerInput, COUNTRY_CODES, normalizePhone } from "@/lib/booking/buyer";
@@ -435,6 +436,8 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
             </p>
           )}
         </div>
+
+        <PendingOverlay show={paying} label="Membuat pesanan…" />
 
         <Dialog open={promoOpen} onClose={() => setPromoOpen(false)} title="Kode Promo">
           <form onSubmit={applyPromo} className="flex flex-col gap-3" noValidate>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { buttonClass } from "@/components/ui/button";
+import { LoadingState } from "@/components/ui/loading-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getHoldView } from "@/lib/booking/hold-view";
 import { getEnv } from "@/lib/env";
@@ -35,9 +36,10 @@ export default function CheckoutPage({ params }: PageProps<"/checkout/[holdId]">
   return (
     <Suspense
       fallback={
-        <div aria-busy="true" aria-label="Memuat pesanan" className="mx-auto grid w-full max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:py-10">
+        <div aria-busy="true" className="relative mx-auto grid w-full max-w-6xl gap-6 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:py-10">
           <Skeleton className="h-96" />
           <Skeleton className="h-72" />
+          <LoadingState label="Menyiapkan pesanan…" />
         </div>
       }
     >

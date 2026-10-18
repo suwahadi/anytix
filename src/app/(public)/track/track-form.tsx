@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { MailIcon, TicketIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
+import { PendingOverlay } from "@/components/ui/pending-overlay";
 import { Toast, type ToastMessage } from "@/components/ui/toast";
 import { requestJson } from "@/lib/client-fetch";
 
@@ -17,6 +18,13 @@ export function TrackForm() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const closeToast = useCallback(() => setToast(null), []);
+
+  useEffect(
+    () => () => {
+      setLoading(false);
+    },
+    [],
+  );
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -79,6 +87,7 @@ export function TrackForm() {
         </Button>
       </form>
       <Toast toast={toast} onClose={closeToast} />
+      <PendingOverlay show={loading} label="Mencari pesanan…" />
     </>
   );
 }

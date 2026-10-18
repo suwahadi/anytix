@@ -289,3 +289,12 @@ export function AlertCircleIcon({ className }: { className?: string }) {
     </Svg>
   );
 }
+
+export function HelpCircleIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.5 9.5a2.5 2.5 0 0 1 4.9.7c0 1.7-2.4 2.1-2.4 3.6M12 17h.01" />
+    </Svg>
+  );
+}
