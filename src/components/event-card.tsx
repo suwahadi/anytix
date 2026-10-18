@@ -4,7 +4,8 @@ import { CalendarIcon } from "@/components/icons";
 import { formatCardDate, formatRupiah } from "@/lib/format";
 import type { PublicEventCard } from "@/lib/public/catalog-queries";
 
-export function EventCard({ event, preload = false }: { event: PublicEventCard; preload?: boolean }) {
+/** `eager` loads the poster at high priority without a head preload: in a responsive grid the first card is not reliably the LCP, so a preload often goes unused. */
+export function EventCard({ event, eager = false }: { event: PublicEventCard; eager?: boolean }) {
   return (
     <article className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-surface transition-colors hover:border-border-strong">
       <div className="relative aspect-video bg-surface-muted">
@@ -14,7 +15,8 @@ export function EventCard({ event, preload = false }: { event: PublicEventCard; 
             alt=""
             fill
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-            preload={preload}
+            loading={eager ? "eager" : undefined}
+            fetchPriority={eager ? "high" : undefined}
             className="object-cover"
           />
         )}

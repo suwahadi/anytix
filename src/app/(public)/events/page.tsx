@@ -66,7 +66,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/events">["s
           </p>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {result.items.map((event, i) => (
-              <EventCard key={event.id} event={event} preload={i === 0} />
+              <EventCard key={event.id} event={event} eager={i === 0} />
             ))}
           </div>
           {pages > 1 && (
