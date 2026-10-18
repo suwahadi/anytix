@@ -1,5 +1,8 @@
 import { findAdminByEmail, setTotpSecret } from "@/lib/admin-service";
 import { sql } from "@/lib/db";
+import { assertDbWriteAllowed } from "@/lib/db-guard";
+
+assertDbWriteAllowed(process.env, "reset-2fa");
 
 async function main() {
   const email = process.argv[2];

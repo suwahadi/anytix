@@ -1,6 +1,9 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createSql, transaction } from "@/lib/db";
+import { assertDbWriteAllowed } from "@/lib/db-guard";
+
+assertDbWriteAllowed(process.env, "migrate");
 
 const dir = join(process.cwd(), "db", "migrations");
 

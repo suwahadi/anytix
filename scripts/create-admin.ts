@@ -1,6 +1,9 @@
 import { createInterface } from "node:readline";
 import { createAdmin, MIN_PASSWORD_LENGTH } from "@/lib/admin-service";
 import { sql } from "@/lib/db";
+import { assertDbWriteAllowed } from "@/lib/db-guard";
+
+assertDbWriteAllowed(process.env, "create-admin");
 
 function askHidden(question: string): Promise<string> {
   return new Promise((resolve) => {
