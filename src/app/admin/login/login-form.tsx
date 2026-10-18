@@ -84,7 +84,6 @@ export function LoginForm() {
         label="Email"
         type="email"
         autoComplete="username"
-        placeholder="email@domain.com"
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -100,7 +99,7 @@ export function LoginForm() {
       />
       {error && <Alert>{error}</Alert>}
       <Button type="submit" loading={loading} disabled={!email || !password}>
-        Masuk
+        Login
       </Button>
     </form>
   );
