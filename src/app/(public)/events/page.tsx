@@ -36,6 +36,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/events">["s
   const q = first(params.q);
   const category = first(params.category);
   const page = Math.max(1, Number.parseInt(first(params.page), 10) || 1);
+  const focusSearch = first(params.fokus) === "cari";
   const [result, categories] = await Promise.all([
     searchPublicEvents({ q: q || undefined, category: category || undefined, page }),
     getPublicCategories(),
@@ -59,7 +60,15 @@ async function Results({ searchParams }: { searchParams: PageProps<"/events">["s
           <label htmlFor="q" className="text-sm font-medium text-text">
             Cari
           </label>
-          <input id="q" name="q" type="search" defaultValue={q} placeholder="Nama event, kota, atau venue" className={`${fieldClass} placeholder:text-muted`} />
+          <input
+            id="q"
+            name="q"
+            type="search"
+            defaultValue={q}
+            autoFocus={focusSearch}
+            placeholder="Nama event, kota, atau venue"
+            className={`${fieldClass} placeholder:text-muted`}
+          />
         </div>
         <div className="flex flex-col gap-1.5 sm:w-56">
           <label htmlFor="category" className="text-sm font-medium text-text">

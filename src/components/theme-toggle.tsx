@@ -75,10 +75,9 @@ export function ThemeToggle() {
       onClick={cycle}
       aria-label={`Tema: ${LABELS[mode]}. Ketuk untuk mengganti.`}
       title={`Tema: ${LABELS[mode]}`}
-      className="inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm text-text hover:bg-surface-muted"
+      className="inline-flex size-11 items-center justify-center rounded-md text-text hover:bg-surface-muted"
     >
       <Icon mode={mode} />
-      <span className="hidden sm:inline">{LABELS[mode]}</span>
     </button>
   );
 }
