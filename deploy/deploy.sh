@@ -4,7 +4,9 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 git pull --ff-only
-npm ci
+npm ci --no-audit --no-fund
+# Only production dependencies reach the site; dev tooling advisories (eslint plugins) are not a deploy blocker.
+npm audit --omit=dev --audit-level=high
 DB_WRITE_ALLOWED=true npm run db:migrate
 npm run build
 pm2 reload deploy/ecosystem.config.cjs --update-env || pm2 start deploy/ecosystem.config.cjs
