@@ -13,10 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function TrackPage() {
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6 px-4 py-10 lg:py-16">
-      <div className="flex flex-col gap-2 text-center">
-        <h1 className="text-2xl font-extrabold tracking-tight text-text sm:text-3xl">Lacak Pesanan</h1>
-        <p className="text-muted">Kode pesanan ada di email konfirmasi, diawali huruf A.</p>
-      </div>
+      <h1 className="text-center text-2xl font-extrabold tracking-tight text-text sm:text-3xl">Lacak Pesanan</h1>
       <TrackForm />
     </div>
   );

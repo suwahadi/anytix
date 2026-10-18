@@ -6,14 +6,12 @@ import { MailIcon, TicketIcon } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Toast, type ToastMessage } from "@/components/ui/toast";
 import { requestJson } from "@/lib/client-fetch";
-import { useWide } from "@/lib/use-wide";
 
 const FIELD = "h-12 w-full min-w-0 rounded-md border border-border-strong bg-surface pl-10 pr-3 text-base text-text placeholder:text-muted";
 const ICON = "pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-muted";
 
 export function TrackForm() {
   const router = useRouter();
-  const wide = useWide();
   const [invoice, setInvoice] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,7 +52,7 @@ export function TrackForm() {
             autoCapitalize="characters"
             spellCheck={false}
             maxLength={20}
-            placeholder={wide ? "Kode pesanan, contoh A1B2C3D4E" : "Kode pesanan"}
+            placeholder="Kode pesanan"
             className={`${FIELD} font-mono uppercase placeholder:font-sans placeholder:normal-case`}
           />
         </div>
@@ -72,7 +70,7 @@ export function TrackForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             maxLength={254}
-            placeholder={wide ? "Email yang dipakai saat memesan" : "Email pemesan"}
+            placeholder="Alamat email"
             className={FIELD}
           />
         </div>
