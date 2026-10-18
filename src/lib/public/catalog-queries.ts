@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { sql } from "@/lib/db";
+import { PRICE_OPTIONS, type PriceFilter, type SortOrder, type WhenFilter } from "@/lib/public/event-filters";
 import { eventTag, TAG_CATEGORIES, TAG_EVENTS, TAG_SITE } from "@/lib/public-cache";
 import { getSettingsGroup, type SiteView } from "@/lib/settings-service";
 import { ticketBadge, type TicketBadge } from "@/lib/ticket-status";
@@ -60,12 +61,40 @@ export type PublicEvent = PublicEventCard & {
 
 export type PublicCategory = { id: number; name: string; slug: string; icon: string | null; eventCount: number };
 
+function minPrice() {
+  return sql`(select min(tc.price) from ticket_categories tc where tc.event_id = e.id and tc.status = 'active')`;
+}
+
 function cardColumns() {
   return sql`
     e.id, e.slug, e.title, e.poster_path as "posterPath", e.starts_at as "startsAt", e.ends_at as "endsAt",
     e.timezone, e.city, e.venue, e.organizer_name as "organizerName", e.organizer_logo_path as "organizerLogoPath",
-    (select min(tc.price) from ticket_categories tc where tc.event_id = e.id and tc.status = 'active') as "minPrice",
+    ${minPrice()} as "minPrice",
     c.slug as "categorySlug", c.name as "categoryName"`;
+}
+
+/** Upper bound on starts_at, so events already running still match. "Hari ini" ends at midnight WIB, the catalogue's home timezone. */
+function startsBefore(when: WhenFilter) {
+  if (when === "hari-ini") return sql`(date_trunc('day', now() at time zone 'Asia/Jakarta') + interval '1 day') at time zone 'Asia/Jakarta'`;
+  return when === "pekan-ini" ? sql`now() + interval '7 days'` : sql`now() + interval '30 days'`;
+}
+
+function orderBy(sort: SortOrder) {
+  if (sort === "terbaru") return sql`e.created_at desc, e.id desc`;
+  if (sort === "termurah") return sql`"minPrice" asc nulls last, e.starts_at, e.id`;
+  if (sort === "termahal") return sql`"minPrice" desc nulls last, e.starts_at, e.id`;
+  return sql`e.starts_at, e.id`;
+}
+
+export async function getPublicCities(): Promise<string[]> {
+  "use cache";
+  cacheLife(PUBLIC_CACHE);
+  cacheTag(TAG_EVENTS);
+  const rows = await sql<{ city: string }[]>`
+    select distinct e.city from events e
+     where e.status = 'published' and e.ends_at > now() and e.city <> ''
+     order by e.city`;
+  return rows.map((r) => r.city);
 }
 
 export async function getPublicCategories(): Promise<PublicCategory[]> {
@@ -108,6 +137,10 @@ export async function getHomeEvents(): Promise<{ featured: PublicEventCard[]; be
 export async function searchPublicEvents(params: {
   category?: string;
   q?: string;
+  city?: string;
+  when?: WhenFilter | "";
+  price?: PriceFilter | "";
+  sort?: SortOrder;
   page: number;
 }): Promise<{ items: PublicEventCard[]; total: number; pageSize: typeof SEARCH_PAGE_SIZE }> {
   "use cache";
@@ -116,15 +149,20 @@ export async function searchPublicEvents(params: {
   const q = params.q?.trim();
   const pattern = q ? `%${q.replace(/[\\%_]/g, (m) => `\\${m}`)}%` : null;
   const page = Math.min(Math.max(1, Math.floor(params.page) || 1), 10_000);
+  const band = PRICE_OPTIONS.find((o) => o.value === params.price);
   const matches = () => sql`
     from events e join event_categories c on c.id = e.event_category_id
    where e.status = 'published' and e.ends_at > now()
      ${params.category ? sql`and c.slug = ${params.category}` : sql``}
-     ${pattern ? sql`and (e.title ilike ${pattern} or e.city ilike ${pattern} or e.venue ilike ${pattern})` : sql``}`;
+     ${params.city ? sql`and e.city = ${params.city}` : sql``}
+     ${pattern ? sql`and (e.title ilike ${pattern} or e.city ilike ${pattern} or e.venue ilike ${pattern})` : sql``}
+     ${params.when ? sql`and e.starts_at < ${startsBefore(params.when)}` : sql``}
+     ${band?.min != null ? sql`and ${minPrice()} >= ${band.min}` : sql``}
+     ${band?.max != null ? sql`and ${minPrice()} < ${band.max}` : sql``}`;
   const [items, [{ total }]] = await Promise.all([
     sql<PublicEventCard[]>`
       select ${cardColumns()} ${matches()}
-       order by e.starts_at, e.id
+       order by ${orderBy(params.sort ?? "terdekat")}
        limit ${SEARCH_PAGE_SIZE} offset ${(page - 1) * SEARCH_PAGE_SIZE}`,
     sql<{ total: number }[]>`select count(*) as total ${matches()}`,
   ]);

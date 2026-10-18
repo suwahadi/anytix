@@ -116,3 +116,11 @@ export function ChatIcon({ className }: { className?: string }) {
     </Svg>
   );
 }
+
+export function FilterIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M4 5h16l-6 7.5V19l-4-2v-4.5L4 5z" />
+    </Svg>
+  );
+}

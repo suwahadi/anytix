@@ -4,7 +4,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { GET as availabilityRoute } from "@/app/api/events/[slug]/availability/route";
 import { sql } from "@/lib/db";
 import { reserveTickets } from "@/lib/hold-service";
-import { getHomeEvents, getPublicEvent, getPublishedSlugs, resolvePublicSlug, searchPublicEvents } from "@/lib/public/catalog-queries";
+import { getHomeEvents, getPublicCities, getPublicEvent, getPublishedSlugs, resolvePublicSlug, searchPublicEvents } from "@/lib/public/catalog-queries";
 import { cleanupTestEvents, createTestEvent } from "./helpers";
 
 afterAll(async () => {
@@ -70,6 +70,32 @@ describe("public catalog queries", () => {
     expect((await searchPublicEvents({ q: token, category: cat.slug, page: 1 })).total).toBe(1);
     expect((await searchPublicEvents({ q: token, category: other.slug, page: 1 })).total).toBe(0);
     expect((await searchPublicEvents({ q: "%", page: 1 })).items.every((e) => e.title.includes("%") || e.city.includes("%") || e.venue.includes("%"))).toBe(true);
+  });
+
+  it("search filters by city, time window and price, and sorts", async () => {
+    const city = `Kota ${randomUUID().slice(0, 8)}`;
+    const make = async (price: number, startsIn: string, endsIn: string) => {
+      const { eventId } = await createTestEvent({ categories: [{ price, capacity: 10 }] });
+      await sql`update events set city = ${city}, starts_at = now() + ${startsIn}::interval, ends_at = now() + ${endsIn}::interval where id = ${eventId}`;
+      return eventId;
+    };
+    const cheap = await make(50000, "3 days", "4 days");
+    const ongoing = await make(300000, "-1 hour", "8 days");
+    const pricey = await make(800000, "20 days", "21 days");
+    const ids = async (p: Partial<Parameters<typeof searchPublicEvents>[0]>) => (await searchPublicEvents({ city, page: 1, ...p })).items.map((e) => e.id);
+
+    expect(await getPublicCities()).toContain(city);
+    expect(await ids({})).toEqual([ongoing, cheap, pricey]);
+    expect(await ids({ when: "hari-ini" })).toEqual([ongoing]);
+    expect(await ids({ when: "pekan-ini" })).toEqual([ongoing, cheap]);
+    expect(await ids({ when: "bulan-ini" })).toEqual([ongoing, cheap, pricey]);
+    expect(await ids({ price: "di-bawah-100rb" })).toEqual([cheap]);
+    expect(await ids({ price: "100rb-500rb" })).toEqual([ongoing]);
+    expect(await ids({ price: "di-atas-500rb" })).toEqual([pricey]);
+    expect(await ids({ sort: "termurah" })).toEqual([cheap, ongoing, pricey]);
+    expect(await ids({ sort: "termahal" })).toEqual([pricey, ongoing, cheap]);
+    expect(await ids({ sort: "terbaru" })).toEqual([pricey, ongoing, cheap]);
+    await sql`update events set status = 'archived' where id = any(${[cheap, ongoing, pricey]})`;
   });
 
   it("a page number from the URL far past the end gives an empty page, not an error", async () => {

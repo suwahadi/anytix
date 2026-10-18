@@ -1,19 +1,25 @@
 import type { Metadata } from "next";
-import Form from "next/form";
 import Link from "next/link";
 import { Suspense } from "react";
 import { EventCard } from "@/components/event-card";
 import { FocusOnMount } from "@/components/focus-on-mount";
 import { buttonClass } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getPublicCategories, searchPublicEvents } from "@/lib/public/catalog-queries";
+import { getPublicCategories, getPublicCities, searchPublicEvents } from "@/lib/public/catalog-queries";
+import { activeFilterCount, eventsHref, parseEventFilters, type PriceFilter, type WhenFilter } from "@/lib/public/event-filters";
+import { EventFilterBar } from "./event-filter-bar";
 
 export const metadata: Metadata = {
   title: "Jelajah event",
   description: "Daftar event yang tiketnya sedang atau akan dijual.",
 };
 
-const fieldClass = "h-11 min-w-0 rounded-md border border-border-strong bg-surface px-3 text-base text-text";
+const WHEN_PHRASE: Record<WhenFilter, string> = { "hari-ini": "hari ini", "pekan-ini": "dalam 7 hari ke depan", "bulan-ini": "dalam 30 hari ke depan" };
+const PRICE_PHRASE: Record<PriceFilter, string> = {
+  "di-bawah-100rb": "dengan harga di bawah Rp100.000",
+  "100rb-500rb": "dengan harga Rp100.000 – Rp500.000",
+  "di-atas-500rb": "dengan harga di atas Rp500.000",
+};
 
 function first(value: string | string[] | undefined): string {
   return (Array.isArray(value) ? value[0] : value)?.trim() ?? "";
@@ -34,59 +40,22 @@ function ResultsSkeleton() {
 
 async function Results({ searchParams }: { searchParams: PageProps<"/events">["searchParams"] }) {
   const params = await searchParams;
-  const q = first(params.q);
-  const category = first(params.category);
-  const page = Math.max(1, Number.parseInt(first(params.page), 10) || 1);
+  const filters = parseEventFilters(params);
+  const { q, page } = filters;
   const focusSearch = first(params.fokus) === "cari";
-  const [result, categories] = await Promise.all([
-    searchPublicEvents({ q: q || undefined, category: category || undefined, page }),
+  const [result, categories, cities] = await Promise.all([
+    searchPublicEvents({ ...filters, q: q || undefined, category: filters.category || undefined, city: filters.city || undefined }),
     getPublicCategories(),
+    getPublicCities(),
   ]);
-  const categoryName = categories.find((c) => c.slug === category)?.name;
+  const categoryName = categories.find((c) => c.slug === filters.category)?.name;
   const pages = Math.max(1, Math.ceil(result.total / result.pageSize));
-  const hrefFor = (p: number) => {
-    const search = new URLSearchParams();
-    if (q) search.set("q", q);
-    if (category) search.set("category", category);
-    if (p > 1) search.set("page", String(p));
-    const s = search.toString();
-    return s ? `/events?${s}` : "/events";
-  };
-  const filtered = Boolean(q || category);
+  const hrefFor = (p: number) => eventsHref({ ...filters, page: p });
+  const filtered = Boolean(q || activeFilterCount(filters));
 
   return (
     <div className="flex flex-col gap-6">
-      <Form action="/events" role="search" className="flex flex-col gap-2 sm:flex-row sm:items-end">
-        <div className="flex flex-1 flex-col gap-1.5">
-          <label htmlFor="q" className="text-sm font-medium text-text">
-            Cari
-          </label>
-          <input
-            id="q"
-            name="q"
-            type="search"
-            defaultValue={q}
-            placeholder="Nama event, kota, atau venue"
-            className={`${fieldClass} placeholder:text-muted`}
-          />
-        </div>
-        <div className="flex flex-col gap-1.5 sm:w-56">
-          <label htmlFor="category" className="text-sm font-medium text-text">
-            Kategori
-          </label>
-          <select id="category" name="category" defaultValue={category} className={fieldClass}>
-            <option value="">Semua kategori</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.slug}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button type="submit" className={buttonClass()}>
-          Terapkan
-        </button>
-      </Form>
+      <EventFilterBar filters={filters} categories={categories} cities={cities} />
       {focusSearch && <FocusOnMount id="q" />}
 
       {result.items.length > 0 ? (
@@ -124,7 +93,10 @@ async function Results({ searchParams }: { searchParams: PageProps<"/events">["s
               <p className="text-text">
                 Tidak ada event
                 {q && <> untuk &ldquo;{q}&rdquo;</>}
-                {categoryName && <> di kategori {categoryName}</>}.
+                {categoryName && <> di kategori {categoryName}</>}
+                {filters.city && <> di {filters.city}</>}
+                {filters.when && <> {WHEN_PHRASE[filters.when]}</>}
+                {filters.price && <> {PRICE_PHRASE[filters.price]}</>}.
               </p>
               <Link href="/events" className={buttonClass("secondary")}>
                 Hapus filter
