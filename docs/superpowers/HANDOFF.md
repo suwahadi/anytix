@@ -1,16 +1,16 @@
 # Serah terima pengerjaan Anytix
 
-Terakhir diperbarui: 17 Oktober 2026, di akhir Fase 2. Dokumen ini untuk agent AI berikutnya. Baca seluruhnya sebelum menulis kode.
+Terakhir diperbarui: 18 Oktober 2026, di akhir Fase 3. Dokumen ini untuk agent AI berikutnya. Baca seluruhnya sebelum menulis kode.
 
 ## Sumber kebenaran
 
 - `PRD.md`: kebutuhan produk.
 - `docs/superpowers/specs/2026-10-17-anytix-mvp-design.md`: keputusan desain yang disetujui pemilik, termasuk arah visual dan dial `ENERGY 1 / RHYTHM 2 / MOTION 1`.
-- `docs/superpowers/plans/2026-10-17-fase-0-fondasi.md`, `…-fase-1-katalog-admin.md`, `…-fase-2-booking-inti.md`: tiga fase yang sudah selesai. Kotak centang di file plan tidak diperbarui; status sebenarnya ada di dokumen ini.
-- `anti-slop/audit-001-2026-10-17.md` (halaman publik) dan `anti-slop/audit-002-2026-10-17.md` (booking, pesanan, Pesanan admin): Delivery Gate bersih. Temuan LOW nomor 1 di audit 002 menunggu keputusan pemilik.
+- `docs/superpowers/plans/2026-10-17-fase-0-fondasi.md`, `…-fase-1-katalog-admin.md`, `…-fase-2-booking-inti.md`, `…-fase-3-hari-h.md`: empat fase yang sudah selesai. Kotak centang di file plan tidak diperbarui; status sebenarnya ada di dokumen ini.
+- `anti-slop/audit-001-2026-10-17.md` (halaman publik), `audit-002-2026-10-17.md` (booking, pesanan), dan `audit-003-2026-10-18.md` (layar Hari-H): Delivery Gate bersih. Temuan LOW yang menunggu keputusan pemilik: nomor 1 di audit 002, nomor 1–3 di audit 003.
 - `AGENTS.md`: aturan proyek dan aturan pemilik.
 
-Ruang lingkup yang disepakati adalah Fase 0–3. Pengerjaan berhenti di akhir tiap fase.
+Ruang lingkup yang disepakati adalah Fase 0–3, dan keempatnya sudah selesai. Fase 4 (go-live produksi) di luar putaran ini kecuali pemilik memintanya.
 
 ## Status
 
@@ -18,77 +18,121 @@ Ruang lingkup yang disepakati adalah Fase 0–3. Pengerjaan berhenti di akhir ti
 |---|---|
 | Fase 0 (fondasi, engine anti-oversell, worker) | Selesai dan di-push |
 | Fase 1 (katalog, admin, halaman publik) | Selesai dan di-push |
-| Fase 2 (booking inti) | Selesai: 12 task, uji sandbox Midtrans end-to-end, review menyeluruh (4 temuan Important diperbaiki), audit antislop 002, lalu di-push |
-| Fase 3 | Belum ada plan |
+| Fase 2 (booking inti) | Selesai dan di-push |
+| Fase 3 (Hari-H) | Selesai: 13 task, review menyeluruh (3 temuan Important diperbaiki dengan RED→GREEN, 7 Minor ditunda), audit antislop 003, lalu di-push |
 
-Hasil test terakhir: `npm test` 124 lulus, `npm run test:db` 182 lulus, `lint`, `tsc` dan `build` bersih.
+Hasil test terakhir: `npm test` 143 lulus, `npm run test:db` 233 lulus, `lint`, `tsc` dan `build` bersih.
 
 ## Langkah berikutnya
 
-1. Pemilik: izinkan IP mesin dev di Brevo (Security → Authorised IPs). Saat ini SMTP menolak dengan `525 5.7.1 Unauthorized IP address`, jadi email sungguhan belum pernah terbukti sampai ke kotak masuk. Setelah itu, kirim satu email transaksional uji dan catat hasilnya.
-2. Pemilik: ganti email admin `admin@admin.com` ke alamat asli. Alert admin (pembayaran terlambat, selisih kuota) dikirim ke semua admin aktif, dan `admin.com` adalah domain milik pihak lain. Sampai diganti, jangan jalankan worker di lingkungan yang menerima pembayaran sungguhan.
-3. Buat plan Fase 3 dari PRD (§13, §14 PDP, §15, §16, §21 k6) dan spec §4 baris "3. Hari-H": e-ticket QR + PDF, scanner PWA + riwayat + statistik, voucher (CRUD, generator massal, modal promo "Lebih hemat pakai promo"), ekspor CSV, kontrol PDP (buka penuh + audit log, retensi 60 hari), dasbor penjualan, audit log, kelola admin, skrip k6. Masukkan "Bawaan untuk Fase 3" di bawah. Jalankan task per task dengan TDD.
-4. Di akhir fase: checkpoint seperti Task 12 Fase 2, lalu commit dan push ke `main`.
+1. **Pemilik: ganti email `admin@admin.com`.** Caranya lewat panel `/admin/admins` → Ganti email (atau tambah admin baru lalu nonaktifkan yang lama). Alert admin dikirim ke semua admin aktif, dan `admin.com` adalah domain milik pihak lain. Sampai diganti, worker jangan dijalankan di lingkungan yang menerima pembayaran sungguhan.
+2. **Pemilik: perbaiki `SMTP_FROM` di `.env.local`.** Formatnya harus `AnyTix <alamat@gmail.com>`. Nilai di panel (`settings.smtp`) sudah benar dan dipakai lebih dulu.
+3. **Pemilik: putuskan temuan LOW** di audit 002 (nomor 1) dan audit 003 (nomor 1–3).
+4. **Uji di perangkat sungguhan (belum dilakukan).** Kamera di sesi agent selalu tiruan.
+   - Buka `/admin/check-in` di ponsel lewat tunnel HTTPS (ngrok), pasang sebagai PWA, lalu scan QR dari halaman pesanan dan dari PDF cetak.
+   - Uji juga QRIS sungguhan (harus "TIDAK VALID"), dan tahan satu tiket di depan kamera ≥ 3 detik (harus tetap hijau sekali, tanpa merah).
+5. **Bila pemilik meminta Fase 4:**
+   - Midtrans produksi.
+   - Autentikasi domain email (DKIM, DMARC) dan paket Brevo berbayar.
+   - Runbook dan uji restore.
+   - Uji beban k6 di server dekat region Supabase (lihat "k6" di bawah).
+   - Daftar "Bawaan untuk Fase 4".
 
-## Bawaan untuk Fase 3
+## Bawaan untuk Fase 4
 
-Dari review akhir Fase 2 (Minor, ditunda):
+Dari review akhir Fase 3 (Minor, ditunda):
 
-- Dua request "Beli Sekarang" yang benar-benar bersamaan bisa lolos dari pengecekan replay selagi Turnstile diperiksa, sehingga yang kedua mendapat 403. Pengaman di UI mencegahnya, dan engine mengganti hold sebelumnya. Perbaikan: `Map<visitor:key, Promise>` untuk request yang sedang berjalan (satu instance). Celah yang sama ada di checkout.
-- `ticket-picker.tsx` menghapus `Idempotency-Key` pada setiap kegagalan, termasuk timeout. Pertahankan key-nya bila `status === 0`.
-- Body templat email dimasukkan sebagai HTML mentah (`render-order-email.ts`). Admin yang mengetik `<` atau `&` merusak email. Perbaikan: `fillPlaceholders(escapeHtml(template.body), vars, true)`.
-- `normalizePhone`: "+62 0812…" dengan pilihan +62 tetap menyimpan angka 0 setelah kode negara. Buang satu angka 0 di depan setelah kode negara dilepas.
-- `apply_payment_status` (Fase 0) menulis `payments.status` walau order tidak berubah, jadi detail admin bisa menampilkan pembayaran "Kedaluwarsa" pada order yang lunas. Jangan pernah menurunkan status `settlement`.
-- Batas per IP (60/menit untuk polling `/api/orders` dan untuk `/api/holds`) bisa terkena NAT operator seluler. Tinjau ulang sebelum peluncuran.
-- Email atau alert admin bisa terkirim dua kali bila pencatatan gagal setelah pengiriman sukses.
-- `verifyTurnstile` tidak memeriksa `hostname` di respons siteverify.
-- HSTS bergantung pada `APP_URL` saat build. Pastikan build produksi memakai `APP_URL` https.
+- `check_in_ticket`: update pemenang hanya mencocokkan `id`. Scan token lama yang sedang berjalan saat reissue bisa lolos. Perbaikan satu baris: `and token = p_token`.
+- Ganti kata sandi dan reset 2FA tidak mencabut sesi yang sudah ada (cookie stateless, 12 jam). Perlu kolom `session_version` yang dicek di `adminFromCookie`.
+- Kolom WhatsApp di CSV terbaca Excel sebagai angka ilmiah (`6.28E+12`).
+- `public/vendor/zxing_reader-3.1.3.wasm` bisa tidak cocok dengan `zxing-wasm` yang terpasang setelah `npm update`. Tambah test versi, dan pesan error terpisah bila detector gagal dimuat (sekarang tampil "Kamera tidak tersedia").
+- PDF: kata yang lebih lebar dari halaman tidak dipotong, dan judul ≥ 5 baris mendorong QR ke footer.
+- Tombol konfirmasi "Terbitkan ulang QR" belum bergaya `danger`.
+- `removePromo` di checkout: bila quote ulang gagal, total lama yang masih terdiskon tetap tampil, padahal order tetap ditagih dengan benar.
 
-Sisa bawaan dari Fase 1, belum dikerjakan:
+Sisa dari fase sebelumnya:
 
-- `smtp/test/route.ts`: `site.name` masuk ke HTML email tanpa di-escape.
-- `mediaPath` di `validation/catalog.ts` menerima string apa saja. Validasi dengan format hasil upload.
-- FK violation masih menjadi 500: `eventCategoryId` yang tidak ada, dan reserve yang masuk di antara cek `everReserved` dan delete di `removeTicketCategory`.
-- `src/app/layout.tsx` memakai template judul tetap `%s · Anytix`, bukan nama situs dari pengaturan.
-- Rename slug kategori tidak punya redirect, dan event di kategori tersembunyi tetap tampil. Tanyakan ke pemilik bila relevan.
-- Gambar yang diganti atau dihapus tetap tersimpan di Supabase Storage.
+- Batas per IP (60/menit untuk `/api/holds` dan polling `/api/orders`) bisa terkena NAT operator seluler. Batas yang sama juga menahan k6 bila dijalankan dari satu mesin.
+- Email atau alert admin bisa terkirim dua kali bila pencatatan gagal setelah pengiriman sukses (at-least-once).
+- HSTS bergantung pada `APP_URL` saat build. Build produksi harus memakai `APP_URL` https.
+- Rename slug kategori event tidak punya redirect, dan event di kategori tersembunyi tetap tampil. Tanyakan ke pemilik.
 - Di `next dev`, setiap halaman 404 memuat ulang dirinya sendiri. Di `next start` tidak terjadi.
 
-## Keputusan Fase 2 di luar teks plan
+## Keputusan Fase 3 di luar teks plan
 
-- Midtrans dipanggil dengan `fetch` biasa (`src/lib/payments/midtrans.ts`), bukan `midtrans-client`. Setiap fungsi menerima `MidtransConfig` opsional supaya bisa diuji.
-- Core API Midtrans menjawab HTTP 200 dengan hasil sebenarnya di `body.status_code` (terbukti di sandbox: transaksi yang tidak ada dijawab 200 + `status_code: "404"`). Kode ≥ 400 dianggap gagal, kecuali 404 (tidak ada) dan 407 (jawaban normal untuk transaksi kedaluwarsa).
-- `serverNow` di setiap respons hold dan order diambil dari jam database (`now()`), bukan jam Node, karena `expires_at` dihitung oleh Postgres.
-- Webhook selalu menjawab 200 setelah signature lolos. Kalau sinkronisasi gagal, job `payment-check:<order>:webhook:<ms>` diantrekan 30 detik kemudian.
-- `payment-check` hanya meng-expire order secara lokal setelah lewat `pay_expires_at`, juga ketika Midtrans tidak mengenal transaksinya.
-- Halaman pesanan tetap polling selama status di database masih `awaiting_payment`, termasuk setelah batas bayar. Selama masa itu tampil "Kami sedang memastikan status pembayaran Anda", dan "Pesan lagi" baru muncul setelah status final.
-- Next 16 menyimpan state halaman yang ditinggalkan (Activity). State yang sedang berjalan (`buying`, `paying`, token Turnstile, `Idempotency-Key`) direset di cleanup effect. Semua `id` elemen di `CheckoutFlow` diberi awalan `useId()`, karena instance lama tetap ada di DOM.
-- Kode email dipisah: `templates.ts` dan `render-order-email.ts` bersifat murni (dipakai pratinjau di panel), sedangkan `order-emails.ts` membaca database. Templat dibaca lewat `getSettingsGroup("email_templates")`, digabung dengan teks bawaan.
-- `displayStatus`, `shouldPoll` dan `isFinalizing` ada di `src/lib/booking/order-status.ts` (murni).
-- `Referrer-Policy: no-referrer` untuk `/orders/*` dan `/api/orders/*` dipasang lewat aturan header kedua di `next.config.ts`, karena aturan global menimpa header dari route. Aturan yang belakangan menang untuk key yang sama.
-- Teks catatan QR di halaman pesanan yang LUNAS ("QR e-ticket tampil di sini sebelum hari acara.") disetujui pemilik.
-- Modul Pesanan admin dikerjakan di Fase 2 atas pilihan pemilik.
+- **Token scan diterima sampai 2048 karakter.** QR non-tiket seperti QRIS harus berujung "TIDAK VALID" dan tercatat, bukan 422. `checkin_events.token` menyimpan 64 karakter pertama.
+- **Kolom baru `checkin_events.event_id`** (migrasi 0010). Riwayat per event mencakup scan kode yang tidak dikenal. `cleanupTestEvents` menghapus berdasarkan `event_id`.
+- **Batas scan 600/menit per akun admin.** Petugas gerbang memakai akun admin bersama di beberapa ponsel (PRD §4).
+- **Scanner dan PWA:**
+  - Debounce scanner ada di `src/lib/checkin/scan-gate.ts` (`ScanGate`, `openCamera`): kode yang sama diabaikan 2 detik setelah scanning dilanjutkan, bukan sejak request dikirim.
+  - Native `BarcodeDetector` dipakai bila ada. Bila tidak, ponyfill `barcode-detector` dengan wasm dari `/vendor`; CSP menambah `'wasm-unsafe-eval'`, dan `Permissions-Policy: camera=(self)`.
+  - Manifest PWA berupa route `/checkin.webmanifest` yang hanya ditautkan dari `/admin/check-in`, supaya memasang situs publik tidak membuka scanner admin. Service worker `public/sw.js` hanya install/claim (scope `/admin/`), tanpa cache.
+  - Ikon PWA "A" putih di atas `#C2410C` disetujui pemilik.
+- **Warna scan tetap di kedua tema:** `--color-scan-ok` `#047857`, `--color-scan-bad` `#b91c1c`. Jam scan ditulis `HH:mm` dengan titik dua sesuai copy PRD.
+- **Identitas di scanner** tampil sebagai "KTP 3201********0001". Nomor yang dibuka di detail pesanan hanya ada di state komponen dan dihapus di cleanup effect.
+- **`pageAdmin()`** (`src/lib/admin-page.ts`) wajib dipanggil di setiap server component yang menampilkan data admin. Proxy hanya memeriksa tanda tangan cookie, belum status aktif admin.
+- **Voucher:**
+  - Kode voucher error dari `compute_quote` dipetakan ke teks Indonesia di `src/lib/booking/voucher-errors.ts`.
+  - `UserError` punya argumen ke-4 `code` (dipakai checkout: `{ code: "VOUCHER" }`).
+  - Quote dengan kode promo dibatasi 10/menit per visitor.
+- **Media dan PDF:**
+  - `mediaPath` hanya menerima `poster|logo|icon/YYYY/<12 karakter>`.
+  - Gambar yang diganti dihapus lewat `src/lib/media-cleanup.ts`.
+  - PDF memakai Helvetica. Karakter di luar WinAnsi diganti huruf dasarnya atau `?` (`shortcut:` di `ticket-pdf.ts`).
+- **Ekspor dan retensi:**
+  - CSV: BOM, CRLF, pengaman formula di `src/lib/csv.ts`. Kolom jawaban form hanya muncul bila diekspor per event. Status memakai label panel, metode memakai label pembeli.
+  - Retensi identitas: `purge_identity_numbers()` dijalankan pg_cron `30 19 * * *` UTC (02.30 WIB).
+- **Panel admin:**
+  - Navigasi admin tampil di satu baris mulai `lg`, dan email admin di bar baru tampil mulai `2xl`.
+  - Test "admin aktif terakhir" tidak ditulis, karena database dev memuat admin pemilik yang tidak boleh dinonaktifkan. Guard berupa `UPDATE` bersyarat.
+
+## k6
+
+Skrip ada di `k6/`. Di mesin dev ini hanya dicek dengan `node --check`.
+
+- `k6 run -e BASE_URL=https://… -e EVENT_ID=… -e INVENTORY_ID=… k6/hold-rush.js`: 300 VU, satu hold per VU. Hitung `holds_created` vs `holds_sold_out`.
+- `k6 run -e BASE_URL=… -e SLUG=… k6/event-page.js`: 1.000 VU di halaman event.
+- `k6 run -e BASE_URL=… -e EVENT_ID=… -e TOKENS_FILE=tokens.txt -e ADMIN_COOKIE="anytix_admin=…" k6/checkin.js`: satu token per baris.
+- **Setelah run,** jalankan `select * from reconcile_inventory(false)` (harus kosong) dan pastikan `sold + held <= capacity`.
+- **Dari satu mesin, batas permintaan menahan uji:** 60/menit per IP untuk `/api/holds`, dan 600/menit per admin untuk scan. Naikkan sementara di environment uji atau sebar IP sumber.
 
 ## Lingkungan dan jebakan
 
-- `.env.local` tidak ada di repo. Pastikan namanya `.env.local` (dengan titik). `NEXT_PUBLIC_MEDIA_BASE_URL` = `SUPABASE_URL` + `/storage/v1/object/public/media`. `MIDTRANS_NOTIFICATION_URL` dikosongkan setelah uji; isi ulang setiap kali tunnel baru dibuat.
-- Uji webhook: `ngrok http 3000` (authtoken sudah terpasang di mesin ini), lalu isi `MIDTRANS_NOTIFICATION_URL=https://<tunnel>/api/webhooks/midtrans`, restart `npm run start`, dan jalankan `npm run worker`. Simulator: `https://simulator.sandbox.midtrans.com` (BCA VA di `/bca/va/index`, Mandiri Bill lewat menu "Mandiri Bill" → `/openapi/va/index?bank=mandiri`, isi biller code dan bill key).
-- Get Status sandbox kadang menjawab 404 untuk transaksi yang beberapa menit sebelumnya sudah lunas. Jangan menyimpulkan bug dari satu panggilan sandbox.
-- Nama merchant di popup Snap ("PJHonda") berasal dari akun Midtrans pemilik.
-- Jam Windows harus sinkron (selisih 30 detik membuat 3 test DB gagal). Cek: `curl -sI https://www.google.com | grep -i date` lalu `date -u`. Perbaikan di PowerShell Administrator: `Start-Service w32time; w32tm /resync /force`.
-- Worker memproses semua job di antrean database bersama. Hentikan worker sebelum `npm run test:db`. Periksa penerima job email dan `admin-alert` sebelum menjalankan worker sungguhan.
-- Test yang membuat baris `settings` baru harus menghapusnya di `afterAll` (`settings.test.ts` sudah melakukannya).
-- `next dev` menulis ulang isi blok `<!-- BEGIN:nextjs-agent-rules -->` di `AGENTS.md`. Aturan proyek harus berada di luar blok itu.
-- Database adalah Supabase dev bersama. `DATABASE_URL` memakai pooler `aws-0-ap-southeast-1:6543`, `max_pipeline: 0`, transaksi lewat `transaction()`; untuk SQL ad hoc, `npx tsx --env-file=.env.local scripts/apply-sql.ts <file.sql>`. Parameter postgres.js tidak bisa ditaruh setelah kata kunci `interval`; pakai `make_interval(...)`.
-- Hapus data order uji dengan urutan FK: `checkin_events` → `tickets` → `order_answers` → `consents` → `email_logs` → `payment_events` (via `midtrans_order_id`) → `payments` → `jobs` (via `payload->>'order_id'`) → `orders` → `hold_items` → `holds`, lalu `reconcile_inventory(true)`. Admin uji: `audit_logs` dulu, baru `admins`.
-- Skrip yang mengimpor `@/…` harus berada di dalam folder proyek (misalnya `scripts/_x.mts`, lalu hapus). Skrip dengan top-level await harus `.mts`.
-- Di Windows, menghentikan `npm run start`/worker dari task latar belakang bisa menyisakan proses `node`. Cek port dan matikan prosesnya sebelum build ulang.
-- Error `tsc` "does not satisfy the constraint 'AppRoutes'" untuk route baru hilang setelah `npm run build`.
-- Playwright: prefetch RSC tampak menggantung (`ERR_ABORTED` setelah 200), jadi pakai `waitUntil: 'load'`. Next menyimpan halaman sebelumnya tersembunyi di DOM, jadi gunakan locator `:visible`. Pesan konsol dari dalam iframe Midtrans (CSP milik Midtrans, `postMessage` origin) bukan error aplikasi.
-- Next.js 16.4 dengan `cacheComponents` dan `partialPrefetching`. Baca `node_modules/next/dist/docs/` sebelum menulis kode.
+- **`.env.local` dan tunnel webhook:**
+  - `.env.local` tidak ada di repo. Pastikan namanya `.env.local` (dengan titik).
+  - `NEXT_PUBLIC_MEDIA_BASE_URL` = `SUPABASE_URL` + `/storage/v1/object/public/media`.
+  - `MIDTRANS_NOTIFICATION_URL` kosong. Isi ulang setiap kali tunnel baru dibuat.
+- **Uji webhook:**
+  - Jalankan `ngrok http 3000` (authtoken sudah terpasang di mesin ini), lalu isi `MIDTRANS_NOTIFICATION_URL=https://<tunnel>/api/webhooks/midtrans`.
+  - Restart `npm run start` dan jalankan `npm run worker`.
+  - Simulator: `https://simulator.sandbox.midtrans.com`.
+- **Midtrans sandbox:**
+  - Akun Midtrans sandbox baru sejak 17 Okt 2026, dengan nama merchant di popup Snap "AnyTix". Ketujuh metode (`other_qris`, `bca_va`, `bni_va`, `bri_va`, `echannel`, `permata_va`, `cimb_va`) terbukti membuat transaksi.
+  - Get Status sandbox kadang menjawab 404 untuk transaksi yang sudah lunas. Jangan menyimpulkan bug dari satu panggilan sandbox.
+- **Brevo (akun baru):**
+  - SMTP mengirim setelah IP mesin dev diizinkan (Security → Authorised IPs).
+  - IP koneksi seluler bisa berganti. Bila muncul `525 5.7.1 Unauthorized IP address`, izinkan IP baru.
+  - Cadangan baris `settings.smtp` lama ada di scratchpad sesi 17 Okt 2026, bukan di repo.
+- **Jam Windows harus sinkron.** Selisih 30 detik membuat test DB gagal. Perbaikan di PowerShell Administrator: `Start-Service w32time; w32tm /resync /force`.
+- **Worker** memproses semua job di antrean database bersama. Hentikan worker sebelum `npm run test:db`, dan periksa penerima job email dan `admin-alert` sebelum menjalankan worker sungguhan.
+- **Test yang membuat baris `settings` baru** harus menghapusnya di `afterAll`.
+- **`next dev` menulis ulang blok `<!-- BEGIN:nextjs-agent-rules -->` di `AGENTS.md`.** Aturan proyek harus berada di luar blok itu.
+- **Database adalah Supabase dev bersama:**
+  - `DATABASE_URL` memakai pooler `aws-0-ap-southeast-1:6543`, `max_pipeline: 0`, dan transaksi lewat `transaction()`.
+  - Parameter postgres.js tidak bisa ditaruh setelah kata kunci `interval`. Pakai `make_interval(...)`.
+- **Urutan FK untuk menghapus data order uji:** `checkin_events` (per `event_id` atau ticket) → `tickets` → `order_answers` → `consents` → `email_logs` → `payment_events` → `payments` → `jobs` (via `payload->>'order_id'`) → `orders` → `hold_items` → `holds` → `vouchers`, lalu `reconcile_inventory(true)`. Admin uji: hapus `audit_logs` dulu, baru `admins`.
+- **Skrip yang mengimpor `@/…`** harus berada di dalam folder proyek (misalnya `scripts/_x.mts`, lalu hapus). Skrip dengan top-level await harus `.mts`.
+- **Penulisan file di Windows:**
+  - Python di Windows menulis CRLF bila file dibuka tanpa `newline=''`. Edit dengan `newline=''`, atau normalkan ke LF sebelum commit.
+  - Di Windows, menghentikan `npm run start` dari task latar belakang bisa menyisakan proses `node`. Matikan proses di port 3000 sebelum build ulang.
+- **Playwright:**
+  - Pakai `waitUntil: 'load'` dan locator `:visible`.
+  - Pesan konsol dari iframe Midtrans dan peringatan preload CSS Next bukan error aplikasi.
+  - Kamera bisa ditiru dengan `addInitScript` yang mengganti `getUserMedia` dengan `canvas.captureStream()` berisi gambar QR. Chromium Windows tidak punya `BarcodeDetector` native, jadi jalur ponyfill yang teruji.
+- **Next.js 16.4** dengan `cacheComponents` dan `partialPrefetching`. Baca `node_modules/next/dist/docs/` sebelum menulis kode.
 
 ## Data di database dev
 
-- Event contoh: "Jazz di Taman 2026" (id 645, slug `jazz-taman-2026`, published, on sale) dengan 3 kategori tiket dan 4 field form. Tidak ada order dan hold; `sold` dan `held` = 0.
-- Admin hanya `admin@admin.com` (2FA aktif). Jangan diubah oleh agent; pemilik akan menggantinya. Untuk uji browser, buat admin sementara dengan `ADMIN_PASSWORD=… npm run admin:create -- nama@anytix.test`, lalu hapus.
-- Pengaturan transaksi bernilai default. Baris `email_templates` tidak ada, sehingga yang dipakai adalah teks bawaan.
+- **Event contoh:** "Jazz di Taman 2026" (id 645, slug `jazz-taman-2026`, published, on sale) dengan 3 kategori tiket dan 4 field form. Tidak ada order, hold, voucher atau check-in; `sold` dan `held` = 0.
+- **Admin:** hanya `admin@admin.com` (2FA aktif). Agent tidak boleh mengubahnya. Untuk uji browser, buat admin sementara dengan `ADMIN_PASSWORD=… npm run admin:create -- nama@anytix.test`, lalu hapus.
+- **Pengaturan transaksi** bernilai default. Baris `email_templates` tidak ada. `settings.smtp` memakai akun Brevo baru.
