@@ -2,10 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useId, useState, type FormEvent } from "react";
+import { useId, useState, useSyncExternalStore, type FormEvent } from "react";
 import { FilterIcon, SearchIcon, SortIcon } from "@/components/icons";
 import type { PublicCategory } from "@/lib/public/catalog-queries";
 import { activeFilterCount, eventsHref, parseEventFilters, PRICE_OPTIONS, SORT_OPTIONS, WHEN_OPTIONS, type EventFilters } from "@/lib/public/event-filters";
+
+const WIDE = "(min-width: 40rem)";
+
+function subscribeWide(onChange: () => void) {
+  const query = window.matchMedia(WIDE);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
 
 const FIELD = "h-11 w-full min-w-0 rounded-md border border-border-strong bg-surface px-3 text-base text-text";
 
@@ -33,6 +41,7 @@ export function EventFilterBar({ filters, categories, cities }: { filters: Event
   const uid = useId();
   const active = activeFilterCount(filters);
   const [open, setOpen] = useState(active > 0);
+  const wide = useSyncExternalStore(subscribeWide, () => window.matchMedia(WIDE).matches, () => false);
 
   function apply(form: HTMLFormElement) {
     const data = Object.fromEntries([...new FormData(form)].map(([k, v]) => [k, String(v)]));
@@ -81,7 +90,7 @@ export function EventFilterBar({ filters, categories, cities }: { filters: Event
             type="search"
             enterKeyHint="search"
             defaultValue={filters.q}
-            placeholder="Cari nama event, kota, atau venue"
+            placeholder={wide ? "Cari nama event, kota, atau venue" : "Cari..."}
             className={`${FIELD} text-ellipsis pl-10 placeholder:text-muted`}
           />
         </div>

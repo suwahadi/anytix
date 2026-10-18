@@ -309,7 +309,7 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
                   <fieldset>
                     <legend className="mb-3 text-lg font-bold text-text">QRIS</legend>
                     <div className={METHOD_GRID}>
-                      <MethodOption uid={uid} id={qris.key} brand="QRIS" caption="E‑wallet & m‑banking" checked={method === qris.key} onSelect={setMethod} />
+                      <MethodOption uid={uid} id={qris.key} brand="QRIS" checked={method === qris.key} onSelect={setMethod} />
                     </div>
                   </fieldset>
                 )}
@@ -318,7 +318,7 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
                     <legend className="mb-3 text-lg font-bold text-text">Transfer Bank</legend>
                     <div className={METHOD_GRID}>
                       {banks.map((b) => (
-                        <MethodOption key={b.key} uid={uid} id={b.key} brand={b.label} caption="Virtual Account" checked={method === b.key} onSelect={setMethod} />
+                        <MethodOption key={b.key} uid={uid} id={b.key} brand={b.label} checked={method === b.key} onSelect={setMethod} />
                       ))}
                     </div>
                   </fieldset>
@@ -534,21 +534,19 @@ function MethodOption({
   uid,
   id,
   brand,
-  caption,
   checked,
   onSelect,
 }: {
   uid: string;
   id: string;
   brand: string;
-  caption: string;
   checked: boolean;
   onSelect: (key: string) => void;
 }) {
   return (
     <label
       htmlFor={`${uid}-method-${id}`}
-      className={`relative flex cursor-pointer flex-col items-center gap-1 rounded-lg border bg-white px-2 pb-2.5 pt-3 transition-shadow has-focus-visible:ring-2 has-focus-visible:ring-accent has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-surface ${
+      className={`relative flex cursor-pointer items-center justify-center rounded-lg border bg-white px-2 py-3 transition-shadow has-focus-visible:ring-2 has-focus-visible:ring-accent has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-surface ${
         checked ? "border-accent ring-2 ring-accent" : "border-stone-300 hover:border-stone-400 hover:shadow-sm dark:border-stone-600"
       }`}
     >
@@ -563,7 +561,6 @@ function MethodOption({
       <span className="flex h-10 w-full items-center justify-center px-2">
         <Image src={`/payment-logos/${id}.svg`} alt={brand} width={120} height={40} className="h-7 w-auto max-w-full object-contain" />
       </span>
-      <span className="px-1 text-center text-xs font-medium leading-snug text-stone-700 sm:text-sm">{caption}</span>
       {checked && (
         <span aria-hidden className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-accent text-on-accent">
           <CheckIcon className="size-4" />

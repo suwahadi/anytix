@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { EyeIcon } from "@/components/icons";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,9 @@ function answerText(a: AdminOrderDetail["answers"][number]): string {
   if (Array.isArray(v)) return v.join(", ");
   return v === null || v === undefined ? "" : String(v);
 }
+
+
+const BUYER_LABEL = "text-muted after:content-[':']";
 
 export function OrderDetail() {
   const { id } = useParams<{ id: string }>();
@@ -226,39 +230,47 @@ export function OrderDetail() {
 
         <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:p-5">
           <h2 className="text-lg font-bold text-text">Pemesan</h2>
-          <dl className="grid gap-2 text-sm">
-            <div>
-              <dt className="text-muted">Nama</dt>
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-2 text-sm">
+            <div className="contents">
+              <dt className={BUYER_LABEL}>Nama</dt>
               <dd className="font-semibold text-text">{order.buyer.name}</dd>
             </div>
-            <div>
-              <dt className="text-muted">Email</dt>
+            <div className="contents">
+              <dt className={BUYER_LABEL}>Email</dt>
               <dd className="break-all text-text">{order.buyer.email}</dd>
             </div>
-            <div>
-              <dt className="text-muted">WhatsApp</dt>
+            <div className="contents">
+              <dt className={BUYER_LABEL}>WhatsApp</dt>
               <dd className="text-text">+{order.buyer.phone}</dd>
             </div>
             {order.answers.map((a) => {
               const identity = a.type === "identity" ? (a.value as { type?: string; number?: string }) : null;
               return (
-                <div key={a.label}>
-                  <dt className="text-muted">{a.label}</dt>
+                <div key={a.label} className="contents">
+                  <dt className={identity?.number ? `${BUYER_LABEL} self-center` : BUYER_LABEL}>{a.label}</dt>
                   {identity && !identity.number ? (
                     <dd className="text-muted">{identity.type} · dihapus otomatis 60 hari setelah acara</dd>
                   ) : identity ? (
-                    <dd className="flex flex-wrap items-center gap-2 text-text">
+                    <dd className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 text-text sm:flex sm:flex-wrap sm:gap-y-1">
                       <span className="font-mono">
                         {identity.type} {revealed?.[a.label] ?? identity.number}
                       </span>
                       {!revealed?.[a.label] && (
-                        <Button variant="ghost" size="sm" onClick={() => (setActionError(""), setRevealOpen(true))}>
-                          Tampilkan nomor lengkap
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => (setActionError(""), setRevealOpen(true))}
+                          aria-label="Tampilkan nomor lengkap"
+                          title="Tampilkan nomor lengkap"
+                          className="whitespace-nowrap max-sm:size-10 max-sm:px-0"
+                        >
+                          <EyeIcon className="size-[18px]" />
+                          <span className="max-sm:sr-only">Tampilkan nomor lengkap</span>
                         </Button>
                       )}
                     </dd>
                   ) : (
-                    <dd className="text-text">{answerText(a) || "Tidak diisi"}</dd>
+                    <dd className="break-words text-text">{answerText(a) || "Tidak diisi"}</dd>
                   )}
                 </div>
               );
