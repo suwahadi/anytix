@@ -20,6 +20,7 @@ export type PublicEventCard = {
   city: string;
   venue: string;
   organizerName: string;
+  organizerLogoPath: string | null;
   minPrice: number | null;
   categorySlug: string;
   categoryName: string;
@@ -51,7 +52,6 @@ export type PublicEvent = PublicEventCard & {
   facilities: string[];
   province: string;
   mapUrl: string | null;
-  organizerLogoPath: string | null;
   socialLinks: Record<string, string>;
   seo: { title?: string; description?: string };
   saleStatus: string;
@@ -63,7 +63,7 @@ export type PublicCategory = { id: number; name: string; slug: string; icon: str
 function cardColumns() {
   return sql`
     e.id, e.slug, e.title, e.poster_path as "posterPath", e.starts_at as "startsAt", e.ends_at as "endsAt",
-    e.timezone, e.city, e.venue, e.organizer_name as "organizerName",
+    e.timezone, e.city, e.venue, e.organizer_name as "organizerName", e.organizer_logo_path as "organizerLogoPath",
     (select min(tc.price) from ticket_categories tc where tc.event_id = e.id and tc.status = 'active') as "minPrice",
     c.slug as "categorySlug", c.name as "categoryName"`;
 }
@@ -81,21 +81,28 @@ export async function getPublicCategories(): Promise<PublicCategory[]> {
      order by c.position, c.id`;
 }
 
-export async function getHomeEvents(): Promise<{ featured: PublicEventCard[]; upcoming: PublicEventCard[] }> {
+export async function getHomeEvents(): Promise<{ featured: PublicEventCard[]; bestSellers: PublicEventCard[]; upcoming: PublicEventCard[] }> {
   "use cache";
   cacheLife(PUBLIC_CACHE);
   cacheTag(TAG_EVENTS);
-  const [featured, upcoming] = await Promise.all([
+  const [featured, bestSellers, upcoming] = await Promise.all([
     sql<PublicEventCard[]>`
       select ${cardColumns()} from events e join event_categories c on c.id = e.event_category_id
        where e.status = 'published' and e.is_featured and e.ends_at > now()
        order by e.starts_at, e.id limit 6`,
     sql<PublicEventCard[]>`
       select ${cardColumns()} from events e join event_categories c on c.id = e.event_category_id
+        join lateral (
+          select sum(i.sold) as sold from ticket_inventory i join ticket_categories tc on tc.id = i.ticket_category_id where tc.event_id = e.id
+        ) s on true
+       where e.status = 'published' and e.ends_at > now() and s.sold > 0
+       order by s.sold desc, e.starts_at, e.id limit 6`,
+    sql<PublicEventCard[]>`
+      select ${cardColumns()} from events e join event_categories c on c.id = e.event_category_id
        where e.status = 'published' and e.ends_at > now()
        order by e.starts_at, e.id limit 8`,
   ]);
-  return { featured, upcoming };
+  return { featured, bestSellers, upcoming };
 }
 
 export async function searchPublicEvents(params: {
@@ -130,7 +137,7 @@ export async function getPublicEvent(eventId: number): Promise<PublicEvent | nul
   cacheTag(TAG_EVENTS, eventTag(eventId));
   const [event] = await sql<Omit<PublicEvent, "ticketCategories">[]>`
     select ${cardColumns()}, e.description, e.terms, e.refund_policy as "refundPolicy", e.facilities, e.province,
-           e.map_url as "mapUrl", e.organizer_logo_path as "organizerLogoPath", e.social_links as "socialLinks",
+           e.map_url as "mapUrl", e.social_links as "socialLinks",
            e.seo, e.sale_status as "saleStatus"
       from events e join event_categories c on c.id = e.event_category_id
      where e.id = ${eventId} and e.status = 'published'`;

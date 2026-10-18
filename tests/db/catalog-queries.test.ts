@@ -114,4 +114,35 @@ describe("public catalog queries", () => {
     });
     expect(res.status).toBe(404);
   });
+
+  it("best sellers empty without sales", async () => {
+    const { eventId } = await createTestEvent();
+    expect((await getHomeEvents()).bestSellers.map((e) => e.id)).not.toContain(eventId);
+  });
+
+  it("best sellers order by tickets sold", async () => {
+    const a = await createTestEvent();
+    const b = await createTestEvent();
+    await sql`update ticket_inventory set sold = 2 where id = ${a.inventoryIds[0]}`;
+    await sql`update ticket_inventory set sold = 5 where id = ${b.inventoryIds[0]}`;
+    const ids = (await getHomeEvents()).bestSellers.map((e) => e.id);
+    expect(ids).toContain(a.eventId);
+    expect(ids.indexOf(b.eventId)).toBeLessThan(ids.indexOf(a.eventId));
+    await sql`update ticket_inventory set sold = 0 where id = any(${[a.inventoryIds[0], b.inventoryIds[0]]})`;
+  });
+
+  it("ended events are not best sellers", async () => {
+    const { eventId, inventoryIds } = await createTestEvent();
+    await sql`update ticket_inventory set sold = 9 where id = ${inventoryIds[0]}`;
+    await sql`update events set starts_at = now() - interval '3 days', ends_at = now() - interval '2 days' where id = ${eventId}`;
+    expect((await getHomeEvents()).bestSellers.map((e) => e.id)).not.toContain(eventId);
+    await sql`update ticket_inventory set sold = 0 where id = ${inventoryIds[0]}`;
+  });
+
+  it("cards carry the organizer logo", async () => {
+    const { eventId } = await createTestEvent();
+    await sql`update events set organizer_logo_path = 'logo/2026/abcdefghijkl' where id = ${eventId}`;
+    const card = (await getHomeEvents()).upcoming.find((e) => e.id === eventId);
+    expect(card?.organizerLogoPath).toBe("logo/2026/abcdefghijkl");
+  });
 });
