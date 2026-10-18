@@ -19,9 +19,23 @@ type Filter = { q: string; status: string; eventId: string; page: number };
 
 const STATUS_OPTIONS = [{ value: "", label: "Semua status" }, ...Object.entries(ORDER_STATUS).map(([value, s]) => ({ value, label: s.label }))];
 
+function filterFrom(params: URLSearchParams): Filter {
+  return { q: params.get("q") ?? "", status: params.get("status") ?? "", eventId: params.get("eventId") ?? "", page: Math.max(1, Number(params.get("page")) || 1) };
+}
+
+function queryOf(f: Filter): URLSearchParams {
+  const qs = new URLSearchParams();
+  if (f.q.trim()) qs.set("q", f.q.trim());
+  if (f.status) qs.set("status", f.status);
+  if (f.eventId) qs.set("eventId", f.eventId);
+  if (f.page > 1) qs.set("page", String(f.page));
+  return qs;
+}
+
 export function OrdersTable() {
   const params = useSearchParams();
-  const [filter, setFilter] = useState<Filter>({ q: "", status: params.get("status") ?? "", eventId: "", page: 1 });
+  const [initial] = useState(() => filterFrom(new URLSearchParams(params)));
+  const [filter, setFilter] = useState<Filter>(initial);
   const [result, setResult] = useState<ListResult | null>(null);
   const [events, setEvents] = useState<Array<{ id: number; title: string }>>([]);
   const [error, setError] = useState("");
@@ -31,11 +45,8 @@ export function OrdersTable() {
     setFilter(next);
     setLoading(true);
     setError("");
-    const qs = new URLSearchParams();
-    if (next.q.trim()) qs.set("q", next.q.trim());
-    if (next.status) qs.set("status", next.status);
-    if (next.eventId) qs.set("eventId", next.eventId);
-    if (next.page > 1) qs.set("page", String(next.page));
+    const qs = queryOf(next);
+    window.history.replaceState(null, "", qs.size > 0 ? `?${qs}` : window.location.pathname);
     const res = await requestJson<ListResult>(`/api/admin/orders?${qs}`);
     setLoading(false);
     if (res.ok) setResult(res.data);
@@ -44,10 +55,7 @@ export function OrdersTable() {
 
   useEffect(() => {
     let active = true;
-    const qs = new URLSearchParams();
-    const initialStatus = params.get("status");
-    if (initialStatus) qs.set("status", initialStatus);
-    Promise.all([requestJson<ListResult>(`/api/admin/orders?${qs}`), requestJson<{ events: Array<{ id: number; title: string }> }>("/api/admin/events")]).then(
+    Promise.all([requestJson<ListResult>(`/api/admin/orders?${queryOf(initial)}`), requestJson<{ events: Array<{ id: number; title: string }> }>("/api/admin/events")]).then(
       ([orders, ev]) => {
         if (!active) return;
         if (orders.ok) setResult(orders.data);
@@ -58,7 +66,7 @@ export function OrdersTable() {
     return () => {
       active = false;
     };
-  }, [params]);
+  }, [initial]);
 
   function search(e: FormEvent) {
     e.preventDefault();

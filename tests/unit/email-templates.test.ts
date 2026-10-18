@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { renderOrderEmail, type OrderEmailData } from "@/lib/email/render-order-email";
-import { DEFAULT_EMAIL_TEMPLATES, fillPlaceholders } from "@/lib/email/templates";
+import { DEFAULT_EMAIL_TEMPLATES, emailMatchesStatus, fillPlaceholders } from "@/lib/email/templates";
 
 const data: OrderEmailData = {
   invoice: "A1234ABCD",
@@ -70,5 +70,16 @@ describe("email templates", () => {
     const m = renderOrderEmail("paid", data, edited);
     expect(m.subject).toBe("Tiket Jazz di Taman 2026 siap");
     expect(m.html).toContain("Terima kasih Budi &lt;b&gt;Santoso&lt;/b&gt;.");
+  });
+});
+
+describe("emailMatchesStatus", () => {
+  it("sends only the email for the order's current status", () => {
+    expect(emailMatchesStatus("awaiting_payment", "awaiting_payment")).toBe(true);
+    expect(emailMatchesStatus("awaiting_payment", "paid")).toBe(false);
+    expect(emailMatchesStatus("awaiting_payment", "expired")).toBe(false);
+    expect(emailMatchesStatus("paid", "paid")).toBe(true);
+    expect(emailMatchesStatus("late_paid", "late_paid_review")).toBe(true);
+    expect(emailMatchesStatus("expired", "cancelled")).toBe(false);
   });
 });

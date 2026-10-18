@@ -8,7 +8,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: `${base}/` },
     { url: `${base}/events` },
-    ...slugs.flatMap((slug) => [{ url: `${base}/events/${slug}` }, { url: `${base}/events/${slug}/tickets` }]),
+    ...slugs.map((slug) => ({ url: `${base}/events/${slug}` })),
+    { url: `${base}/about` },
+    { url: `${base}/contact` },
+    { url: `${base}/faq` },
     { url: `${base}/terms` },
     { url: `${base}/privacy` },
   ];

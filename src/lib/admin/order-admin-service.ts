@@ -3,7 +3,7 @@ import { writeAudit } from "@/lib/audit";
 import { decrypt } from "@/lib/crypto";
 import { sql } from "@/lib/db";
 import { parseEngineError } from "@/lib/db-errors";
-import type { EmailType } from "@/lib/email/templates";
+import { EMAIL_FOR_STATUS } from "@/lib/email/templates";
 import { enqueueJob } from "@/lib/jobs";
 import { maskIdentity } from "@/lib/mask";
 import { cancelTransaction, MidtransError } from "@/lib/payments/midtrans";
@@ -160,13 +160,6 @@ export async function cancelOrder(adminId: number, id: number): Promise<void> {
   if (result.status !== "cancelled") throw new UserError("Status pesanan baru saja berubah. Muat ulang halaman.", 409);
   await writeAudit(sql, { adminId, action: "cancel", entity: "order", entityId: id });
 }
-
-const EMAIL_FOR_STATUS: Record<string, EmailType> = {
-  awaiting_payment: "awaiting_payment",
-  paid: "paid",
-  expired: "expired",
-  late_paid_review: "late_paid",
-};
 
 export async function resendOrderEmail(adminId: number, id: number, input: { to?: string; updateBuyerEmail?: boolean }): Promise<void> {
   const o = await orderRow(id);

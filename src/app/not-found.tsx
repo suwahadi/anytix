@@ -1,15 +1,21 @@
-import Link from "next/link";
-import { buttonClass } from "@/components/ui/button";
+import type { Metadata } from "next";
+import { NotFoundBody } from "@/app/(public)/not-found";
+import { SiteFooter } from "@/app/(public)/site-footer";
+import { SiteHeader } from "@/app/(public)/site-header";
+import { getPublicCategories, getPublicSite } from "@/lib/public/catalog-queries";
 
-export default function NotFound() {
+export const metadata: Metadata = { title: "Halaman tidak ditemukan" };
+
+/** Unmatched URLs render here outside the (public) layout, so this page adds that layout's header and footer itself. */
+export default async function NotFound() {
+  const [site, categories] = await Promise.all([getPublicSite(), getPublicCategories()]);
   return (
-    <main className="mx-auto flex w-full max-w-xl flex-1 flex-col items-start justify-center gap-4 px-4 py-16">
-      <p className="text-sm font-semibold text-muted">404</p>
-      <h1 className="text-2xl font-extrabold tracking-tight text-text">Halaman tidak ditemukan</h1>
-      <p className="text-muted">Event ini mungkin sudah tidak tersedia, atau alamatnya salah ketik.</p>
-      <Link href="/events" className={buttonClass()}>
-        Lihat event lain
-      </Link>
-    </main>
+    <>
+      <SiteHeader site={site} />
+      <main id="konten" className="flex flex-1 flex-col justify-center">
+        <NotFoundBody />
+      </main>
+      <SiteFooter site={site} categories={categories} />
+    </>
   );
 }

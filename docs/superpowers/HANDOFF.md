@@ -26,7 +26,7 @@ Ruang lingkup yang disepakati adalah Fase 0–3, dan keempatnya sudah selesai. F
 | Revamp beranda | Selesai dan di-push: header pill, hero carousel, Rekomendasi, Laris Manis, Kategori, Event Terdekat, footer 4 kolom. Belum di-deploy ke server |
 | Konten (Tentang Kami, Hubungi Kami, FAQ) | Selesai dan di-push: admin /admin/content (editor dengan unggah gambar, FAQ urut-geser), publik /about, /contact, /faq (accordion satu-terbuka). Migrasi 0014 (tabel `faqs`, setting `pages` berisi lorem ipsum) sudah diterapkan ke database bersama. Isi Tentang Kami dan Hubungi Kami masih lorem ipsum |
 
-Hasil test terakhir: `npm test` 170 lulus, `lint`, `tsc` dan `build` bersih.
+Hasil test terakhir: `npm test` (unit) 183 lulus, `lint`, `tsc` dan `build` bersih. Migrasi 0015 (index `jobs_running_idx`) sudah diterapkan ke database bersama.
 
 ## Langkah berikutnya
 

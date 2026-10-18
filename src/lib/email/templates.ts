@@ -3,6 +3,18 @@ export type EmailType = (typeof EMAIL_TYPES)[number];
 export type EmailTemplate = { subject: string; body: string };
 export type EmailTemplates = Record<EmailType, EmailTemplate>;
 
+export const EMAIL_FOR_STATUS: Partial<Record<string, EmailType>> = {
+  awaiting_payment: "awaiting_payment",
+  paid: "paid",
+  expired: "expired",
+  late_paid_review: "late_paid",
+};
+
+/** A queued email whose order has since moved on (retry after paid, say) would tell the buyer something false. */
+export function emailMatchesStatus(type: EmailType, orderStatus: string): boolean {
+  return EMAIL_FOR_STATUS[orderStatus] === type;
+}
+
 export const EMAIL_PLACEHOLDERS = ["nama", "event", "invoice", "total", "batas_bayar", "tautan_pesanan"] as const;
 
 export const EMAIL_TYPE_LABELS: Record<EmailType, string> = {
