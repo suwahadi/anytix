@@ -124,3 +124,11 @@ export function FilterIcon({ className }: { className?: string }) {
     </Svg>
   );
 }
+
+export function CheckIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </Svg>
+  );
+}

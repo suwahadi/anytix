@@ -6,7 +6,7 @@ import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type
 import { CheckoutSteps } from "@/components/checkout-steps";
 import { Countdown } from "@/components/countdown";
 import { DynamicFormFields, type AnswerValues } from "@/components/dynamic-form-fields";
-import { ClockIcon } from "@/components/icons";
+import { CheckIcon, ClockIcon, CloseIcon } from "@/components/icons";
 import { TurnstileWidget, type TurnstileHandle } from "@/components/turnstile-widget";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonClass } from "@/components/ui/button";
@@ -205,6 +205,13 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
   }
 
   const canPay = Boolean(method && consents.terms && consents.privacy && token);
+
+  /** The phone bar's pay button stays tappable: until everything is ready it scrolls to the part still missing. */
+  function payFromBar() {
+    if (canPay) return void pay();
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    document.getElementById(method ? `${uid}-summary` : `${uid}-methods`)?.scrollIntoView({ behavior, block: "start" });
+  }
   const banks = view.paymentMethods.filter((m) => m.group === "va");
   const qris = view.paymentMethods.find((m) => m.group === "qris");
 
@@ -237,7 +244,7 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
             </div>
 
             {step === 2 ? (
-              <form ref={form} onSubmit={continueToConfirm} noValidate className="flex flex-col gap-5">
+              <form ref={form} id={`${uid}-details`} onSubmit={continueToConfirm} noValidate className="flex flex-col gap-5">
                 <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5">
                   <h2 className="text-lg font-bold text-text">Data Pemesan</h2>
                   <Field
@@ -289,12 +296,12 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
                     </div>
                   )}
                 </section>
-                <Button type="submit" className="self-stretch sm:self-start">
-                  Lanjutkan
-                </Button>
+                <div className="hidden lg:block">
+                  <Button type="submit">Lanjutkan</Button>
+                </div>
               </form>
             ) : (
-              <section className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-4 sm:p-5">
+              <section id={`${uid}-methods`} className="flex scroll-mt-24 flex-col gap-5 rounded-lg border border-border bg-surface p-4 sm:p-5">
                 {qris && (
                   <fieldset className="flex flex-col gap-2">
                     <legend className="mb-2 text-lg font-bold text-text">QRIS</legend>
@@ -314,7 +321,7 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
           </div>
 
           <aside className="lg:col-start-2 lg:row-start-1">
-            <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5 lg:sticky lg:top-22 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto">
+            <div id={`${uid}-summary`} className="flex scroll-mt-24 flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5 lg:sticky lg:top-22 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto">
               <div className={`hidden ${TIMER_BOX} lg:flex`}>
                 <TimerLabel />
                 <Countdown expiresAt={view.expiresAt} serverNow={view.serverNow} receivedAt={receivedAt} onExpire={() => setExpired(true)} />
@@ -337,7 +344,7 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
                 </div>
                 {totals.discount > 0 && (
                   <div className="flex justify-between">
-                    <dt className="text-muted">Diskon{promoCode && ` (${promoCode})`}</dt>
+                    <dt className="text-muted">Diskon</dt>
                     <dd className="text-text">−{formatRupiah(totals.discount)}</dd>
                   </div>
                 )}
@@ -353,13 +360,20 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
               {step === 3 && (
                 <div className="flex flex-col gap-3 border-t border-border pt-4">
                   {promoCode ? (
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="text-text">
-                        Promo <strong>{promoCode}</strong> dipakai.
-                      </span>
-                      <Button variant="ghost" size="sm" onClick={removePromo}>
-                        Hapus promo
-                      </Button>
+                    <div role="status" className="flex items-center gap-2 rounded-md border border-success bg-success-soft py-1 pl-3 pr-1 text-sm font-semibold text-success">
+                      <CheckIcon className="size-[18px] shrink-0" />
+                      <span className="min-w-0 flex-1">Kode promo berhasil digunakan.</span>
+                      <button
+                        type="button"
+                        onClick={removePromo}
+                        aria-label="Hapus kode promo"
+                        title="Hapus kode promo"
+                        className="inline-flex size-11 shrink-0 items-center justify-center rounded-full"
+                      >
+                        <span className="inline-flex size-7 items-center justify-center rounded-full bg-danger text-surface">
+                          <CloseIcon className="size-4" />
+                        </span>
+                      </button>
                     </div>
                   ) : (
                     <Button
@@ -393,16 +407,43 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
                   />
                   <TurnstileWidget ref={turnstile} siteKey={siteKey} onToken={setToken} />
                   {payError && <Alert>{payError}</Alert>}
-                  <Button onClick={pay} loading={paying} disabled={!canPay} className="w-full" aria-describedby={`${uid}-pay-note`}>
-                    Bayar Sekarang
-                  </Button>
-                  <p id={`${uid}-pay-note`} className="text-sm text-muted">
-                    {method ? "Pembayaran dibuka di halaman berikutnya." : "Pilih metode pembayaran dan centang kedua persetujuan."}
-                  </p>
+                  <div className="hidden lg:block">
+                    <Button onClick={pay} loading={paying} disabled={!canPay} className="w-full" aria-describedby={method ? `${uid}-pay-note` : undefined}>
+                      Bayar Sekarang
+                    </Button>
+                  </div>
+                  {method && (
+                    <p id={`${uid}-pay-note`} className="text-sm text-muted">
+                      Pembayaran dibuka di halaman berikutnya.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
           </aside>
+        </div>
+
+        <div data-buy-bar className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgb(0_0_0/0.08)] lg:hidden">
+          <div className="mx-auto flex w-full max-w-6xl items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted">Total Bayar</p>
+              <p className="text-lg font-extrabold leading-tight text-text">{formatRupiah(totals.total)}</p>
+            </div>
+            {step === 2 ? (
+              <Button type="submit" form={`${uid}-details`} className="shrink-0 px-6">
+                Lanjutkan
+              </Button>
+            ) : (
+              <Button onClick={payFromBar} loading={paying} className="shrink-0 px-6">
+                Bayar Sekarang
+              </Button>
+            )}
+          </div>
+          {step === 3 && payError && (
+            <p aria-hidden className="mx-auto mt-2 w-full max-w-6xl text-sm text-danger">
+              {payError}
+            </p>
+          )}
         </div>
 
         <Dialog open={promoOpen} onClose={() => setPromoOpen(false)} title="Kode Promo">
@@ -417,7 +458,6 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
               autoCapitalize="characters"
               maxLength={40}
             />
-            <p className="text-sm text-muted">Diskon berlaku untuk harga tiket. Biaya layanan tidak didiskon.</p>
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setPromoOpen(false)}>
                 Batal

@@ -93,9 +93,12 @@ body {
     cursor: pointer;
   }
 
-  /** The fixed mobile buy bar would cover the copyright line; the footer grows so its dark band runs under the bar. */
+  /**
+   * The fixed mobile buy bar would cover the copyright line; the footer grows so its dark band runs under the bar.
+   * Pages kept for back navigation are hidden with an inline display:none, so their bar must not count.
+   */
   @media (width < 64rem) {
-    body:has([data-buy-bar]) footer {
+    body:has([data-buy-bar]:not([style*="display: none"] *)) footer {
       padding-bottom: 5.5rem;
     }
   }
