@@ -58,7 +58,7 @@ export function TrackForm() {
         </div>
         <div className="relative">
           <label htmlFor="track-email" className="sr-only">
-            Email pemesan
+            Alamat email
           </label>
           <MailIcon className={ICON} />
           <input
