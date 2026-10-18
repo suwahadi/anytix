@@ -2,6 +2,158 @@
 
 Panduan untuk pemilik dan pengelola. Setiap langkah ditulis dengan menu, nilai, dan cara memastikan langkah itu berhasil. Perintah `npm run …` dijalankan di folder aplikasi di VPS, kecuali disebut lain.
 
+## Peta sistem
+
+| Bagian | Di mana | Rahasia disimpan di |
+|---|---|---|
+| Domain `anytix.web.id` | Registrar domain; DNS di Cloudflare atau registrar | Akun registrar/Cloudflare |
+| Aplikasi web (`anytix-web`) dan worker (`anytix-worker`) | VPS Singapura, dikelola aaPanel, dijalankan PM2 dari folder aplikasi (misalnya `/www/wwwroot/anytix`) | `.env.local` di folder aplikasi |
+| HTTPS dan reverse proxy | Nginx aaPanel (Website → `anytix.web.id`), sertifikat Let's Encrypt | aaPanel |
+| Database, jadwal sweeper, gambar | Supabase (project yang sama dengan dev) | `.env.local` (`DATABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) |
+| Pembayaran | Midtrans (mode Production) | `.env.local` (`MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`) |
+| Email | Brevo SMTP | Panel → Pengaturan → Email (password terenkripsi di database) |
+| Anti-bot | Cloudflare Turnstile | `.env.local` (`TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`) |
+| Backup | `/www/backup/anytix` di VPS + salinan luar VPS | — |
+
+Yang paling penting: `DATA_ENCRYPTION_KEY` dan `COOKIE_SECRET` di `.env.local`. Simpan salinannya di password manager pemilik.
+- Bila `DATA_ENCRYPTION_KEY` hilang, nomor identitas, password SMTP, dan secret 2FA di database tidak bisa dibaca lagi.
+
+## Deploy pertama
+
+1. **Siapkan VPS di aaPanel:**
+   - App Store → pasang **Nginx** dan **Node.js version manager**, lalu pilih Node 22 dan jadikan default.
+   - Terminal: jalankan `npm install -g pm2`, lalu `node -v`. Hasilnya harus `v22.…`.
+   - Security → Firewall: hanya port 22 (SSH), 80, 443, dan port panel aaPanel yang terbuka. Port 3000 **jangan** dibuka.
+2. **DNS:**
+   - Buat record A `anytix.web.id` ke IP publik VPS. Bila memakai Cloudflare, awan oranye boleh menyala setelah SSL aktif.
+   - Berhasil bila: `ping anytix.web.id` menjawab dari IP VPS (atau IP Cloudflare bila proxy menyala).
+3. **Website dan SSL:**
+   - Website → Add site, domain `anytix.web.id`, jenis "Pure static".
+   - Website → `anytix.web.id` → SSL → Let's Encrypt → Apply. Aktifkan **Force HTTPS**.
+   - Website → `anytix.web.id` → Config: ganti blok `location /` bawaan dengan isi `deploy/nginx-anytix.conf`, lalu Save. Bila Cloudflare tidak dipakai, baris `set_real_ip_from` dan `real_ip_header` boleh dihapus.
+4. **Ambil kode dan isi env:**
+   ```bash
+   cd /www/wwwroot && git clone https://github.com/suwahadi/anytix.git anytix && cd anytix
+   cp .env.production.example .env.local && nano .env.local
+   ```
+   - Isi semua nilai. Rahasia baru dibuat dengan perintah yang tertulis di komentar template.
+   - Karena database dipakai bersama dev, salin `COOKIE_SECRET` dan `DATA_ENCRYPTION_KEY` dari `.env.local` dev yang sekarang, **bukan** membuat baru. Dengan begitu data terenkripsi yang sudah ada tetap terbaca.
+5. **Deploy:**
+   ```bash
+   bash deploy/deploy.sh
+   pm2 startup   # jalankan perintah yang dicetaknya, supaya PM2 hidup lagi setelah VPS reboot
+   pm2 save
+   ```
+   - Berhasil bila: deploy.sh berakhir dengan `{"ok":true,…}` dan `Deploy selesai.`, `pm2 status` menampilkan `anytix-web` dan `anytix-worker` online, dan `https://anytix.web.id` terbuka.
+6. **Monitor uptime:** daftarkan `https://anytix.web.id/api/health` di UptimeRobot (gratis, interval 5 menit, alert ke email/WhatsApp pemilik).
+   - Berhasil bila: status monitor Up.
+7. **Gerbang terakhir:** jalankan `npm run preflight`.
+   - Berhasil bila: semua baris PASS dan tertulis `Siap produksi.`
+
+## Deploy rutin dan rollback
+
+- **Update:** di folder aplikasi jalankan `bash deploy/deploy.sh`. Skrip ini mengambil kode terbaru, memasang migrasi baru, build, lalu reload tanpa mematikan situs.
+- **Bila deploy.sh gagal di tengah:** situs tetap berjalan dengan versi lama, karena PM2 belum di-reload. Baca pesan error, perbaiki, ulangi.
+- **Rollback ke versi sebelumnya:**
+  ```bash
+  git log --oneline -5              # pilih commit yang terakhir sehat
+  git checkout <commit> && npm ci && npm run build && pm2 reload deploy/ecosystem.config.cjs --update-env
+  git checkout main                 # setelah perbaikan siap, kembali dan deploy normal
+  ```
+  Migrasi database hanya maju. Bila versi baru sudah menambah kolom, versi lama biasanya tetap jalan. Bila tidak, minta agent membuat migrasi perbaikan, jangan menghapus kolom manual.
+- **Log:** `pm2 logs anytix-web --lines 200` dan `pm2 logs anytix-worker --lines 200`.
+
+## Sebelum on-sale event besar
+
+H-1 sampai H-3 sebelum penjualan dibuka:
+
+1. **Panel → Pengaturan → Transaksi:**
+   - Lama kunci slot: 3 menit (bawaan), naikkan bila form pemesan panjang.
+   - Batas bayar dan cadangannya.
+   - Biaya layanan.
+   - Metode bayar: hanya yang OK di `npm run midtrans:check`.
+
+   Perubahan hanya berlaku untuk transaksi baru.
+2. **Event → kategori tiket:** harga, kuota, periode jual, maksimal per transaksi, dan status Aktif. Buka halaman tiket publik dan cek tampilannya di ponsel.
+3. **Voucher** (tab Voucher di event): kode, kuota, periode. Coba satu kode di checkout lalu batalkan.
+4. **Teknis:**
+   - `https://anytix.web.id/api/health` menjawab ok.
+   - `pm2 status`: kedua proses online.
+   - `RATE_LIMIT_SCALE=1` di `.env.local`.
+   - `npm run preflight` semua PASS.
+5. **Email:** kirim email uji dari panel dan cek kuota harian paket Brevo.
+6. **Saat penjualan dibuka:**
+   - Pantau Dasbor (hold aktif, pesanan lunas) dan `pm2 logs anytix-web`.
+   - Lonjakan pesan `Terlalu banyak percobaan` wajar, karena rate limit bekerja.
+
+## Hari-H gerbang
+
+1. **Akun petugas:** pakai akun admin dengan 2FA aktif. Bila petugas memakai akun bersama, ganti kata sandinya setelah acara. Ganti kata sandi otomatis mengeluarkan semua perangkat lain.
+2. **Siapkan ponsel:**
+   - Buka `https://anytix.web.id/admin/check-in` dan masuk.
+   - Pasang sebagai aplikasi: Chrome ⋮ → Install app, atau Safari Share → Add to Home Screen.
+   - Pilih event, isi nama gate (A, B, Utara, …), lalu **Mulai scan** dan izinkan kamera.
+3. **Arti layar:**
+
+   | Layar | Arti dan tindakan |
+   |---|---|
+   | Hijau **VALID** | Persilakan masuk. Bila identitas tampil, cocokkan dengan kartu identitas. |
+   | Merah **SUDAH DIPAKAI pukul …, Gate …** | Tiket sudah masuk sebelumnya. Arahkan ke meja bantuan. |
+   | Merah **TIDAK VALID** | Bukan tiket event ini, QR sudah diterbitkan ulang, atau bukan QR tiket. |
+   | Abu-abu **Koneksi gagal** | Sinyal hilang. Scan ulang, atau pakai ponsel lain. |
+
+4. **Tanpa sinyal:** scanner hanya bekerja online. Siapkan hotspot cadangan di gerbang. Kode di bawah QR bisa diketik di kolom "Kode manual" bila kamera bermasalah.
+5. **Tautan tiket bocor atau tiket dicurigai digandakan:** buka Panel → Pesanan → pesanan itu → **Terbitkan ulang QR**. QR lama langsung TIDAK VALID. Pembeli melihat QR baru di tautan pesanan yang sama.
+6. **Pantau:** Panel → Check-in menampilkan kehadiran per kategori dan riwayat scan per gate.
+
+## Insiden
+
+| Gejala | Penyebab umum | Tindakan |
+|---|---|---|
+| Monitor uptime: `/api/health` 503 dengan `db: "down"` | Database Supabase tidak terjangkau | Cek status.supabase.com dan Supabase → project status. Aplikasi pulih sendiri saat database kembali. |
+| `/api/health` 503 dengan `oldestQueuedJobSec` besar | Worker mati | `pm2 status`. Bila `anytix-worker` tidak online, jalankan `pm2 restart anytix-worker`, lalu cek `pm2 logs anytix-worker`. |
+| Pembeli sudah bayar tapi status masih PENDING | Notifikasi Midtrans gagal masuk | Tunggu 1–2 menit; worker mengecek status ke Midtrans sendiri. Cek Midtrans → Settings → Notification URL dan riwayatnya. Detail pesanan di panel menunjukkan event pembayaran yang diterima. |
+| Email admin "selisih kuota" | Data `sold`/`held` tidak cocok dengan hold | Worker memperbaikinya setiap jam. Bila berulang, minta agent memeriksa. Jangan ubah kuota langsung di database. |
+| Pesanan berstatus **Perlu tindak lanjut** (pembayaran terlambat, kuota habis) | Pembeli membayar setelah batas waktu | Pilih: naikkan kuota lalu **Terbitkan tiket**, atau refund di dashboard Midtrans lalu **Tandai sudah direfund**. Hubungi pembeli. |
+| Email tidak sampai | IP VPS belum diizinkan, kuota Brevo habis, atau masuk spam | Brevo → Transactional → Logs. `525 Unauthorized IP` berarti tambahkan IP VPS di Authorised IPs. Kirim ulang dari Panel → Pesanan → **Kirim ulang email**. |
+| Banyak pembeli melihat `Terlalu banyak percobaan` | Rate limit per IP, sering pada jaringan seluler yang berbagi IP | Bila mengganggu saat on-sale, naikkan `RATE_LIMIT_SCALE` (misalnya 2) di `.env.local`, lalu `pm2 reload anytix-web --update-env`. Kembalikan setelahnya. |
+| Situs tidak terbuka, health tidak menjawab | Proses web mati atau Nginx bermasalah | `pm2 status`, `pm2 restart anytix-web`, aaPanel → Nginx → Restart. Cek sertifikat SSL masih berlaku. |
+
+## Akun dan rahasia
+
+- **Tambah, ganti email, atau nonaktifkan admin:** Panel → Admin & Audit → Akun admin. Admin yang dinonaktifkan langsung keluar. Minimal harus ada satu admin aktif.
+- **2FA hilang:**
+  - Admin lain membuka Panel → Admin & Audit → **Reset 2FA**.
+  - Bila tidak ada admin lain, jalankan di VPS: `DB_WRITE_ALLOWED=true npm run admin:reset-2fa -- email@domain`.
+  - Setelah itu, aktifkan 2FA lagi di halaman Keamanan.
+- **Admin pertama dari VPS** bila semua akun terkunci: `DB_WRITE_ALLOWED=true ADMIN_PASSWORD='…' npm run admin:create -- email@domain`.
+- **Ganti kata sandi sendiri:** Panel → Keamanan. Semua perangkat lain otomatis keluar.
+- **Kebocoran rahasia:**
+  - `COOKIE_SECRET`: buat baru, isi `.env.local`, lalu `pm2 reload anytix-web --update-env`. Semua admin harus masuk ulang.
+  - Key Midtrans dan Brevo: buat ulang di dashboard masing-masing, lalu perbarui `.env.local` atau panel.
+  - `DATA_ENCRYPTION_KEY` **jangan** diganti tanpa skrip enkripsi ulang. Hubungi agent.
+- **Audit:** semua perubahan dan pembukaan nomor identitas tercatat di Panel → Admin & Audit → Audit log.
+
+## Data pribadi (PDP)
+
+- **Nomor identitas:** tersimpan terenkripsi dan tampil tersamar (`3201********0001`) di panel, PDF, CSV, dan scanner. Nomor lengkap hanya lewat tombol **Tampilkan nomor lengkap** di detail pesanan, dan setiap pembukaan tercatat di audit log. Batasi siapa saja yang memegang akun admin.
+- **Retensi:** nomor identitas dihapus otomatis 60 hari setelah event selesai, setiap hari pukul 02.30 WIB. Jenis identitasnya tetap tersimpan.
+- **Permintaan hapus data dari pembeli:**
+  - Catat permintaannya.
+  - Bila pesanan sudah lunas dan event belum lewat, jelaskan bahwa tiket ikut tidak berlaku.
+  - Minta agent atau pengelola teknis menghapus jawaban form dan menyamarkan nama/email/WhatsApp pesanan itu lewat SQL yang ditinjau. Jangan menghapus baris pesanan, karena laporan keuangan membutuhkannya.
+- **Ekspor CSV** berisi data pribadi pemesan (nama, email, WhatsApp). Simpan hanya selama dibutuhkan dan jangan dibagikan di grup chat.
+
+## Kontak dan eskalasi
+
+| Peran | Nama | Kontak |
+|---|---|---|
+| Pemilik | | |
+| Pengelola teknis | | |
+| Midtrans support | | support@midtrans.com |
+| Brevo support | | lewat dashboard Brevo |
+| Penyedia VPS | | |
+
 ## Midtrans produksi
 
 Dikerjakan sekali sebelum event pertama dijual.
