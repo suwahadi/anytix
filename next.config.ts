@@ -17,7 +17,7 @@ const csp = [
   `script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' ${MIDTRANS} ${TURNSTILE}`,
   `frame-src ${MIDTRANS} ${TURNSTILE}`,
   `connect-src 'self' ${MIDTRANS} ${TURNSTILE}`,
-  `img-src 'self' data: blob: ${mediaOrigin()} ${MIDTRANS}`,
+  `img-src 'self' data: blob: ${mediaOrigin()} https://images.unsplash.com ${MIDTRANS}`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self'",
   "frame-ancestors 'none'",
