@@ -3,6 +3,7 @@ import Form from "next/form";
 import Link from "next/link";
 import { Suspense } from "react";
 import { EventCard } from "@/components/event-card";
+import { FocusOnMount } from "@/components/focus-on-mount";
 import { buttonClass } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getPublicCategories, searchPublicEvents } from "@/lib/public/catalog-queries";
@@ -65,7 +66,6 @@ async function Results({ searchParams }: { searchParams: PageProps<"/events">["s
             name="q"
             type="search"
             defaultValue={q}
-            autoFocus={focusSearch}
             placeholder="Nama event, kota, atau venue"
             className={`${fieldClass} placeholder:text-muted`}
           />
@@ -87,6 +87,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/events">["s
           Terapkan
         </button>
       </Form>
+      {focusSearch && <FocusOnMount id="q" />}
 
       {result.items.length > 0 ? (
         <>

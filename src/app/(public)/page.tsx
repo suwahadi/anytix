@@ -7,6 +7,9 @@ import { buttonClass } from "@/components/ui/button";
 import { getHomeEvents, getPublicCategories, getPublicSite } from "@/lib/public/catalog-queries";
 import { buildHeroSlides, type EventSlide } from "@/lib/public/hero-slides";
 
+/** Below this many open events the extra rows would only repeat the same cards. */
+const MIN_EVENTS_FOR_ROWS = 4;
+
 const CARD_ITEM = "w-[78%] sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-3rem)/4)]";
 
 function SectionTitle({ id, children }: { id: string; children: string }) {
@@ -19,9 +22,10 @@ function SectionTitle({ id, children }: { id: string; children: string }) {
 
 export default async function Home() {
   const [{ featured, bestSellers, upcoming }, categories, site] = await Promise.all([getHomeEvents(), getPublicCategories(), getPublicSite()]);
-  const hero = buildHeroSlides(featured);
-  const recommended = featured.length > 0 ? featured : upcoming;
-  const laris: EventSlide[] = buildHeroSlides(bestSellers, 0).filter((s): s is EventSlide => s.kind === "event");
+  const hero = buildHeroSlides(featured, { siteName: site.name });
+  const fullCatalogue = upcoming.length >= MIN_EVENTS_FOR_ROWS;
+  const recommended = !fullCatalogue ? [] : featured.length > 0 ? featured : upcoming;
+  const laris: EventSlide[] = !fullCatalogue ? [] : buildHeroSlides(bestSellers, { siteName: site.name, min: 0 }).filter((s): s is EventSlide => s.kind === "event");
 
   return (
     <div className="flex flex-col pb-14">

@@ -153,7 +153,7 @@ export function Carousel({
                 onClick={() => goTo(i)}
                 aria-label={`Ke slide ${i + 1}`}
                 aria-current={i === active ? "true" : undefined}
-                className="inline-flex h-11 items-center justify-center px-1"
+                className="inline-flex h-11 items-center justify-center px-2"
               >
                 <span className={`block h-2 rounded-full transition-all duration-300 motion-reduce:transition-none ${i === active ? "w-6 bg-accent" : "w-2 bg-border-strong"}`} />
               </button>

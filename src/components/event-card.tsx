@@ -25,9 +25,9 @@ export function EventCard({ event, preload = false }: { event: PublicEventCard; 
             {event.title}
           </Link>
         </h3>
-        <p className="flex items-center gap-1.5 text-sm text-muted">
-          <CalendarIcon className="size-4 shrink-0" />
-          <span className="truncate">
+        <p className="flex items-start gap-1.5 text-sm text-muted">
+          <CalendarIcon className="mt-0.5 size-4 shrink-0" />
+          <span>
             {formatCardDate(event.startsAt, event.endsAt, event.timezone)}
             {event.city && <> · {event.city}</>}
           </span>

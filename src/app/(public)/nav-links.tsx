@@ -6,11 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import { CloseIcon, MenuIcon } from "@/components/icons";
 import { isActive, type NavItem } from "@/lib/public/nav";
 
-function Soon({ label, className }: { label: string; className: string }) {
+function Soon({ label, className, badgeClassName = "bg-surface-muted" }: { label: string; className: string; badgeClassName?: string }) {
   return (
     <span className={className}>
       {label}
-      <span className="ml-1.5 rounded bg-surface-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted">Segera</span>
+      <span className={`ml-1.5 rounded ${badgeClassName} px-1.5 py-0.5 text-[11px] font-semibold text-muted`}>Segera</span>
     </span>
   );
 }
@@ -26,7 +26,7 @@ export function PillList({ items, pathname }: { items: NavItem[]; pathname: stri
       {items.map((item) => (
         <li key={item.label}>
           {"soon" in item ? (
-            <Soon label={item.label} className="inline-flex h-9 cursor-default items-center px-3 text-sm font-medium text-muted" />
+            <Soon label={item.label} badgeClassName="bg-surface" className="inline-flex h-9 cursor-default items-center px-3 text-sm font-medium text-muted" />
           ) : (
             <Link
               href={item.href}

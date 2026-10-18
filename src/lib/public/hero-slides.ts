@@ -10,7 +10,7 @@ export const GENERIC_BANNERS: ReadonlyArray<GenericSlide> = [
     kind: "generic",
     key: "generic-concert",
     href: "/events",
-    title: "Jelajahi event di Anytix",
+    title: "Jelajahi event di {site}",
     subtitle: "Beli tiket tanpa daftar akun, e-ticket langsung ke email.",
     imageUrl: unsplash("1514525253161-7a46d19cd819"),
     alt: "Panggung konser dengan lampu warna-warni di atas penonton",
@@ -37,12 +37,12 @@ export const GENERIC_BANNERS: ReadonlyArray<GenericSlide> = [
 
 export function buildHeroSlides(
   featured: ReadonlyArray<{ slug: string; title: string; posterPath: string | null }>,
-  min = 3,
-  max = 6,
+  { siteName, min = 3, max = 6 }: { siteName: string; min?: number; max?: number },
 ): HeroSlide[] {
   const events: HeroSlide[] = featured
     .filter((e): e is { slug: string; title: string; posterPath: string } => Boolean(e.posterPath))
     .slice(0, max)
     .map((e) => ({ kind: "event", key: `event-${e.slug}`, href: `/events/${e.slug}`, title: e.title, posterPath: e.posterPath }));
-  return [...events, ...GENERIC_BANNERS.slice(0, Math.max(0, min - events.length))];
+  const banners = GENERIC_BANNERS.slice(0, Math.max(0, min - events.length)).map((b) => ({ ...b, title: b.title.replace("{site}", siteName) }));
+  return [...events, ...banners];
 }
