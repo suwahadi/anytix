@@ -31,6 +31,20 @@ export function formatEventSchedule(startsAt: Date, endsAt: Date, tz: Timezone):
   };
 }
 
+/** Short card date: "20 Desember 2026", "7 – 8 November 2026", "30 Nov – 1 Des 2026". */
+export function formatCardDate(startsAt: Date, endsAt: Date, tz: Timezone): string {
+  const parts = (at: Date) => {
+    const get = (opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat("id-ID", { timeZone: tz, ...opts }).format(at);
+    return { day: get({ day: "numeric" }), long: get({ month: "long" }), short: get({ month: "short" }).replace(".", ""), year: get({ year: "numeric" }) };
+  };
+  const a = parts(startsAt);
+  const b = parts(endsAt);
+  if (a.year !== b.year) return `${a.day} ${a.short} ${a.year} – ${b.day} ${b.short} ${b.year}`;
+  if (a.long !== b.long) return `${a.day} ${a.short} – ${b.day} ${b.short} ${b.year}`;
+  if (a.day !== b.day) return `${a.day} – ${b.day} ${b.long} ${b.year}`;
+  return `${a.day} ${a.long} ${a.year}`;
+}
+
 export function formatDateTime(at: Date, tz: Timezone): string {
   const day = new Intl.DateTimeFormat("id-ID", { timeZone: tz, weekday: "long", day: "numeric", month: "long", year: "numeric" });
   const clock = new Intl.DateTimeFormat("id-ID", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });

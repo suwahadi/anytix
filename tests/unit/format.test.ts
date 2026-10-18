@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDateTime, formatEventSchedule, formatRupiah, toIsoFromLocal, toLocalInput } from "@/lib/format";
+import { formatCardDate, formatDateTime, formatEventSchedule, formatRupiah, toIsoFromLocal, toLocalInput } from "@/lib/format";
 
 describe("timezone conversion for datetime-local inputs", () => {
   it("adds the fixed Indonesian offset", () => {
@@ -49,5 +49,13 @@ describe("formatDateTime", () => {
   it("shows day, date, time and zone label in the event timezone", () => {
     expect(formatDateTime(new Date("2026-12-01T03:19:00Z"), "Asia/Jakarta")).toBe("Selasa, 1 Desember 2026 pukul 10.19 WIB");
     expect(formatDateTime(new Date("2026-12-01T03:19:00Z"), "Asia/Makassar")).toBe("Selasa, 1 Desember 2026 pukul 11.19 WITA");
+  });
+
+  it("card dates are short and merge shared month and year", () => {
+    const tz = "Asia/Jakarta" as const;
+    expect(formatCardDate(new Date("2026-12-20T12:00:00Z"), new Date("2026-12-20T15:00:00Z"), tz)).toBe("20 Desember 2026");
+    expect(formatCardDate(new Date("2026-11-07T03:00:00Z"), new Date("2026-11-08T15:00:00Z"), tz)).toBe("7 – 8 November 2026");
+    expect(formatCardDate(new Date("2026-11-30T03:00:00Z"), new Date("2026-12-01T15:00:00Z"), tz)).toBe("30 Nov – 1 Des 2026");
+    expect(formatCardDate(new Date("2026-12-31T03:00:00Z"), new Date("2027-01-01T15:00:00Z"), tz)).toBe("31 Des 2026 – 1 Jan 2027");
   });
 });
