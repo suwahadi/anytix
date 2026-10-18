@@ -37,7 +37,7 @@ describe("public nav", () => {
     expect(cols.map((c) => c.title)).toEqual(["Tentang Kami", "Informasi", "Kategori Event"]);
     expect(cols[1].items).toEqual([
       { label: "Syarat & Ketentuan", href: "/terms" },
-      { label: "Kebijakan Privasi & Pemrosesan Data", href: "/privacy" },
+      { label: "Kebijakan Privasi", href: "/privacy" },
       { label: "FAQ", soon: true },
     ]);
     expect(cols[0].items).toEqual([
