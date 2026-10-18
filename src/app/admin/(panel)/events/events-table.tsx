@@ -3,10 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
+import { PlusIcon, SearchIcon } from "@/components/icons";
 import { Alert } from "@/components/ui/alert";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
-import { Button, buttonClass } from "@/components/ui/button";
-import { Field, Select } from "@/components/ui/field";
+import { Button, buttonClass, ICON_ONLY_ON_PHONE } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AdminEventRow } from "@/lib/catalog/event-service";
 import { requestJson } from "@/lib/client-fetch";
@@ -21,6 +21,8 @@ export const STATUS_LABELS: Record<string, { label: string; tone: BadgeTone }> =
 };
 
 export const SALE_LABELS: Record<string, string> = { on_sale: "Penjualan dibuka", paused: "Penjualan dijeda", closed: "Penjualan ditutup" };
+
+const CONTROL = "h-11 w-full min-w-0 rounded-md border border-border-strong bg-surface px-3 text-base text-text placeholder:text-muted";
 
 export function formatAdminSchedule(startsAt: string | Date, timezone: string) {
   const tz = timezone as Timezone;
@@ -70,36 +72,52 @@ export function EventsTable() {
 
   return (
     <div className="mt-6 flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <form onSubmit={search} className="flex flex-wrap items-end gap-2" role="search">
-          <div className="w-64 max-w-full">
-            <Field id="event-search" label="Cari judul, kota, atau slug" value={q} onChange={(e) => setQ(e.target.value)} />
-          </div>
-          <div className="w-40">
-            <Select
-              id="event-status"
-              label="Status"
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                load(q, e.target.value);
-              }}
-              options={[
-                { value: "", label: "Semua" },
-                { value: "draft", label: "Draf" },
-                { value: "published", label: "Terbit" },
-                { value: "archived", label: "Arsip" },
-              ]}
-            />
-          </div>
-          <Button type="submit" variant="secondary" loading={loading}>
-            Cari
-          </Button>
-        </form>
-        <Link href="/admin/events/new" className={buttonClass()}>
-          Buat event
+      <form
+        onSubmit={search}
+        role="search"
+        className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-2 sm:grid-cols-[minmax(0,1fr)_11rem_auto_auto]"
+      >
+        <div className="relative col-span-3 sm:col-span-1">
+          <label htmlFor="event-search" className="sr-only">
+            Cari judul, kota, atau slug
+          </label>
+          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-muted" />
+          <input
+            id="event-search"
+            type="search"
+            enterKeyHint="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Cari judul, kota, atau slug"
+            className={`${CONTROL} pl-10`}
+          />
+        </div>
+        <label htmlFor="event-status" className="sr-only">
+          Status
+        </label>
+        <select
+          id="event-status"
+          value={status}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            load(q, e.target.value);
+          }}
+          className={CONTROL}
+        >
+          <option value="">Semua status</option>
+          <option value="draft">Draf</option>
+          <option value="published">Terbit</option>
+          <option value="archived">Arsip</option>
+        </select>
+        <Button type="submit" variant="secondary" loading={loading}>
+          {!loading && <SearchIcon className="size-[18px]" />}
+          Cari
+        </Button>
+        <Link href="/admin/events/new" aria-label="Buat event" title="Buat event" className={`${buttonClass()} ${ICON_ONLY_ON_PHONE}`}>
+          <PlusIcon className="size-5" />
+          <span className="max-sm:sr-only">Buat event</span>
         </Link>
-      </div>
+      </form>
 
       {error && (
         <div className="flex flex-col items-start gap-3">
