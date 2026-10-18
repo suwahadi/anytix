@@ -19,6 +19,11 @@ const schema = z.object({
     .default("false")
     .transform((v) => v === "true"),
   MIDTRANS_NOTIFICATION_URL: optional,
+  TRUST_PROXY: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+  RATE_LIMIT_SCALE: z.coerce.number().min(0.1).max(100).default(1).catch(1),
   TURNSTILE_SITE_KEY: z.string().default("1x00000000000000000000AA"),
   TURNSTILE_SECRET_KEY: z.string().default("1x0000000000000000000000000000000AA"),
   SMTP_HOST: optional,

@@ -25,4 +25,10 @@ describe("parseEnv", () => {
     expect(env.MIDTRANS_IS_PRODUCTION).toBe(false);
     expect(env.APP_URL).toBe("http://localhost:3000");
   });
+
+  it("proxy trust and rate limit scale default safely", () => {
+    expect(parseEnv(valid)).toMatchObject({ TRUST_PROXY: false, RATE_LIMIT_SCALE: 1 });
+    expect(parseEnv({ ...valid, TRUST_PROXY: "true", RATE_LIMIT_SCALE: "10" })).toMatchObject({ TRUST_PROXY: true, RATE_LIMIT_SCALE: 10 });
+    for (const bad of ["abc", "0", "500"]) expect(parseEnv({ ...valid, RATE_LIMIT_SCALE: bad }).RATE_LIMIT_SCALE).toBe(1);
+  });
 });

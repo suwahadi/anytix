@@ -3,7 +3,7 @@ import { ORDER_UUID } from "@/lib/booking/order-view";
 import { sql } from "@/lib/db";
 import { midtransClientKey, snapScriptUrl } from "@/lib/payments/midtrans";
 import { ensureSnapToken } from "@/lib/payments/payment-service";
-import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { clientIp, ipLimit, rateLimit } from "@/lib/rate-limit";
 
 function json(body: unknown, status = 200): NextResponse {
   const res = NextResponse.json(body, { status });
@@ -13,7 +13,7 @@ function json(body: unknown, status = 200): NextResponse {
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ uuid: string }> }) {
-  if (!rateLimit(`orders-pay:${clientIp(req.headers)}`, 20, 60_000)) return json({ error: "Terlalu banyak percobaan. Coba lagi sebentar lagi." }, 429);
+  if (!rateLimit(`orders-pay:${clientIp(req.headers)}`, ipLimit(20), 60_000)) return json({ error: "Terlalu banyak percobaan. Coba lagi sebentar lagi." }, 429);
   const { uuid } = await params;
   if (!ORDER_UUID.test(uuid)) return json({ error: "Pesanan tidak ditemukan." }, 404);
   const [order] = await sql<{ id: number }[]>`select id from orders where public_uuid = ${uuid}`;

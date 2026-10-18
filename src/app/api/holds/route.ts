@@ -5,7 +5,7 @@ import { holdErrorResponse } from "@/lib/booking/hold-errors";
 import { sql } from "@/lib/db";
 import { HoldError, reserveTickets } from "@/lib/hold-service";
 import { visitorRoute } from "@/lib/public-route";
-import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { clientIp, ipLimit, rateLimit } from "@/lib/rate-limit";
 import { singleFlight } from "@/lib/single-flight";
 import { verifyTurnstile } from "@/lib/turnstile";
 
@@ -26,7 +26,7 @@ export const POST = visitorRoute(holdInput, async ({ visitorId, req, body }) => 
     return NextResponse.json({ error: "Muat ulang halaman lalu coba lagi.", fields: { idempotencyKey: "Tidak valid." } }, { status: 422 });
   }
   const ip = clientIp(req.headers);
-  if (!rateLimit(`holds:visitor:${visitorId}`, 10, 60_000) || !rateLimit(`holds:ip:${ip}`, 60, 60_000)) {
+  if (!rateLimit(`holds:visitor:${visitorId}`, 10, 60_000) || !rateLimit(`holds:ip:${ip}`, ipLimit(60), 60_000)) {
     return NextResponse.json({ error: TOO_MANY }, { status: 429 });
   }
 
