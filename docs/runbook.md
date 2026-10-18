@@ -18,36 +18,150 @@ Panduan untuk pemilik dan pengelola. Setiap langkah ditulis dengan menu, nilai, 
 Yang paling penting: `DATA_ENCRYPTION_KEY` dan `COOKIE_SECRET` di `.env.local`. Simpan salinannya di password manager pemilik.
 - Bila `DATA_ENCRYPTION_KEY` hilang, nomor identitas, password SMTP, dan secret 2FA di database tidak bisa dibaca lagi.
 
-## Deploy pertama
+## Deploy pertama (aaPanel, site anytix.web.id yang sudah ada sebagai PHP project)
 
-1. **Siapkan VPS di aaPanel:**
-   - App Store → pasang **Nginx** dan **Node.js version manager**, lalu pilih Node 22 dan jadikan default.
-   - Terminal: jalankan `npm install -g pm2`, lalu `node -v`. Hasilnya harus `v22.…`.
-   - Security → Firewall: hanya port 22 (SSH), 80, 443, dan port panel aaPanel yang terbuka. Port 3000 **jangan** dibuka.
-2. **DNS:**
-   - Buat record A `anytix.web.id` ke IP publik VPS. Bila memakai Cloudflare, awan oranye boleh menyala setelah SSL aktif.
-   - Berhasil bila: `ping anytix.web.id` menjawab dari IP VPS (atau IP Cloudflare bila proxy menyala).
-3. **Website dan SSL:**
-   - Website → Add site, domain `anytix.web.id`, jenis "Pure static".
-   - Website → `anytix.web.id` → SSL → Let's Encrypt → Apply. Aktifkan **Force HTTPS**.
-   - Website → `anytix.web.id` → Config: ganti blok `location /` bawaan dengan isi `deploy/nginx-anytix.conf`, lalu Save. Bila Cloudflare tidak dipakai, baris `set_real_ip_from` dan `real_ip_header` boleh dihapus.
-4. **Ambil kode dan isi env:**
+Site `anytix.web.id` yang sudah dibuat di aaPanel dipertahankan, karena domain dan sertifikat SSL-nya ada di sana. Yang diubah hanya cara site itu melayani request: bukan lagi PHP, tapi diteruskan (reverse proxy) ke aplikasi Node di `127.0.0.1:3000`. Kode aplikasi diletakkan di folder terpisah, `/www/wwwroot/anytix`. Folder bawaan site (`/www/wwwroot/anytix.web.id`) tidak dipakai lagi.
+
+Urutan kerja: **A** cek VPS → **B** pasang Node dan PM2 → **C** ambil kode dan isi `.env.local` → **D** build dan jalankan → **E** ubah site PHP menjadi reverse proxy → **F** firewall → **G** verifikasi → **H** langkah sesudahnya.
+
+### A. Cek VPS
+
+1. Masuk SSH sebagai root. aaPanel → Terminal juga bisa.
+2. Cek RAM: `free -h`. Build Next.js butuh sekitar 2 GB.
+   - Bila RAM di bawah 2 GB atau `Swap` bernilai 0, buat swap 2 GB:
+     ```bash
+     fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+     echo '/swapfile none swap sw 0 0' >> /etc/fstab
+     ```
+   - Berhasil bila: `free -h` menampilkan Swap 2.0Gi.
+3. Cek IP publik VPS: `curl -4 ifconfig.me`. Catat IP-nya, karena dipakai untuk DNS dan Brevo.
+
+### B. Pasang Node 22, PM2, git
+
+1. aaPanel → **App Store** → cari **Node.js version manager** → Install.
+2. Buka Node.js version manager → pilih versi **v22.x (LTS)** → Install. Setelah selesai, jadikan versi itu yang dipakai command line (tombol **Set as command-line version** atau sejenisnya).
+3. Di Terminal:
    ```bash
-   cd /www/wwwroot && git clone https://github.com/suwahadi/anytix.git anytix && cd anytix
-   cp .env.production.example .env.local && nano .env.local
+   node -v          # harus v22.x
+   npm -v
+   npm install -g pm2
+   pm2 -v
+   git --version || apt install -y git
    ```
-   - Isi semua nilai. Rahasia baru dibuat dengan perintah yang tertulis di komentar template.
-   - Karena database dipakai bersama dev, salin `COOKIE_SECRET` dan `DATA_ENCRYPTION_KEY` dari `.env.local` dev yang sekarang, **bukan** membuat baru. Dengan begitu data terenkripsi yang sudah ada tetap terbaca.
-5. **Deploy:**
+   - Berhasil bila: keempat perintah menampilkan versi.
+   - Jangan membuat "Node Project" di menu Website aaPanel untuk aplikasi ini. Aplikasi dijalankan oleh PM2 lewat `deploy/ecosystem.config.cjs`. Dua pengelola untuk satu aplikasi akan saling bentrok di port 3000.
+
+### C. Ambil kode dan isi `.env.local`
+
+1. Clone repo:
    ```bash
+   cd /www/wwwroot
+   git clone https://github.com/suwahadi/anytix.git anytix
+   cd anytix
+   cp .env.production.example .env.local
+   chmod 600 .env.local
+   ```
+2. Buat site key Turnstile untuk domain: dashboard Cloudflare → **Turnstile** → Add widget.
+   - Nama: `AnyTix`.
+   - Hostname: `anytix.web.id`.
+   - Mode: **Managed**.
+
+   Salin Site Key dan Secret Key. Turnstile bisa dipakai walau DNS domain tidak di Cloudflare.
+3. Isi `.env.local` dengan `nano .env.local`:
+
+   | Variabel | Isi |
+   |---|---|
+   | `DATABASE_URL`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_MEDIA_BASE_URL` | Sama persis dengan `.env.local` di laptop (database yang sama) |
+   | `DATABASE_URL_DIRECT` | Supabase → Connect → **Session pooler** (port 5432), untuk backup |
+   | `COOKIE_SECRET`, `DATA_ENCRYPTION_KEY` | **Salin dari `.env.local` laptop. Jangan membuat baru**, karena data terenkripsi yang sudah ada harus tetap terbaca |
+   | `MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_IS_PRODUCTION` | Tahap pertama boleh key **sandbox** dengan `MIDTRANS_IS_PRODUCTION=false`, untuk mencoba situs dulu. Ganti ke key produksi dan `true` saat bagian "Midtrans produksi" dikerjakan |
+   | `APP_URL` | `https://anytix.web.id` (sudah terisi) |
+   | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Dari langkah 2 |
+   | `SMTP_*` | Cadangan bila pengaturan email di panel kosong. `SMTP_FROM` sudah terisi `AnyTix <no-reply@anytix.web.id>` |
+   | `TRUST_PROXY=true`, `RATE_LIMIT_SCALE=1` | Sudah terisi, jangan diubah |
+   | `DB_TESTS_ALLOWED`, `DB_WRITE_ALLOWED` | **Jangan ditambahkan** di server |
+
+   Simpan dengan `Ctrl+O`, Enter, lalu keluar dengan `Ctrl+X`.
+   - Berhasil bila: `grep -c '=$' .env.local` hanya menghitung baris yang memang boleh kosong (`MIDTRANS_NOTIFICATION_URL` dan baris komentar).
+
+### D. Build dan jalankan aplikasi
+
+1. Deploy:
+   ```bash
+   cd /www/wwwroot/anytix
    bash deploy/deploy.sh
-   pm2 startup   # jalankan perintah yang dicetaknya, supaya PM2 hidup lagi setelah VPS reboot
-   pm2 save
    ```
-   - Berhasil bila: deploy.sh berakhir dengan `{"ok":true,…}` dan `Deploy selesai.`, `pm2 status` menampilkan `anytix-web` dan `anytix-worker` online, dan `https://anytix.web.id` terbuka.
-6. **Monitor uptime:** daftarkan `https://anytix.web.id/api/health` di UptimeRobot (gratis, interval 5 menit, alert ke email/WhatsApp pemilik).
-   - Berhasil bila: status monitor Up.
-7. **Gerbang terakhir:** jalankan `npm run preflight`.
+   Proses pertama makan waktu 3–10 menit (`npm ci` lalu build). Migrasi akan menjawab `up to date`, karena database sudah termigrasi dari laptop.
+   - Berhasil bila: baris terakhir `{"ok":true,"db":"ok",…}` lalu `Deploy selesai.`
+   - Bila build berhenti dengan `Killed`, RAM tidak cukup. Buat swap (A.2), lalu ulangi.
+2. Pastikan PM2 hidup lagi setelah VPS reboot:
+   ```bash
+   pm2 startup          # salin dan jalankan perintah "sudo env PATH=..." yang dicetaknya
+   pm2 save
+   pm2 status           # anytix-web dan anytix-worker: online
+   ```
+3. Hentikan worker di laptop. Mulai sekarang worker produksi yang memproses antrean. Laptop hanya boleh menjalankan worker bila server mati dan Anda sengaja mengambil alih.
+
+### E. Ubah site PHP `anytix.web.id` menjadi reverse proxy
+
+1. **DNS:** di pengelola DNS domain, buat record **A** `anytix.web.id` ke IP VPS (A.3). Tambahkan juga `www` sebagai CNAME ke `anytix.web.id` bila ingin `www` ikut.
+   - Bila DNS di Cloudflare, biarkan dulu **DNS only** (awan abu-abu) sampai SSL terpasang.
+   - Berhasil bila: `ping anytix.web.id` menjawab dari IP VPS.
+2. **Matikan PHP:** aaPanel → **Website** → `anytix.web.id` → **Conf** (atau klik nama site) → tab **PHP version** → pilih **Static** / **Pure static** → Switch.
+3. **SSL:** di jendela yang sama, tab **SSL** → **Let's Encrypt** → centang `anytix.web.id` (dan `www.anytix.web.id` bila ada) → Apply. Setelah terbit, nyalakan **Force HTTPS**.
+   - Berhasil bila: tab SSL menampilkan sertifikat dengan tanggal kedaluwarsa sekitar 90 hari ke depan.
+4. **Edit config Nginx:** tab **Config file** (atau Config). Di dalam blok `server { … }`:
+   1. **Hapus** baris `include enable-php-…conf;` bila masih ada.
+   2. **Hapus** dua blok cache statis bawaan aaPanel. Bentuknya seperti ini:
+      ```nginx
+      location ~ .*\.(gif|jpg|jpeg|png|bmp|swf)$ { expires 30d; … }
+      location ~ .*\.(js|css)?$ { expires 12h; … }
+      ```
+      Kedua blok ini mencari file di folder site lama, sehingga semua file `/_next/static/…js` dan `.css` aplikasi menjadi 404 dan halaman tampil tanpa gaya.
+   3. **Biarkan** blok `location ~ \.well-known` (perpanjangan SSL otomatis), blok larangan file seperti `.user.ini` dan `.git`, baris `ssl_*`, dan baris `access_log` / `error_log`.
+   4. **Tempel** seluruh isi file `deploy/nginx-anytix.conf` dari repo tepat sebelum kurung kurawal penutup `}` terakhir blok server. Lihat isinya di VPS dengan `cat /www/wwwroot/anytix/deploy/nginx-anytix.conf`.
+   5. Bila DNS **tidak** lewat proxy Cloudflare, baris `set_real_ip_from …` dan `real_ip_header …` boleh dihapus. Dibiarkan pun tidak berbahaya.
+   6. **Save.** aaPanel menguji config sebelum menyimpan. Bila muncul error, baca baris yang disebut. Biasanya kurung kurawal tidak seimbang, atau ada dua blok `location /`. Hapus `location /` lama bila ada.
+5. **Jangan** memakai menu **Reverse proxy** aaPanel untuk site ini. Proxy sudah diatur di config, dan dua pengaturan proxy akan bentrok.
+6. **Cloudflare (opsional, setelah SSL jalan):** nyalakan awan oranye, lalu atur Cloudflare → SSL/TLS → mode **Full (strict)**. Mode Flexible menyebabkan redirect berulang.
+
+### F. Firewall
+
+aaPanel → **Security**: yang terbuka hanya port **22** (SSH), **80**, **443**, dan port panel aaPanel. Port **3000 tidak boleh dibuka**. Aplikasi memang hanya mendengar di `127.0.0.1`, tapi aturan ini menutup celah bila suatu saat salah konfigurasi.
+
+### G. Verifikasi
+
+Di VPS:
+```bash
+curl -s https://anytix.web.id/api/health        # {"ok":true,"db":"ok",...}
+curl -sI https://anytix.web.id | grep -iE "^HTTP|strict-transport|content-security"
+curl -sI https://anytix.web.id/_next/static/ 2>/dev/null | head -1   # bukan 404 dari nginx folder lama
+pm2 status
+```
+Di browser (ponsel dan laptop):
+1. `https://anytix.web.id` terbuka, bergaya normal, dan gambar event tampil.
+2. `https://anytix.web.id/admin/login` → masuk dengan akun admin Anda.
+3. Pilih tiket di event, sampai langkah pembayaran. Widget Turnstile harus muncul tanpa error. Bila tahap ini masih memakai key sandbox Midtrans, pembayaran bisa dicoba dengan simulator sandbox.
+4. Panel → Check-in terbuka dan kamera bisa diizinkan (butuh HTTPS, yang sekarang sudah ada).
+
+| Masalah | Penyebab dan perbaikan |
+|---|---|
+| `502 Bad Gateway` | Aplikasi tidak jalan. Cek `pm2 status` dan `pm2 logs anytix-web --lines 100`. |
+| Halaman tanpa gaya, file `/_next/static/…` 404 | Blok cache statis aaPanel (E.4.2) masih ada. Hapus, lalu Save. |
+| `ERR_TOO_MANY_REDIRECTS` | Cloudflare SSL mode masih Flexible. Ubah ke Full (strict). |
+| Turnstile error atau "Verifikasi keamanan gagal" | Hostname widget bukan `anytix.web.id`, atau key di `.env.local` salah. Perbaiki, lalu `bash deploy/deploy.sh` (site key dibaca saat build). |
+| Login admin langsung keluar lagi | `APP_URL` bukan https, atau `COOKIE_SECRET` berbeda dari laptop. Samakan, lalu deploy ulang. |
+| Upload poster gagal (413) | `client_max_body_size 11m;` dari snippet belum tersimpan di config. |
+
+### H. Sesudah situs jalan
+
+Kerjakan berurutan, masing-masing ada di bagian runbook berikutnya:
+1. **Midtrans produksi:** key produksi, URL notifikasi, `npm run midtrans:check`.
+2. **Email dari domain:** Brevo domain, DKIM/DMARC, IP VPS, kotak masuk `cs@anytix.web.id`.
+3. **Backup dan restore:** `postgresql-client`, cron harian, uji restore.
+4. **Monitor uptime:** UptimeRobot → New monitor → HTTP(s) → `https://anytix.web.id/api/health`, interval 5 menit, alert ke email/WhatsApp Anda.
+5. **Ganti `admin@admin.com`** di Panel → Admin & Audit dan pastikan semua admin memakai 2FA. Lalu di laptop, hapus baris `DB_TESTS_ALLOWED=true` dan `DB_WRITE_ALLOWED=true` dari `.env.local`.
+6. **Gerbang terakhir:** di VPS jalankan `npm run preflight`.
    - Berhasil bila: semua baris PASS dan tertulis `Siap produksi.`
 
 ## Deploy rutin dan rollback
