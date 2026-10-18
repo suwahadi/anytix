@@ -40,6 +40,9 @@ function readStored(key: string): string | null {
   }
 }
 
+/** Turnstile normally answers in a second or two; past this the visitor gets a retry instead of an endless "verifying" state. */
+const VERIFY_TIMEOUT_MS = 20_000;
+
 export function TicketPicker({ slug, eventId, siteKey, categories }: { slug: string; eventId: number; siteKey: string; categories: Category[] }) {
   const router = useRouter();
   const [badges, setBadges] = useState<Record<number, TicketBadge>>(() => Object.fromEntries(categories.map((c) => [c.id, c.badge])));
@@ -54,6 +57,8 @@ export function TicketPicker({ slug, eventId, siteKey, categories }: { slug: str
   const [edited, setQty] = useState<Record<number, number> | null>(null);
   const qty = edited ?? restored;
   const [token, setToken] = useState("");
+  const [verifyFailed, setVerifyFailed] = useState(false);
+  const [needsTick, setNeedsTick] = useState(false);
   const [buying, setBuying] = useState(false);
   const [buyError, setBuyError] = useState("");
   const turnstile = useRef<TurnstileHandle>(null);
@@ -109,8 +114,28 @@ export function TicketPicker({ slug, eventId, siteKey, categories }: { slug: str
     setQty({ ...qty, [id]: count });
   };
 
+  useEffect(() => {
+    if (token || verifyFailed || needsTick) return;
+    const timer = setTimeout(() => setVerifyFailed(true), VERIFY_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [token, verifyFailed, needsTick]);
+
+  function onToken(t: string) {
+    setToken(t);
+    if (t) {
+      setVerifyFailed(false);
+      setNeedsTick(false);
+    }
+  }
+
+  function retryVerify() {
+    setVerifyFailed(false);
+    turnstile.current?.reset();
+  }
+
   async function buy() {
-    if (chosen.length === 0 || buying) return;
+    if (!token && verifyFailed) return retryVerify();
+    if (chosen.length === 0 || buying || !token) return;
     setBuying(true);
     setBuyError("");
     idempotencyKey.current ||= crypto.randomUUID();
@@ -236,10 +261,35 @@ export function TicketPicker({ slug, eventId, siteKey, categories }: { slug: str
             </div>
           </dl>
           {buyError && <Alert>{buyError}</Alert>}
-          {chosen.length > 0 && <TurnstileWidget ref={turnstile} siteKey={siteKey} onToken={setToken} />}
+          <div
+            className={`max-lg:fixed max-lg:inset-x-4 max-lg:bottom-[calc(5.75rem+env(safe-area-inset-bottom))] max-lg:z-40 max-lg:flex max-lg:justify-center ${
+              needsTick ? "max-lg:rounded-xl max-lg:border max-lg:border-border max-lg:bg-surface max-lg:p-2 max-lg:shadow-lg" : token ? "max-lg:hidden" : ""
+            }`}
+          >
+            <TurnstileWidget
+              ref={turnstile}
+              siteKey={siteKey}
+              onToken={onToken}
+              onError={() => setVerifyFailed(true)}
+              onInteractive={setNeedsTick}
+              appearance="interaction-only"
+              className=""
+            />
+          </div>
+          {chosen.length > 0 && verifyFailed && !token && (
+            <p role="alert" className="hidden text-sm text-danger lg:block">
+              Verifikasi keamanan gagal. Periksa koneksi, lalu tekan Coba lagi.
+            </p>
+          )}
           <div className={chosen.length > 0 ? "hidden lg:block" : ""}>
-            <Button className="w-full" onClick={buy} loading={buying} disabled={chosen.length === 0 || !token} aria-describedby={chosen.length === 0 ? "buy-note" : undefined}>
-              Beli Sekarang
+            <Button
+              className="w-full"
+              onClick={buy}
+              loading={buying || (chosen.length > 0 && !token && !verifyFailed && !needsTick)}
+              disabled={chosen.length === 0 || (!token && needsTick)}
+              aria-describedby={chosen.length === 0 ? "buy-note" : undefined}
+            >
+              {chosen.length > 0 && verifyFailed && !token ? "Coba lagi" : "Beli Sekarang"}
             </Button>
           </div>
           {chosen.length === 0 && (
@@ -254,11 +304,13 @@ export function TicketPicker({ slug, eventId, siteKey, categories }: { slug: str
         <div data-buy-bar className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgb(0_0_0/0.08)] lg:hidden">
           <div className="mx-auto flex w-full max-w-6xl items-center gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted">{token ? `${units} tiket · Subtotal` : "Memverifikasi keamanan…"}</p>
+              <p role="status" className={`text-xs ${verifyFailed && !token ? "text-danger" : "text-muted"}`}>
+                {token ? `${units} tiket · Subtotal` : verifyFailed ? "Verifikasi gagal" : needsTick ? "Centang verifikasi di atas" : "Memverifikasi keamanan…"}
+              </p>
               <p className="text-lg font-extrabold leading-tight text-text">{formatRupiah(subtotal)}</p>
             </div>
-            <Button className="shrink-0 px-6" onClick={buy} loading={buying} disabled={!token}>
-              Beli Sekarang
+            <Button className="shrink-0 px-6" onClick={buy} loading={buying || (!token && !verifyFailed && !needsTick)} disabled={!token && needsTick}>
+              {verifyFailed && !token ? "Coba lagi" : "Beli Sekarang"}
             </Button>
           </div>
           {buyError && (

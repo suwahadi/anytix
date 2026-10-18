@@ -35,13 +35,37 @@ function loadScript(): Promise<void> {
   return loading;
 }
 
-/** Cloudflare Turnstile; a token is single use, so callers clear their copy and reset() after every request that consumed it. */
-export function TurnstileWidget({ siteKey, onToken, ref }: { siteKey: string; onToken: (token: string) => void; ref?: Ref<TurnstileHandle> }) {
+/**
+ * Cloudflare Turnstile; a token is single use, so callers clear their copy and reset() after every request that consumed it.
+ * `interaction-only` keeps the widget invisible unless Cloudflare asks the visitor to tick it, so the caller must place it where it will be seen.
+ */
+export function TurnstileWidget({
+  siteKey,
+  onToken,
+  onError,
+  onInteractive,
+  appearance = "always",
+  className = "min-h-[65px]",
+  ref,
+}: {
+  siteKey: string;
+  onToken: (token: string) => void;
+  onError?: () => void;
+  /** Called with true when Cloudflare shows the checkbox and false once the visitor has answered it. */
+  onInteractive?: (shown: boolean) => void;
+  appearance?: "always" | "interaction-only";
+  className?: string;
+  ref?: Ref<TurnstileHandle>;
+}) {
   const box = useRef<HTMLDivElement>(null);
   const widget = useRef<string | null>(null);
   const callback = useRef(onToken);
+  const failed = useRef(onError);
+  const interactive = useRef(onInteractive);
   useEffect(() => {
     callback.current = onToken;
+    failed.current = onError;
+    interactive.current = onInteractive;
   });
 
   useImperativeHandle(ref, () => ({
@@ -59,18 +83,31 @@ export function TurnstileWidget({ siteKey, onToken, ref }: { siteKey: string; on
           sitekey: siteKey,
           language: "id",
           theme: "auto",
+          appearance,
           callback: (t: string) => callback.current(t),
           "expired-callback": () => callback.current(""),
-          "error-callback": () => callback.current(""),
+          "error-callback": () => {
+            callback.current("");
+            failed.current?.();
+          },
+          "before-interactive-callback": () => interactive.current?.(true),
+          "after-interactive-callback": () => interactive.current?.(false),
+          "timeout-callback": () => {
+            callback.current("");
+            failed.current?.();
+          },
         });
       })
-      .catch(() => callback.current(""));
+      .catch(() => {
+        callback.current("");
+        failed.current?.();
+      });
     return () => {
       cancelled = true;
       if (widget.current && window.turnstile) window.turnstile.remove(widget.current);
       widget.current = null;
     };
-  }, [siteKey]);
+  }, [siteKey, appearance]);
 
-  return <div ref={box} className="min-h-[65px]" />;
+  return <div ref={box} className={className} />;
 }

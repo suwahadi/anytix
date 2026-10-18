@@ -4,7 +4,7 @@ import { findOrderUuid, normalizeInvoice } from "@/lib/booking/track-order";
 import { readJson, str } from "@/lib/http";
 import { clientIp, ipLimit, rateLimit } from "@/lib/rate-limit";
 
-const NOT_FOUND = "Kode pesanan atau email tidak cocok. Periksa lagi email konfirmasi pesanan Anda.";
+const NOT_FOUND = "Kode pesanan atau email tidak cocok. Periksa data pesanan Anda.";
 
 function json(body: unknown, status = 200): NextResponse {
   const res = NextResponse.json(body, { status });
