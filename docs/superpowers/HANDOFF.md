@@ -7,7 +7,7 @@ Terakhir diperbarui: 18 Oktober 2026, di akhir Fase 3. Dokumen ini untuk agent A
 - `PRD.md`: kebutuhan produk.
 - `docs/superpowers/specs/2026-10-17-anytix-mvp-design.md`: keputusan desain yang disetujui pemilik, termasuk arah visual dan dial `ENERGY 1 / RHYTHM 2 / MOTION 1`.
 - `docs/superpowers/plans/2026-10-17-fase-0-fondasi.md`, `…-fase-1-katalog-admin.md`, `…-fase-2-booking-inti.md`, `…-fase-3-hari-h.md`: empat fase yang sudah selesai. Kotak centang di file plan tidak diperbarui; status sebenarnya ada di dokumen ini.
-- `anti-slop/audit-001-2026-10-17.md` (halaman publik), `audit-002-2026-10-17.md` (booking, pesanan), dan `audit-003-2026-10-18.md` (layar Hari-H): Delivery Gate bersih. Temuan LOW yang masih menunggu keputusan pemilik: nomor 1 di audit 002. Temuan 1–3 audit 003 sudah diperbaiki.
+- `anti-slop/audit-001-2026-10-17.md` (halaman publik), `audit-002-2026-10-17.md` (booking, pesanan), dan `audit-003-2026-10-18.md` (layar Hari-H): Delivery Gate bersih. Semua temuan LOW sudah diperbaiki atas permintaan pemilik (audit 002 nomor 1, audit 003 nomor 1–3).
 - `AGENTS.md`: aturan proyek dan aturan pemilik.
 
 Ruang lingkup yang disepakati adalah Fase 0–3, dan keempatnya sudah selesai. Fase 4 (go-live produksi) di luar putaran ini kecuali pemilik memintanya.
@@ -27,11 +27,10 @@ Hasil test terakhir: `npm test` 143 lulus, `npm run test:db` 233 lulus, `lint`, 
 
 1. **Pemilik: ganti email `admin@admin.com`.** Caranya lewat panel `/admin/admins` → Ganti email (atau tambah admin baru lalu nonaktifkan yang lama). Alert admin dikirim ke semua admin aktif, dan `admin.com` adalah domain milik pihak lain. Sampai diganti, worker jangan dijalankan di lingkungan yang menerima pembayaran sungguhan.
 2. **Pemilik: perbaiki `SMTP_FROM` di `.env.local`.** Formatnya harus `AnyTix <alamat@gmail.com>`. Nilai di panel (`settings.smtp`) sudah benar dan dipakai lebih dulu.
-3. **Pemilik: putuskan temuan LOW** nomor 1 di audit 002.
-4. **Uji di perangkat sungguhan (belum dilakukan).** Kamera di sesi agent selalu tiruan.
+3. **Uji di perangkat sungguhan (belum dilakukan).** Kamera di sesi agent selalu tiruan.
    - Buka `/admin/check-in` di ponsel lewat tunnel HTTPS (ngrok), pasang sebagai PWA, lalu scan QR dari halaman pesanan dan dari PDF cetak.
    - Uji juga QRIS sungguhan (harus "TIDAK VALID"), dan tahan satu tiket di depan kamera ≥ 3 detik (harus tetap hijau sekali, tanpa merah).
-5. **Bila pemilik meminta Fase 4:**
+4. **Bila pemilik meminta Fase 4:**
    - Midtrans produksi.
    - Autentikasi domain email (DKIM, DMARC) dan paket Brevo berbayar.
    - Runbook dan uji restore.

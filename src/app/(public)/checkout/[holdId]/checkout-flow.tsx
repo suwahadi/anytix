@@ -387,31 +387,19 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
                   id={`${uid}-terms`}
                   checked={consents.terms}
                   onChange={(v) => setConsents({ ...consents, terms: v })}
-                  label={
-                    <>
-                      Saya menyetujui{" "}
-                      <Link href="/terms" target="_blank" className="font-semibold text-accent-text underline underline-offset-4">
-                        Syarat &amp; Ketentuan
-                      </Link>
-                      .
-                    </>
-                  }
+                  label="Saya menyetujui Syarat & Ketentuan."
+                  link={{ href: "/terms", text: "Baca Syarat & Ketentuan" }}
                 />
                 <Consent
                   id={`${uid}-privacy`}
                   checked={consents.privacy}
                   onChange={(v) => setConsents({ ...consents, privacy: v })}
-                  label={
-                    <>
-                      Saya menyetujui{" "}
-                      <Link href="/privacy" target="_blank" className="font-semibold text-accent-text underline underline-offset-4">
-                        Kebijakan Privasi &amp; Pemrosesan Data
-                      </Link>
-                      {view.hasIdentityField
-                        ? ", termasuk pemrosesan nomor identitas untuk verifikasi identitas pemesan saat check-in. Nomor identitas dihapus 60 hari setelah acara berakhir."
-                        : "."}
-                    </>
-                  }
+                  label={`Saya menyetujui Kebijakan Privasi & Pemrosesan Data${
+                    view.hasIdentityField
+                      ? ", termasuk pemrosesan nomor identitas untuk verifikasi identitas pemesan saat check-in. Nomor identitas dihapus 60 hari setelah acara berakhir."
+                      : "."
+                  }`}
+                  link={{ href: "/privacy", text: "Baca Kebijakan Privasi" }}
                 />
                 <TurnstileWidget ref={turnstile} siteKey={siteKey} onToken={setToken} />
                 {payError && <Alert>{payError}</Alert>}
@@ -532,13 +520,30 @@ function MethodOption({ uid, id, label, checked, onSelect }: { uid: string; id: 
   );
 }
 
-function Consent({ id, label, checked, onChange }: { id: string; label: ReactNode; checked: boolean; onChange: (v: boolean) => void }) {
+function Consent({
+  id,
+  label,
+  link,
+  checked,
+  onChange,
+}: {
+  id: string;
+  label: ReactNode;
+  link: { href: string; text: string };
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
     <div className="flex items-start gap-3">
       <input id={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-accent" />
-      <label htmlFor={id} className="text-sm text-text">
-        {label}
-      </label>
+      <div className="flex flex-col">
+        <label htmlFor={id} className="text-sm text-text">
+          {label}
+        </label>
+        <Link href={link.href} target="_blank" className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-accent-text underline underline-offset-4">
+          {link.text}
+        </Link>
+      </div>
     </div>
   );
 }
