@@ -16,7 +16,8 @@
     "worker": "tsx --env-file=.env.local worker/index.ts",
     "db:apply": "tsx --env-file=.env.local scripts/apply-sql.ts",
     "db:reset-dev": "tsx --env-file=.env.local scripts/reset-dev-data.ts",
-    "preflight": "tsx --env-file=.env.local scripts/preflight.ts"
+    "preflight": "tsx --env-file=.env.local scripts/preflight.ts",
+    "midtrans:check": "tsx --env-file=.env.local scripts/check-midtrans.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
