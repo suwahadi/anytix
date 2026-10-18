@@ -173,3 +173,85 @@ export function WhatsAppIcon({ className = "size-5" }: { className?: string }) {
     </svg>
   );
 }
+
+export function MusicIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M9 18V5l11-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="17" cy="16" r="3" />
+    </Svg>
+  );
+}
+
+export function FrameIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="m3 16 5-5 4 4 3-3 6 6" />
+      <circle cx="15.5" cy="8.5" r="1.5" />
+    </Svg>
+  );
+}
+
+export function MaskIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M4 4h16v7a8 8 0 0 1-16 0V4z" />
+      <path d="M8.5 9h1M14.5 9h1M9 14.5a4 4 0 0 0 6 0" />
+    </Svg>
+  );
+}
+
+export function BallIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3v18M3 12h18M5.6 5.6c3.5 3.5 3.5 9.3 0 12.8M18.4 5.6c-3.5 3.5-3.5 9.3 0 12.8" />
+    </Svg>
+  );
+}
+
+export function MountainIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="m3 20 6.5-11 4 6.5L16 12l5 8H3z" />
+      <circle cx="17" cy="6" r="2" />
+    </Svg>
+  );
+}
+
+export function MicIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" />
+    </Svg>
+  );
+}
+
+export function ToolIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M14.5 5.5a4 4 0 0 0 5 5L21 12l-9 9-3-3 9-9-1.5-1.5a4 4 0 0 0-5-5L14 4z" />
+      <path d="m3 21 4-4" />
+    </Svg>
+  );
+}
+
+export function TrophyIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M8 4h8v5a4 4 0 0 1-8 0V4zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8M9 17h6" />
+    </Svg>
+  );
+}
+
+export function TicketIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M3 8a2 2 0 0 0 0 4v0a2 2 0 0 1 0 4v2h18v-2a2 2 0 0 1 0-4 2 2 0 0 0 0-4V6H3v2z" />
+      <path d="M14 6v12" />
+    </Svg>
+  );
+}

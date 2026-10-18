@@ -27,7 +27,6 @@ export async function SiteFooter({ site, categories }: { site: SiteView; categor
           <p className="max-w-xs text-stone-300">Beli tiket event tanpa perlu daftar akun.</p>
           {(site.csWhatsapp || site.csEmail) && (
             <div className="flex flex-col">
-              <p className="mt-2 font-semibold text-white">Bantuan pembeli</p>
               {site.csWhatsapp && (
                 <a href={`https://wa.me/${site.csWhatsapp}`} aria-label={`WhatsApp +${site.csWhatsapp}`} className={LINK}>
                   <WhatsAppIcon className="size-4 shrink-0" />+{site.csWhatsapp}

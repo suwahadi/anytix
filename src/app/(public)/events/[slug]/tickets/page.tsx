@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckoutSteps } from "@/components/checkout-steps";
+import { EventMeta } from "@/components/event-meta";
 import { getEnv } from "@/lib/env";
 import { formatEventSchedule } from "@/lib/format";
 import { loadEvent, publishedSlugParams } from "../load-event";
@@ -30,10 +31,7 @@ export default async function TicketsPage({ params }: PageProps<"/events/[slug]/
             ← Kembali ke detail event
           </Link>
           <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-text sm:text-3xl">{event.title}</h1>
-          <p className="text-sm text-muted">
-            {schedule.date} · {schedule.time}
-            {event.city && <> · {event.city}</>}
-          </p>
+          <EventMeta date={schedule.date} time={schedule.time} place={event.city} />
         </div>
         <TicketPicker
           slug={event.slug}

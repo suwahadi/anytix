@@ -20,6 +20,9 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: keyof typeof SIZES;
 };
 
+/** Phones show the icon alone in a 44px square; pair with a `max-sm:sr-only` label so screen readers keep the name. */
+export const ICON_ONLY_ON_PHONE = "max-sm:w-11 max-sm:px-0";
+
 export function buttonClass(variant: keyof typeof VARIANTS = "primary", size: keyof typeof SIZES = "md") {
   return `inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${VARIANTS[variant]} ${SIZES[size]}`;
 }

@@ -7,7 +7,7 @@ import { RichTextEditor } from "@/components/rich-text-editor";
 import { SortableList } from "@/components/sortable-list";
 import { Alert } from "@/components/ui/alert";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, ICON_ONLY_ON_PHONE } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Checkbox, Field, Select } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -37,9 +37,6 @@ const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
   active: { label: "Aktif", tone: "success" },
   hidden: { label: "Tersembunyi", tone: "muted" },
 };
-
-/** Phones show the icon alone in a 44px square; the label stays for screen readers. */
-const ICON_ONLY_ON_PHONE = "max-sm:w-11 max-sm:px-0";
 
 function QuotaBar({ c }: { c: AdminTicketCategory }) {
   const pct = (n: number) => (c.capacity > 0 ? (n / c.capacity) * 100 : 0);

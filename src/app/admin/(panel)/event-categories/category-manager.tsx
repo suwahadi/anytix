@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import { useEffect, useState, type FormEvent } from "react";
+import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { ImageUpload } from "@/components/image-upload";
 import { SortableList } from "@/components/sortable-list";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, ICON_ONLY_ON_PHONE } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Checkbox, Field } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -111,7 +112,10 @@ export function CategoryManager() {
           Urutan di sini sama dengan urutan kategori di beranda. Geser lewat tombol titik-titik, atau fokuskan lalu tekan
           spasi dan panah.
         </p>
-        <Button onClick={() => openDraft()}>Tambah kategori</Button>
+        <Button onClick={() => openDraft()} aria-label="Tambah kategori" title="Tambah kategori" className={ICON_ONLY_ON_PHONE}>
+          <PlusIcon className="size-5" />
+          <span className="max-sm:sr-only">Tambah kategori</span>
+        </Button>
       </div>
 
       {notice && <Alert tone="success">{notice}</Alert>}
@@ -174,17 +178,20 @@ export function CategoryManager() {
                   /{c.slug} · {c.eventCount} event
                 </p>
               </div>
-              <div className="flex shrink-0 gap-1">
-                <Button variant="ghost" size="sm" onClick={() => openDraft(c)} aria-label={`Ubah kategori ${c.name}`}>
-                  Ubah
+              <div className="flex shrink-0 gap-2">
+                <Button variant="secondary" onClick={() => openDraft(c)} aria-label={`Ubah kategori ${c.name}`} title="Ubah" className={ICON_ONLY_ON_PHONE}>
+                  <PencilIcon className="size-[18px]" />
+                  <span className="max-sm:sr-only">Ubah</span>
                 </Button>
                 <Button
-                  variant="ghost"
-                  size="sm"
+                  variant="danger"
                   onClick={() => (setRemoveError(""), setRemoving(c))}
                   aria-label={`Hapus kategori ${c.name}`}
+                  title="Hapus"
+                  className={ICON_ONLY_ON_PHONE}
                 >
-                  Hapus
+                  <TrashIcon className="size-[18px]" />
+                  <span className="max-sm:sr-only">Hapus</span>
                 </Button>
               </div>
             </div>

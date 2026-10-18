@@ -33,7 +33,7 @@ export function footerColumns(site: Contact, categories: ReadonlyArray<{ name: s
       title: "Informasi",
       items: [
         { label: "Syarat & Ketentuan", href: "/terms" },
-        { label: "Kebijakan Privasi & Pemrosesan Data", href: "/privacy" },
+        { label: "Kebijakan Privasi", href: "/privacy" },
         { label: "FAQ", soon: true },
       ],
     },

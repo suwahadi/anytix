@@ -7,6 +7,7 @@ import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type
 import { CheckoutSteps } from "@/components/checkout-steps";
 import { Countdown } from "@/components/countdown";
 import { DynamicFormFields, type AnswerValues } from "@/components/dynamic-form-fields";
+import { EventMeta } from "@/components/event-meta";
 import { CheckIcon, ClockIcon, CloseIcon } from "@/components/icons";
 import { TurnstileWidget, type TurnstileHandle } from "@/components/turnstile-widget";
 import { Alert } from "@/components/ui/alert";
@@ -233,9 +234,10 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
               </button>
               <div className="min-w-0 pt-1.5">
                 <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-text">{step === 2 ? "Detail Pesanan" : "Metode Pembayaran"}</h1>
-                <p className="mt-1 text-sm text-muted">
-                  {view.event.title} · {schedule.date}
-                </p>
+                <p className="mt-1 text-sm font-medium text-text">{view.event.title}</p>
+                <div className="mt-1.5">
+                  <EventMeta date={schedule.date} time={schedule.time} place={view.event.city} />
+                </div>
               </div>
             </div>
 
