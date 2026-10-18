@@ -483,8 +483,9 @@ Properti setiap field: `key` (otomatis dari label, bahasa Inggris snake_case, bi
 
 | Area | Spesifikasi |
 |---|---|
-| Routing | `/`, `/events`, `/events/{slug}`, `/events/{slug}/tickets`, `/checkout/{holdId}`, `/orders/{uuid}`, `/admin/*`. Halaman pesanan bersifat global dan **tidak** bersarang di bawah slug event (berbeda dari Artatix `/event/{slug}/ticket/{orderId}`): satu pola `/orders/{uuid}` untuk semua event, dan nama event cukup tampil di isi halaman |
-| SEO | SSR/ISR, meta OG, JSON-LD `Event`, sitemap. `/checkout/*` dan `/orders/*` diberi `noindex, nofollow` |
+| Routing | `/`, `/events`, `/events/{slug}`, `/events/{slug}/tickets`, `/checkout/{holdId}`, `/orders/{uuid}`, `/track`, `/admin/*`. Halaman pesanan bersifat global dan **tidak** bersarang di bawah slug event (berbeda dari Artatix `/event/{slug}/ticket/{orderId}`): satu pola `/orders/{uuid}` untuk semua event, dan nama event cukup tampil di isi halaman |
+| SEO | SSR/ISR, meta OG, JSON-LD `Event`, sitemap. `/checkout/*` dan `/orders/*` diberi `noindex, nofollow`. `/track` boleh diindeks dan masuk sitemap, karena pembeli mencarinya ("lacak pesanan anytix"), sedangkan halamannya tidak memuat data pribadi |
+| Lacak pesanan | `/track`: pembeli yang kehilangan tautan `/orders/{uuid}` memasukkan kode pesanan (invoice) dan email pemesan. Bila keduanya cocok, pembeli diarahkan ke `/orders/{uuid}`. Pesan gagal selalu sama ("kode pesanan atau email tidak cocok") agar tidak membocorkan apakah sebuah invoice ada. Huruf O, I, L dibaca sebagai 0, 1, 1. Ditautkan dari kolom Navigasi di footer |
 | Cache | Halaman event `Cache-Control: public, s-maxage=30–60, stale-while-revalidate=300` tanpa data pengguna. Endpoint ketersediaan di-cache mikro 2–5 detik. `/api/holds*`, `/api/orders*`, `/checkout/*` memakai `no-store` |
 | Gambar | Upload dikonversi ke WebP dengan sharp (`rotate()` → `resize` tanpa memperbesar → `webp({quality: 80})`). Ukuran `lg` 1600, `md` 800, `thumb` 400 px. Batas upload 10 MB dengan cek magic bytes. `srcset` + lazy load |
 | Dark mode | Token warna CSS terang/gelap, mengikuti sistem secara default, toggle manual disimpan di `localStorage`, tanpa flash saat load. Kontras WCAG AA; QR selalu di latar putih |
@@ -556,6 +557,7 @@ Properti setiap field: `key` (otomatis dari label, bahasa Inggris snake_case, bi
 | `POST /api/holds/{id}/checkout` | visitor pemilik, Turnstile, `Idempotency-Key` | `checkout_hold` → Snap → `{orderUuid}` |
 | `GET /api/orders/{uuid}` | UUID saja, rate limit, `Referrer-Policy: no-referrer` | Status, batas bayar, `snap_token` (bila pending), e-ticket (bila lunas) |
 | `GET /api/orders/{uuid}/tickets.pdf` | UUID | PDF e-ticket |
+| `POST /api/orders/track` | Invoice + email, rate limit 10/menit per IP, cek Origin | `{ href: "/orders/{uuid}" }` atau 404 dengan pesan umum |
 | `POST /api/webhooks/midtrans` | signature + Get Status | `apply_payment_status` |
 | `POST /api/admin/auth/login`, `/logout`, `/2fa` | — | Auth admin |
 | `/api/admin/event-categories`, `/events`, `/events/{id}/ticket-categories`, `/events/{id}/form-fields`, `/vouchers` | admin | CRUD |

@@ -35,6 +35,7 @@ describe("public nav", () => {
       { label: "Home", href: "/" },
       { label: "Tentang", href: "/about" },
       { label: "Hubungi Kami", href: "/contact" },
+      { label: "Lacak Pesanan", href: "/track" },
     ]);
     expect(cols[1].items).toEqual([
       { label: "Syarat & Ketentuan", href: "/terms" },

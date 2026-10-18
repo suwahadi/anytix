@@ -23,7 +23,12 @@ export function footerColumns(categories: ReadonlyArray<{ name: string; slug: st
   return [
     {
       title: "Navigasi",
-      items: [{ label: "Home", href: "/" }, { label: "Tentang", href: "/about" }, { label: "Hubungi Kami", href: "/contact" }],
+      items: [
+        { label: "Home", href: "/" },
+        { label: "Tentang", href: "/about" },
+        { label: "Hubungi Kami", href: "/contact" },
+        { label: "Lacak Pesanan", href: "/track" },
+      ],
     },
     {
       title: "Informasi",
