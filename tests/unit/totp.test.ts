@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generateTotpSecret, totpCode, totpUri, verifyTotp } from "@/lib/totp";
+import { generateTotpSecret, totpCode, totpStep, totpUri, verifyTotp } from "@/lib/totp";
 
 const s = "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ";
 
@@ -13,6 +13,13 @@ describe("totp", () => {
     expect(verifyTotp(s, "287082", 89_000)).toBe(true);
     expect(verifyTotp(s, "287082", 149_000)).toBe(false);
     expect(verifyTotp(s, "28708", 59_000)).toBe(false);
+  });
+
+  it("reports the matched time step so a used code can be refused", () => {
+    expect(totpStep(s, "287082", 59_000)).toBe(1);
+    expect(totpStep(s, "287082", 89_000)).toBe(1);
+    expect(totpStep(s, "287082", 149_000)).toBeNull();
+    expect(totpStep(s, "abc", 59_000)).toBeNull();
   });
 
   it("generates base32 secrets of 20 bytes", () => {

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { foreignOrigin } from "@/lib/admin-route";
 import { requireAdmin } from "@/lib/admin-service";
 import { randomToken } from "@/lib/crypto";
 import { detectImageType, toWebpVariants, VARIANT_WIDTHS, type VariantSize } from "@/lib/image-service";
@@ -13,6 +14,7 @@ export async function POST(req: NextRequest) {
   if (!(await requireAdmin(req))) {
     return NextResponse.json({ error: "Sesi berakhir. Silakan masuk lagi." }, { status: 401 });
   }
+  if (foreignOrigin(req)) return NextResponse.json({ error: "Permintaan ditolak." }, { status: 403 });
   if (Number(req.headers.get("content-length") ?? 0) > MAX_BYTES + 64 * 1024) return tooBig();
 
   const form = await req.formData().catch(() => null);

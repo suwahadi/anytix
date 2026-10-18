@@ -35,6 +35,15 @@ export async function setTotpSecret(adminId: number, secret: string | null): Pro
   await sql`update admins set totp_secret_enc = ${enc} where id = ${adminId}`;
 }
 
+/** Accepts each 2FA time step once, so a code seen over a shoulder cannot be replayed within its 90-second window. */
+export async function claimTotpStep(adminId: number, step: number): Promise<boolean> {
+  const rows = await sql`
+    update admins set totp_last_step = ${step}
+     where id = ${adminId} and (totp_last_step is null or totp_last_step < ${step})
+    returning id`;
+  return rows.length > 0;
+}
+
 export async function getTotpSecret(adminId: number): Promise<string | null> {
   const [row] = await sql<{ totp_secret_enc: Buffer | null }[]>`
     select totp_secret_enc from admins where id = ${adminId}`;

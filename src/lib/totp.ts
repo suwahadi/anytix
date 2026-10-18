@@ -53,11 +53,17 @@ export function totpCode(secret: string, timeMs: number): string {
   return codeForCounter(base32Decode(secret), Math.floor(timeMs / STEP_MS));
 }
 
-export function verifyTotp(secret: string, code: string, timeMs = Date.now()): boolean {
-  if (!/^\d{6}$/.test(code)) return false;
+/** The time step the code belongs to (one step of drift allowed), or null when it matches none. */
+export function totpStep(secret: string, code: string, timeMs = Date.now()): number | null {
+  if (!/^\d{6}$/.test(code)) return null;
   const key = base32Decode(secret);
   const counter = Math.floor(timeMs / STEP_MS);
-  return [-1, 0, 1].some((d) => codeForCounter(key, counter + d) === code);
+  const d = [-1, 0, 1].find((d) => codeForCounter(key, counter + d) === code);
+  return d === undefined ? null : counter + d;
+}
+
+export function verifyTotp(secret: string, code: string, timeMs = Date.now()): boolean {
+  return totpStep(secret, code, timeMs) !== null;
 }
 
 export function totpUri(secret: string, email: string, issuer: string): string {

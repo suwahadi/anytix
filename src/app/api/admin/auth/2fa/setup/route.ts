@@ -1,11 +1,13 @@
 import QRCode from "qrcode";
 import { NextResponse, type NextRequest } from "next/server";
+import { foreignOrigin } from "@/lib/admin-route";
 import { getTotpSecret, requireAdmin, setTotpSecret } from "@/lib/admin-service";
 import { readJson, str } from "@/lib/http";
 import { getSetting } from "@/lib/settings";
 import { generateTotpSecret, totpUri, verifyTotp } from "@/lib/totp";
 
 const unauthorized = () => NextResponse.json({ error: "Sesi berakhir. Silakan masuk lagi." }, { status: 401 });
+const forbidden = () => NextResponse.json({ error: "Permintaan ditolak." }, { status: 403 });
 const noStore = { headers: { "cache-control": "no-store" } };
 
 export async function GET(req: NextRequest) {
@@ -22,6 +24,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const admin = await requireAdmin(req);
   if (!admin) return unauthorized();
+  if (foreignOrigin(req)) return forbidden();
   if (await getTotpSecret(admin.id)) {
     return NextResponse.json(
       { error: "Verifikasi dua langkah sudah aktif. Matikan dulu dengan kode yang berlaku sebelum memasang yang baru." },
@@ -44,6 +47,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const admin = await requireAdmin(req);
   if (!admin) return unauthorized();
+  if (foreignOrigin(req)) return forbidden();
   const secret = await getTotpSecret(admin.id);
   const code = str((await readJson(req)).code).replace(/\s/g, "");
   if (!secret || !verifyTotp(secret, code)) {

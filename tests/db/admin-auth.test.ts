@@ -114,6 +114,18 @@ describe("admin auth", () => {
     expect(cookieFrom(ok, ADMIN_COOKIE)).toBeDefined();
   });
 
+  it("a 2fa code logs in once only", async () => {
+    const { id, email } = await newAdmin();
+    const secret = generateTotpSecret();
+    await setTotpSecret(id, secret);
+    const code = totpCode(secret, Date.now());
+    const pendingFor = async () => cookieFrom(await login(post("/api/admin/auth/login", { email, password: PASSWORD })), ADMIN_2FA_COOKIE)!;
+    expect((await verify2fa(post("/api/admin/auth/2fa", { code }, await pendingFor()))).status).toBe(200);
+    const replay = await verify2fa(post("/api/admin/auth/2fa", { code }, await pendingFor()));
+    expect(replay.status).toBe(401);
+    expect(cookieFrom(replay, ADMIN_COOKIE)).toBeUndefined();
+  });
+
   it("2fa without pending cookie is rejected", async () => {
     const res = await verify2fa(post("/api/admin/auth/2fa", { code: "123456" }));
     expect(res.status).toBe(401);

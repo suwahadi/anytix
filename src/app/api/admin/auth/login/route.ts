@@ -7,6 +7,7 @@ import {
   cookieOptions,
   createSessionValue,
 } from "@/lib/admin-session";
+import { foreignOrigin } from "@/lib/admin-route";
 import { findAdminByEmail, markLoggedIn } from "@/lib/admin-service";
 import { readJson, str } from "@/lib/http";
 import { hashPassword, verifyPassword } from "@/lib/password";
@@ -15,6 +16,7 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
 let dummyHash: Promise<string> | undefined;
 
 export async function POST(req: NextRequest) {
+  if (foreignOrigin(req)) return NextResponse.json({ error: "Permintaan ditolak." }, { status: 403 });
   const body = await readJson(req);
   const email = str(body.email).trim().toLowerCase();
   const password = str(body.password);

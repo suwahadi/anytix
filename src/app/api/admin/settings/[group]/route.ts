@@ -5,7 +5,7 @@ import { getSettingsGroup, putSettingsGroup } from "@/lib/settings-service";
 import { SETTINGS_SCHEMAS, type SettingsGroup } from "@/lib/validation/settings";
 
 function groupOf(params: Record<string, string>): SettingsGroup {
-  if (params.group in SETTINGS_SCHEMAS) return params.group as SettingsGroup;
+  if (Object.hasOwn(SETTINGS_SCHEMAS, params.group)) return params.group as SettingsGroup;
   throw new UserError("Grup pengaturan tidak dikenal.", 404);
 }
 
