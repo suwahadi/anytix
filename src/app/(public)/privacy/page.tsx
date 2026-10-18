@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Kebijakan privasi" };
 export default async function PrivacyPage() {
   const site = await getPublicSite();
   return (
-    <article className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-6 sm:py-10">
+    <article className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:py-10">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-extrabold tracking-tight text-text sm:text-3xl">Kebijakan privasi</h1>
         {site.privacy && site.privacyUpdatedAt && (
