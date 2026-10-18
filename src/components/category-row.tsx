@@ -34,10 +34,7 @@ export function CategoryRow({ categories }: { categories: PublicCategory[] }) {
               <span className="relative flex size-12 items-center justify-center overflow-hidden rounded-full bg-accent-soft text-accent-text transition-colors group-hover:bg-accent group-hover:text-on-accent">
                 {c.icon ? <Image src={c.icon} alt="" fill sizes="48px" className="object-contain p-2.5" /> : <Glyph className="size-6" />}
               </span>
-              <span className="flex flex-col gap-0.5">
-                <span className="text-sm font-semibold text-text">{c.name}</span>
-                <span className="text-xs text-muted">{c.eventCount > 0 ? `${c.eventCount} event` : "Belum ada event"}</span>
-              </span>
+              <span className="text-sm font-semibold text-text">{c.name}</span>
             </Link>
           </li>
         );

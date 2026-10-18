@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, type FormEvent } from "react";
 import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { RichTextEditor } from "@/components/rich-text-editor";
@@ -101,15 +100,7 @@ export function FaqManager() {
 
   return (
     <div className="mt-6 flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-prose text-sm text-muted">
-          Urutan di sini sama dengan urutan di halaman{" "}
-          <Link href="/faq" target="_blank" rel="noopener" className="font-semibold text-accent-text underline underline-offset-4">
-            FAQ
-            <span className="sr-only"> (tab baru)</span>
-          </Link>
-          . Geser lewat tombol titik-titik, atau fokuskan lalu tekan spasi dan panah.
-        </p>
+      <div className="flex justify-end">
         <Button onClick={() => openDraft()} aria-label="Tambah pertanyaan" title="Tambah pertanyaan" className={ICON_ONLY_ON_PHONE}>
           <PlusIcon className="size-5" />
           <span className="max-sm:sr-only">Tambah pertanyaan</span>

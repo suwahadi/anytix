@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent } from "react";
-import { FilterIcon, SearchIcon } from "@/components/icons";
+import { FilterIcon, SearchIcon, SortIcon } from "@/components/icons";
 import type { PublicCategory } from "@/lib/public/catalog-queries";
 import { activeFilterCount, eventsHref, parseEventFilters, PRICE_OPTIONS, SORT_OPTIONS, WHEN_OPTIONS, type EventFilters } from "@/lib/public/event-filters";
 
@@ -52,24 +52,25 @@ export function EventFilterBar({ filters, categories, cities }: { filters: Event
 
   return (
     <form key={eventsHref(filters)} action="/events" role="search" onSubmit={onSubmit} onChange={onChange} className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-expanded={open}
           aria-controls={`${uid}-panel`}
-          className="inline-flex h-11 items-center gap-2 rounded-md border border-border-strong bg-surface px-4 text-sm font-semibold text-text hover:bg-surface-muted aria-expanded:bg-surface-muted"
+          title="Filter"
+          className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center gap-2 rounded-md border border-border-strong bg-surface text-sm font-semibold text-text hover:bg-surface-muted aria-expanded:bg-surface-muted sm:w-auto sm:px-4"
         >
-          <FilterIcon className="size-4" />
-          Filter
+          <FilterIcon className="size-[18px] sm:size-4" />
+          <span className="max-sm:sr-only">Filter</span>
           {active > 0 && (
-            <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-xs font-bold text-on-accent">
+            <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-xs font-bold text-on-accent max-sm:absolute max-sm:-right-1.5 max-sm:-top-1.5">
               {active}
               <span className="sr-only"> filter aktif</span>
             </span>
           )}
         </button>
-        <div className="relative order-last w-full sm:order-none sm:w-auto sm:flex-1">
+        <div className="relative min-w-0 flex-1">
           <label htmlFor="q" className="sr-only">
             Cari event
           </label>
@@ -81,14 +82,15 @@ export function EventFilterBar({ filters, categories, cities }: { filters: Event
             enterKeyHint="search"
             defaultValue={filters.q}
             placeholder="Cari nama event, kota, atau venue"
-            className={`${FIELD} pl-10 placeholder:text-muted`}
+            className={`${FIELD} text-ellipsis pl-10 placeholder:text-muted`}
           />
         </div>
-        <div className="ml-auto flex items-center gap-2">
-          <label htmlFor={`${uid}-sort`} className="text-sm font-medium text-muted max-sm:sr-only">
+        <div className="relative w-[7.5rem] shrink-0 sm:w-40">
+          <label htmlFor={`${uid}-sort`} className="sr-only">
             Urutkan
           </label>
-          <select id={`${uid}-sort`} name="urut" defaultValue={filters.sort} className={`${FIELD} w-auto`}>
+          <SortIcon className="pointer-events-none absolute left-3 top-1/2 hidden size-4 -translate-y-1/2 text-muted sm:block" />
+          <select id={`${uid}-sort`} name="urut" defaultValue={filters.sort} className={`${FIELD} sm:pl-9`}>
             {SORT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}

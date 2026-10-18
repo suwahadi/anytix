@@ -9,7 +9,7 @@ export default async function FaqPage() {
   const faqs = await getPublicFaqs();
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:py-10">
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 text-center">
         <h1 className="text-2xl font-extrabold tracking-tight text-text sm:text-3xl">Pertanyaan yang Sering Diajukan</h1>
         <p className="text-muted">
           Tidak menemukan jawabannya?{" "}

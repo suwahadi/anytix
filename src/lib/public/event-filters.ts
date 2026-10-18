@@ -11,10 +11,10 @@ export const PRICE_OPTIONS = [
 ] as const;
 
 export const SORT_OPTIONS = [
-  { value: "terdekat", label: "Tanggal terdekat" },
-  { value: "terbaru", label: "Baru ditambahkan" },
-  { value: "termurah", label: "Harga terendah" },
-  { value: "termahal", label: "Harga tertinggi" },
+  { value: "terdekat", label: "Terdekat" },
+  { value: "terbaru", label: "Terbaru" },
+  { value: "termurah", label: "Termurah" },
+  { value: "termahal", label: "Termahal" },
 ] as const;
 
 export type WhenFilter = (typeof WHEN_OPTIONS)[number]["value"];

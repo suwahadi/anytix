@@ -11,12 +11,7 @@ import { useSettings } from "../settings/use-settings";
 
 const PAGES = {
   about: { label: "Isi halaman Tentang Kami", path: "/about", saved: "Halaman Tentang Kami disimpan." },
-  contact: {
-    label: "Isi halaman Hubungi Kami",
-    path: "/contact",
-    saved: "Halaman Hubungi Kami disimpan.",
-    hint: "WhatsApp dan email layanan pelanggan dari Pengaturan › Situs tampil otomatis di atas teks ini.",
-  },
+  contact: { label: "Isi halaman Hubungi Kami", path: "/contact", saved: "Halaman Hubungi Kami disimpan." },
 } as const;
 
 export function PageForm({ page }: { page: keyof PagesView }) {
@@ -39,7 +34,6 @@ export function PageForm({ page }: { page: keyof PagesView }) {
           id={`page-${page}`}
           label={meta.label}
           imageKind="page"
-          hint={"hint" in meta ? meta.hint : undefined}
           value={form[page]}
           error={errors[page]}
           onChange={(v) => setData({ ...form, [page]: v })}

@@ -263,3 +263,11 @@ export function ChevronDownIcon({ className }: { className?: string }) {
     </Svg>
   );
 }
+
+export function SortIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M7 4v16M3 8l4-4 4 4M17 20V4M13 16l4 4 4-4" />
+    </Svg>
+  );
+}

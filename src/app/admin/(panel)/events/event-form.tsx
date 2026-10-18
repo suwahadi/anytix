@@ -303,11 +303,11 @@ export function EventForm({ eventId }: { eventId?: number }) {
       </Section>
 
       <Section title="Deskripsi">
-        <RichTextEditor id="description" label="Deskripsi event" value={form.description} error={errors.description} onChange={(v) => set("description", v)} />
+        <RichTextEditor id="description" label="Deskripsi event" imageKind="page" value={form.description} error={errors.description} onChange={(v) => set("description", v)} />
       </Section>
 
       <Section title="Syarat & ketentuan">
-        <RichTextEditor id="terms" label="Syarat & ketentuan" value={form.terms} error={errors.terms} onChange={(v) => set("terms", v)} />
+        <RichTextEditor id="terms" label="Syarat & ketentuan" imageKind="page" value={form.terms} error={errors.terms} onChange={(v) => set("terms", v)} />
       </Section>
 
       <Section title="Fasilitas">
