@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import { PencilIcon, PlusIcon, TrashIcon } from "@/components/icons";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { SortableList } from "@/components/sortable-list";
 import { Alert } from "@/components/ui/alert";
@@ -36,6 +37,9 @@ const STATUS: Record<string, { label: string; tone: BadgeTone }> = {
   active: { label: "Aktif", tone: "success" },
   hidden: { label: "Tersembunyi", tone: "muted" },
 };
+
+/** Phones show the icon alone in a 44px square; the label stays for screen readers. */
+const ICON_ONLY_ON_PHONE = "max-sm:w-11 max-sm:px-0";
 
 function QuotaBar({ c }: { c: AdminTicketCategory }) {
   const pct = (n: number) => (c.capacity > 0 ? (n / c.capacity) * 100 : 0);
@@ -192,8 +196,9 @@ export function TicketCategoryManager() {
         <p className="max-w-prose text-sm text-muted">
           Urutan di sini sama dengan urutan kartu tiket di halaman pemesanan. Waktu dalam {tz}.
         </p>
-        <Button onClick={() => open()} disabled={!categories}>
-          Tambah kategori tiket
+        <Button onClick={() => open()} disabled={!categories} aria-label="Tambah kategori tiket" title="Tambah kategori tiket" className={ICON_ONLY_ON_PHONE}>
+          <PlusIcon className="size-5" />
+          <span className="max-sm:sr-only">Tambah kategori tiket</span>
         </Button>
       </div>
 
@@ -235,12 +240,14 @@ export function TicketCategoryManager() {
                 </p>
                 <QuotaBar c={c} />
               </div>
-              <div className="flex shrink-0 flex-col gap-1 sm:flex-row">
-                <Button variant="ghost" size="sm" onClick={() => open(c)} aria-label={`Ubah ${c.name}`}>
-                  Ubah
+              <div className="flex shrink-0 flex-col gap-1 sm:flex-row sm:gap-2">
+                <Button variant="secondary" onClick={() => open(c)} aria-label={`Ubah ${c.name}`} title="Ubah" className={ICON_ONLY_ON_PHONE}>
+                  <PencilIcon className="size-[18px]" />
+                  <span className="max-sm:sr-only">Ubah</span>
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => (setRemoveError(""), setRemoving(c))} aria-label={`Hapus ${c.name}`}>
-                  Hapus
+                <Button variant="danger" onClick={() => (setRemoveError(""), setRemoving(c))} aria-label={`Hapus ${c.name}`} title="Hapus" className={ICON_ONLY_ON_PHONE}>
+                  <TrashIcon className="size-[18px]" />
+                  <span className="max-sm:sr-only">Hapus</span>
                 </Button>
               </div>
             </div>

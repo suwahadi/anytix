@@ -100,7 +100,7 @@ export async function getAdminOrder(id: number) {
         from payment_events e join payments p on p.midtrans_order_id = e.midtrans_order_id
        where p.order_id = ${id} order by e.received_at`,
     sql<{ type: string; toEmail: string; status: string; error: string | null; createdAt: Date }[]>`
-      select type, to_email as "toEmail", status, error, created_at as "createdAt" from email_logs where order_id = ${id} order by created_at`,
+      select type, to_email as "toEmail", status, error, created_at as "createdAt" from email_logs where order_id = ${id} order by created_at desc, id desc`,
     sql<{ label: string; type: string; value: unknown; value_encrypted: Buffer | null }[]>`
       select f.label, f.type, a.value, a.value_encrypted
         from order_answers a join form_fields f on f.id = a.form_field_id

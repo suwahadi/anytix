@@ -30,7 +30,7 @@ afterAll(async () => {
   const restored = [...originalOrder.filter((id) => ids.includes(id)), ...ids.filter((id) => !originalOrder.includes(id))];
   await reorderEventCategories(adminId, restored);
   await sql`delete from audit_logs where admin_id = ${adminId}`;
-  await sql`delete from admins where email like 'test-admin-%'`;
+  await sql`delete from admins where id = ${adminId}`;
 });
 
 async function userError(p: Promise<unknown>): Promise<UserError> {

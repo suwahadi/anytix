@@ -25,7 +25,7 @@ afterAll(async () => {
     await sql`update settings set value = ${sql.json(row.value as never)}, secret_enc = ${row.secret_enc} where key = ${row.key}`;
   }
   await sql`delete from audit_logs where admin_id = ${adminId}`;
-  await sql`delete from admins where email like 'test-admin-%'`;
+  await sql`delete from admins where id = ${adminId}`;
 });
 
 const transaction = {

@@ -34,7 +34,7 @@ function NavLinks() {
 
 export async function AdminBar() {
   await connection();
-  const admin = await pageAdmin();
+  await pageAdmin();
   return (
     <header className="border-b border-border bg-surface">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-2">
@@ -47,12 +47,11 @@ export async function AdminBar() {
           </nav>
         </div>
         <div className="flex items-center gap-1">
-          <span className="hidden max-w-[14rem] truncate px-2 text-sm text-muted 2xl:inline" title={admin.email}>
-            {admin.email}
-          </span>
           <ThemeToggle />
-          <LogoutButton />
-          <MobileMenu email={admin.email}>
+          <div className="hidden lg:block">
+            <LogoutButton />
+          </div>
+          <MobileMenu footer={<LogoutButton inMenu />}>
             <NavLinks />
           </MobileMenu>
         </div>

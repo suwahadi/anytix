@@ -5,6 +5,7 @@ const VARIANTS = {
   primary: "bg-accent text-on-accent hover:bg-accent-hover",
   secondary: "border border-border-strong bg-surface text-text hover:bg-surface-muted",
   ghost: "text-text hover:bg-surface-muted",
+  ghostDanger: "text-danger hover:bg-danger-soft",
   danger: "border border-danger bg-surface text-danger hover:bg-danger-soft",
 } as const;
 

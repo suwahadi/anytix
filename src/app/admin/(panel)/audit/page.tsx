@@ -25,8 +25,8 @@ async function AuditList({ searchParams }: { searchParams: Search }) {
 
   return (
     <div className="mt-6 flex flex-col gap-4">
-      <form method="get" className="flex flex-wrap items-end gap-2">
-        <div className="flex w-56 max-w-full flex-col gap-1.5">
+      <form method="get" className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:flex-row sm:items-end">
+        <div className="flex min-w-0 flex-col gap-1.5 sm:w-64">
           <label htmlFor="audit-entity" className="text-sm font-medium text-text">
             Jenis data
           </label>
@@ -48,22 +48,23 @@ async function AuditList({ searchParams }: { searchParams: Search }) {
       ) : (
         <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
           {items.map((i) => (
-            <li key={i.id} className="flex flex-col gap-1 px-3 py-2.5 text-sm">
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <span className="font-semibold text-text">
+            <li key={i.id} className="flex flex-col gap-1.5 px-4 py-3 text-sm sm:flex-row sm:items-start sm:gap-6">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                <p className="font-semibold text-text">
                   {i.action} · {i.entity}
                   {i.entityId && ` #${i.entityId}`}
-                </span>
-                <span className="ml-auto text-muted">
-                  {formatAdminTime(i.at)} · {i.adminEmail ?? "sistem"}
-                </span>
+                </p>
+                {i.diff !== null && i.diff !== undefined && (
+                  <details>
+                    <summary className="inline-flex min-h-9 cursor-pointer items-center text-muted">Rincian perubahan</summary>
+                    <pre className="mt-1 overflow-x-auto rounded-md bg-surface-muted p-2 text-xs text-text">{JSON.stringify(i.diff, null, 2)}</pre>
+                  </details>
+                )}
               </div>
-              {i.diff !== null && i.diff !== undefined && (
-                <details>
-                  <summary className="cursor-pointer text-muted">Rincian perubahan</summary>
-                  <pre className="mt-1 overflow-x-auto rounded-md bg-surface-muted p-2 text-xs text-text">{JSON.stringify(i.diff, null, 2)}</pre>
-                </details>
-              )}
+              <p className="flex flex-col text-muted sm:shrink-0 sm:text-right">
+                <span className="tabular-nums">{formatAdminTime(i.at)}</span>
+                <span className="break-all">{i.adminEmail ?? "sistem"}</span>
+              </p>
             </li>
           ))}
         </ul>

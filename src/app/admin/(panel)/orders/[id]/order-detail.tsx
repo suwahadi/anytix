@@ -295,7 +295,7 @@ export function OrderDetail() {
         </section>
 
         <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:p-5">
-          <h2 className="text-lg font-bold text-text">Email terkirim</h2>
+          <h2 className="text-lg font-bold text-text">Log Email</h2>
           {order.emails.length === 0 ? (
             <p className="text-sm text-muted">Belum ada email terkirim. Pastikan worker berjalan.</p>
           ) : (

@@ -23,7 +23,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await cleanupTestEvents();
   await sql`delete from audit_logs where admin_id = ${adminId}`;
-  await sql`delete from admins where email like 'test-admin-%'`;
+  await sql`delete from admins where id = ${adminId}`;
 });
 
 const values = (over: Record<string, unknown> = {}) => formFieldInput.parse({ label: "Ukuran Baju", type: "short_text", ...over });

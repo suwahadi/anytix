@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
+import { DownloadIcon, SearchIcon } from "@/components/icons";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonClass } from "@/components/ui/button";
@@ -69,14 +70,18 @@ export function OrdersTable() {
 
   return (
     <div className="mt-6 flex flex-col gap-4">
-      <form onSubmit={search} role="search" className="flex flex-wrap items-end gap-2">
-        <div className="w-72 max-w-full">
+      <form
+        onSubmit={search}
+        role="search"
+        className="grid gap-3 rounded-lg border border-border bg-surface p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_11rem_14rem_auto] lg:items-end"
+      >
+        <div className="min-w-0 sm:col-span-2 lg:col-span-1">
           <Field id="order-search" label="Cari invoice, email, nama, atau UUID" value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} />
         </div>
-        <div className="w-48 max-w-full">
+        <div className="min-w-0">
           <Select id="order-status" label="Status" value={filter.status} options={STATUS_OPTIONS} onChange={(e) => load({ ...filter, status: e.target.value, page: 1 })} />
         </div>
-        <div className="w-56 max-w-full">
+        <div className="min-w-0">
           <Select
             id="order-event"
             label="Event"
@@ -85,17 +90,21 @@ export function OrdersTable() {
             onChange={(e) => load({ ...filter, eventId: e.target.value, page: 1 })}
           />
         </div>
-        <Button type="submit" variant="secondary" loading={loading}>
-          Cari
-        </Button>
-        <a
-          href={`/api/admin/reports/sales.csv?${new URLSearchParams({ ...(filter.status && { status: filter.status }), ...(filter.eventId && { eventId: filter.eventId }) })}`}
-          download
-          className={buttonClass("ghost")}
-          title={filter.eventId ? "Termasuk jawaban form event ini. Nomor identitas disamarkan." : "Pilih satu event untuk menyertakan jawaban form. Nomor identitas disamarkan."}
-        >
-          Ekspor CSV
-        </a>
+        <div className="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-1 lg:flex">
+          <Button type="submit" loading={loading}>
+            {!loading && <SearchIcon className="size-[18px]" />}
+            Cari
+          </Button>
+          <a
+            href={`/api/admin/reports/sales.csv?${new URLSearchParams({ ...(filter.status && { status: filter.status }), ...(filter.eventId && { eventId: filter.eventId }) })}`}
+            download
+            className={buttonClass("secondary")}
+            title={filter.eventId ? "Termasuk jawaban form event ini. Nomor identitas disamarkan." : "Pilih satu event untuk menyertakan jawaban form. Nomor identitas disamarkan."}
+          >
+            <DownloadIcon className="size-[18px]" />
+            Ekspor CSV
+          </a>
+        </div>
       </form>
 
       {error && (

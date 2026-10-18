@@ -132,3 +132,43 @@ export function CheckIcon({ className }: { className?: string }) {
     </Svg>
   );
 }
+
+export function PlusIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M12 5v14M5 12h14" />
+    </Svg>
+  );
+}
+
+export function PencilIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4" />
+    </Svg>
+  );
+}
+
+export function TrashIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+    </Svg>
+  );
+}
+
+export function DownloadIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+    </Svg>
+  );
+}
+
+export function LogoutIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10" />
+    </Svg>
+  );
+}
