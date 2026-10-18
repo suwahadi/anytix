@@ -1,6 +1,6 @@
 # Serah terima pengerjaan Anytix
 
-Terakhir diperbarui: 18 Oktober 2026, di akhir Fase 3. Dokumen ini untuk agent AI berikutnya. Baca seluruhnya sebelum menulis kode.
+Terakhir diperbarui: 18 Oktober 2026, setelah revamp beranda publik. Dokumen ini untuk agent AI berikutnya. Baca seluruhnya sebelum menulis kode.
 
 ## Sumber kebenaran
 
@@ -8,6 +8,8 @@ Terakhir diperbarui: 18 Oktober 2026, di akhir Fase 3. Dokumen ini untuk agent A
 - `docs/superpowers/specs/2026-10-17-anytix-mvp-design.md`: keputusan desain yang disetujui pemilik, termasuk arah visual dan dial `ENERGY 1 / RHYTHM 2 / MOTION 1`.
 - `docs/superpowers/plans/2026-10-17-fase-0-fondasi.md`, `…-fase-1-katalog-admin.md`, `…-fase-2-booking-inti.md`, `…-fase-3-hari-h.md`: empat fase yang sudah selesai. Kotak centang di file plan tidak diperbarui; status sebenarnya ada di dokumen ini.
 - `anti-slop/audit-001-2026-10-17.md` (halaman publik), `audit-002-2026-10-17.md` (booking, pesanan), dan `audit-003-2026-10-18.md` (layar Hari-H): Delivery Gate bersih. Semua temuan LOW sudah diperbaiki atas permintaan pemilik (audit 002 nomor 1, audit 003 nomor 1–3).
+- `docs/superpowers/specs/2026-10-18-homepage-revamp-design.md` dan `docs/superpowers/plans/2026-10-18-homepage-revamp.md`: revamp beranda ala artatix (8 task, selesai). `anti-slop/audit-004-2026-10-18.md`: 7 temuan menunggu keputusan pemilik.
+- `docs/runbook.md`: panduan produksi aaPanel (PM2 port 3100, Nginx, Midtrans, email Brevo port 2525, backup).
 - `AGENTS.md`: aturan proyek dan aturan pemilik.
 
 Ruang lingkup yang disepakati adalah Fase 0–3, dan keempatnya sudah selesai. Fase 4 (go-live produksi) di luar putaran ini kecuali pemilik memintanya.
@@ -20,20 +22,24 @@ Ruang lingkup yang disepakati adalah Fase 0–3, dan keempatnya sudah selesai. F
 | Fase 1 (katalog, admin, halaman publik) | Selesai dan di-push |
 | Fase 2 (booking inti) | Selesai dan di-push |
 | Fase 3 (Hari-H) | Selesai: 13 task, review menyeluruh (3 temuan Important diperbaiki dengan RED→GREEN, 7 Minor ditunda), audit antislop 003, lalu di-push |
+| Fase 4 (go-live) | Live di https://anytix.web.id dengan Midtrans sandbox; pembayaran, webhook, PDF dan email teruji end-to-end. Sisa langkah pemilik di bawah |
+| Revamp beranda | Selesai dan di-push: header pill, hero carousel, Rekomendasi, Laris Manis, Kategori, Event Terdekat, footer 4 kolom. Belum di-deploy ke server |
 
-Hasil test terakhir: `npm test` 146 lulus, `npm run test:db` 236 lulus, `lint`, `tsc` dan `build` bersih.
+Hasil test terakhir: `npm test` 170 lulus, `lint`, `tsc` dan `build` bersih.
 
 ## Langkah berikutnya
 
-1. **Pemilik: ganti email `admin@admin.com`.** Caranya lewat panel `/admin/admins` → Ganti email (atau tambah admin baru lalu nonaktifkan yang lama). Alert admin dikirim ke semua admin aktif, dan `admin.com` adalah domain milik pihak lain. Sampai diganti, worker jangan dijalankan di lingkungan yang menerima pembayaran sungguhan.
-2. **Pemilik: perbaiki `SMTP_FROM` di `.env.local`.** Formatnya harus `AnyTix <alamat@gmail.com>`. Nilai di panel (`settings.smtp`) sudah benar dan dipakai lebih dulu.
-3. **Uji di perangkat sungguhan: selesai (18 Okt 2026).** Pemilik menguji scanner di ponsel lewat tunnel ngrok dan menyatakan semua sesuai. Riwayat mencatat 2 valid dan 3 "sudah dipakai" di Gate A. Tidak ada baris "tidak valid", jadi uji QRIS sungguhan kemungkinan tidak dilakukan. Jalur itu tercakup test `long non-ticket QR is invalid through the API`. Untuk uji lewat tunnel, jalankan server dengan `APP_URL=https://<tunnel> npm run start`, supaya cek Origin pada POST lolos.
-4. **Bila pemilik meminta Fase 4:**
+1. **Pemilik: deploy revamp beranda** di server dengan `bash deploy/deploy.sh`.
+2. **Pemilik: pilih nomor temuan audit 004** yang mau diperbaiki. Hanya nomor yang disetujui yang dikerjakan.
+3. **Sisa go-live (dijalankan pemilik):**
    - Midtrans produksi.
-   - Autentikasi domain email (DKIM, DMARC) dan paket Brevo berbayar.
-   - Runbook dan uji restore.
-   - Uji beban k6 di server dekat region Supabase (lihat "k6" di bawah).
-   - Daftar "Bawaan untuk Fase 4".
+   - Autentikasi domain Brevo, serta mailbox `cs@` dan `admin@`.
+   - Cron backup dan uji restore.
+   - UptimeRobot.
+   - Aktifkan 2FA untuk `admin@anytix.web.id`.
+   - Saat cutover: hapus `DB_TESTS_ALLOWED` dan `DB_WRITE_ALLOWED` dari `.env.local` laptop, jalankan `npm run db:reset-dev -- --apply`, lalu `npm run preflight`.
+   - Uji beban k6.
+4. **Jebakan Next 16 di header publik:** `usePathname()` di komponen client wajib dibungkus `<Suspense>`, karena route dinamis seperti `/checkout/[holdId]` gagal di-prerender tanpanya. `NavPills` dan `MobileNav` sudah dibungkus, dengan fallback tanpa status aktif.
 
 ## Bawaan untuk Fase 4 dan catatan
 
