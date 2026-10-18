@@ -33,7 +33,7 @@ export default async function Home() {
           center
           dots
           autoplayMs={6000}
-          itemClassName="w-full sm:w-[88%]"
+          itemClassName="w-(--slide) [--slide:100%] sm:[--slide:88%]"
           items={hero.map((slide, i) => <PosterBanner key={slide.key} slide={slide} preload={i === 0} />)}
         />
       </section>
@@ -60,7 +60,7 @@ export default async function Home() {
               label="Event laris"
               center
               dots
-              itemClassName="w-full sm:w-[72%]"
+              itemClassName="w-(--slide) [--slide:100%] sm:[--slide:72%]"
               items={laris.map((slide) => <PosterBanner key={slide.key} slide={slide} caption />)}
             />
           </div>

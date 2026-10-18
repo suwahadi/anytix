@@ -13,7 +13,10 @@ function subscribeReduced(callback: () => void) {
 }
 
 const ARROW =
-  "absolute top-1/2 z-10 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-text shadow-sm hover:bg-surface-muted";
+  "absolute top-1/2 z-10 hidden size-11 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-text shadow-sm hover:bg-surface-muted sm:inline-flex";
+
+/** Centred mode: itemClassName sets `--slide` (the slide width); edge margins resolve against the track width so first and last slides can sit in the middle. */
+const CENTER_EDGES = "first:ml-[calc((100%-var(--slide))/2)] last:mr-[calc((100%-var(--slide))/2)]";
 
 export function Carousel({
   label,
@@ -105,16 +108,14 @@ export function Carousel({
       <ul
         ref={track}
         onScroll={measure}
-        className={`flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${
-          center ? "px-[6%]" : ""
-        }`}
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {items.map((item, i) => (
           <li
             key={i}
             aria-roledescription="slide"
             aria-label={`${i + 1} dari ${items.length}`}
-            className={`shrink-0 ${center ? "snap-center" : "snap-start"} ${itemClassName}`}
+            className={`shrink-0 ${center ? `snap-center ${CENTER_EDGES}` : "snap-start"} ${itemClassName}`}
           >
             {item}
           </li>

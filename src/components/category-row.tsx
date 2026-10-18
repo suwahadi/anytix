@@ -4,7 +4,7 @@ import type { PublicCategory } from "@/lib/public/catalog-queries";
 
 export function CategoryRow({ categories }: { categories: PublicCategory[] }) {
   return (
-    <ul className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:justify-between sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+    <ul className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] lg:mx-0 lg:justify-between lg:px-0 [&::-webkit-scrollbar]:hidden">
       {categories.map((c) => (
         <li key={c.id} className="shrink-0">
           <Link href={`/events?category=${c.slug}`} className="group flex w-20 flex-col items-center gap-2 rounded-lg py-1 sm:w-24">
