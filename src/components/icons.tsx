@@ -73,3 +73,46 @@ export function CloseIcon({ className }: { className?: string }) {
     </Svg>
   );
 }
+
+export function ClockIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </Svg>
+  );
+}
+
+export function MapPinIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z" />
+      <circle cx="12" cy="10" r="2.5" />
+    </Svg>
+  );
+}
+
+export function ExternalLinkIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+    </Svg>
+  );
+}
+
+export function MailIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </Svg>
+  );
+}
+
+export function ChatIcon({ className }: { className?: string }) {
+  return (
+    <Svg className={className}>
+      <path d="M21 12a8 8 0 0 1-11.8 7L4 20l1.1-4.6A8 8 0 1 1 21 12z" />
+    </Svg>
+  );
+}

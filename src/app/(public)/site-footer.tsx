@@ -1,6 +1,7 @@
 import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
+import { ChatIcon, MailIcon } from "@/components/icons";
 import type { PublicCategory } from "@/lib/public/catalog-queries";
 import { footerColumns } from "@/lib/public/nav";
 import type { SiteView } from "@/lib/settings-service";
@@ -12,7 +13,7 @@ async function copyrightYear(): Promise<number> {
   return new Date().getFullYear();
 }
 
-const LINK = "flex min-h-11 items-center text-stone-300 underline-offset-4 hover:text-white hover:underline sm:min-h-9";
+const LINK = "flex min-h-11 items-center gap-2 text-stone-300 underline-offset-4 hover:text-white hover:underline sm:min-h-9";
 
 export async function SiteFooter({ site, categories }: { site: SiteView; categories: PublicCategory[] }) {
   const year = await copyrightYear();
@@ -28,12 +29,13 @@ export async function SiteFooter({ site, categories }: { site: SiteView; categor
             <div className="flex flex-col">
               <p className="mt-2 font-semibold text-white">Bantuan pembeli</p>
               {site.csWhatsapp && (
-                <a href={`https://wa.me/${site.csWhatsapp}`} className={LINK}>
-                  WhatsApp +{site.csWhatsapp}
+                <a href={`https://wa.me/${site.csWhatsapp}`} aria-label={`WhatsApp +${site.csWhatsapp}`} className={LINK}>
+                  <ChatIcon className="size-4 shrink-0" />+{site.csWhatsapp}
                 </a>
               )}
               {site.csEmail && (
-                <a href={`mailto:${site.csEmail}`} className={LINK}>
+                <a href={`mailto:${site.csEmail}`} aria-label={`Email ${site.csEmail}`} className={LINK}>
+                  <MailIcon className="size-4 shrink-0" />
                   {site.csEmail}
                 </a>
               )}
@@ -45,9 +47,9 @@ export async function SiteFooter({ site, categories }: { site: SiteView; categor
             <p className="mb-1 font-semibold text-white">{col.title}</p>
             {col.items.map((item) =>
               "soon" in item ? (
-                <span key={item.label} className="flex min-h-11 cursor-default items-center gap-1.5 text-stone-400 sm:min-h-9">
+                <span key={item.label} title="Segera hadir" className="flex min-h-11 cursor-default items-center text-stone-500 sm:min-h-9">
                   {item.label}
-                  <span className="rounded bg-stone-800 px-1.5 py-0.5 text-[11px] font-semibold text-stone-300">Segera</span>
+                  <span className="sr-only"> (segera hadir)</span>
                 </span>
               ) : (
                 <Link key={item.label} href={item.href} className={LINK}>
@@ -59,7 +61,7 @@ export async function SiteFooter({ site, categories }: { site: SiteView; categor
         ))}
       </div>
       <div className="border-t border-stone-800">
-        <p className="mx-auto w-full max-w-6xl px-4 py-5 text-stone-400">
+        <p className="mx-auto w-full max-w-6xl px-4 py-5 text-center text-[0.7875rem] text-stone-400">
           © {year} {site.name}. Hak Cipta Dilindungi.
         </p>
       </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { CalendarIcon, ClockIcon, ExternalLinkIcon, MapPinIcon } from "@/components/icons";
 import { Badge } from "@/components/ui/badge";
 import { buttonClass } from "@/components/ui/button";
 import { getEnv } from "@/lib/env";
@@ -161,31 +162,48 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
           <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5 lg:sticky lg:top-6">
             <h2 className="text-lg font-bold text-text">Detail acara</h2>
             <dl className="flex flex-col gap-3 text-sm">
-              <div>
-                <dt className="text-muted">Tanggal</dt>
-                <dd className="font-semibold text-text">{schedule.date}</dd>
+              <div className="flex gap-3">
+                <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-text">
+                  <CalendarIcon className="size-[18px]" />
+                </span>
+                <div>
+                  <dt className="text-muted">Tanggal</dt>
+                  <dd className="font-semibold text-text">{schedule.date}</dd>
+                </div>
               </div>
-              <div>
-                <dt className="text-muted">Waktu</dt>
-                <dd className="font-semibold text-text">{schedule.time}</dd>
+              <div className="flex gap-3">
+                <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-text">
+                  <ClockIcon className="size-[18px]" />
+                </span>
+                <div>
+                  <dt className="text-muted">Waktu</dt>
+                  <dd className="font-semibold text-text">{schedule.time}</dd>
+                </div>
               </div>
               {(event.venue || place) && (
-                <div>
-                  <dt className="text-muted">Lokasi</dt>
-                  <dd className="font-semibold text-text">
-                    {event.venue}
-                    {place && <span className="block font-normal text-muted">{place}</span>}
-                  </dd>
-                  {event.mapUrl && (
-                    <a
-                      href={event.mapUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex min-h-11 items-center font-semibold text-accent-text underline-offset-4 hover:underline"
-                    >
-                      Buka peta
-                    </a>
-                  )}
+                <div className="flex gap-3">
+                  <span aria-hidden className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent-text">
+                    <MapPinIcon className="size-[18px]" />
+                  </span>
+                  <div>
+                    <dt className="text-muted">Lokasi</dt>
+                    <dd className="font-semibold text-text">
+                      {event.venue}
+                      {place && <span className="block font-normal text-muted">{place}</span>}
+                    </dd>
+                    {event.mapUrl && (
+                      <a
+                        href={event.mapUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-11 items-center gap-1.5 font-semibold text-accent-text underline-offset-4 hover:underline"
+                      >
+                        Buka peta
+                        <ExternalLinkIcon className="size-4" />
+                        <span className="sr-only">(tab baru)</span>
+                      </a>
+                    )}
+                  </div>
                 </div>
               )}
             </dl>
