@@ -413,15 +413,10 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
                   <TurnstileWidget ref={turnstile} siteKey={siteKey} onToken={setToken} />
                   {payError && <Alert>{payError}</Alert>}
                   <div className="hidden lg:block">
-                    <Button onClick={pay} loading={paying} disabled={!canPay} className="w-full" aria-describedby={method ? `${uid}-pay-note` : undefined}>
+                    <Button onClick={pay} loading={paying} disabled={!canPay} className="w-full">
                       Bayar Sekarang
                     </Button>
                   </div>
-                  {method && (
-                    <p id={`${uid}-pay-note`} className="text-sm text-muted">
-                      Pembayaran dibuka di halaman berikutnya.
-                    </p>
-                  )}
                 </div>
               )}
             </div>
@@ -544,7 +539,7 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
 
 const METHOD_GRID = "grid grid-cols-2 gap-3 sm:grid-cols-4";
 
-/** Brand logos are drawn for a white ground, so the plate stays white in dark mode too. */
+/** The logos are transparent but drawn for a light ground (navy, teal, black marks), so the whole card stays white in both themes. */
 function MethodOption({
   uid,
   id,
@@ -563,8 +558,8 @@ function MethodOption({
   return (
     <label
       htmlFor={`${uid}-method-${id}`}
-      className={`relative flex cursor-pointer flex-col gap-2 rounded-lg border p-2 transition-colors has-focus-visible:ring-2 has-focus-visible:ring-accent ${
-        checked ? "border-accent bg-accent-soft ring-1 ring-accent" : "border-border-strong hover:bg-surface-muted"
+      className={`relative flex cursor-pointer flex-col items-center gap-1 rounded-lg border bg-white px-2 pb-2.5 pt-3 transition-shadow has-focus-visible:ring-2 has-focus-visible:ring-accent has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-surface ${
+        checked ? "border-accent ring-2 ring-accent" : "border-stone-300 hover:border-stone-400 hover:shadow-sm dark:border-stone-600"
       }`}
     >
       <input
@@ -575,10 +570,10 @@ function MethodOption({
         onChange={() => onSelect(id)}
         className="sr-only"
       />
-      <span className="flex h-14 items-center justify-center rounded-md bg-white px-3">
+      <span className="flex h-10 w-full items-center justify-center px-2">
         <Image src={`/payment-logos/${id}.svg`} alt={brand} width={120} height={40} className="h-7 w-auto max-w-full object-contain" />
       </span>
-      <span className="px-1 pb-0.5 text-center text-xs font-medium leading-snug text-text sm:text-sm">{caption}</span>
+      <span className="px-1 text-center text-xs font-medium leading-snug text-stone-700 sm:text-sm">{caption}</span>
       {checked && (
         <span aria-hidden className="absolute -right-2 -top-2 flex size-6 items-center justify-center rounded-full bg-accent text-on-accent">
           <CheckIcon className="size-4" />

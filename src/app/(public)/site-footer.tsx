@@ -1,7 +1,7 @@
 import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
-import { ChatIcon, MailIcon } from "@/components/icons";
+import { MailIcon, WhatsAppIcon } from "@/components/icons";
 import type { PublicCategory } from "@/lib/public/catalog-queries";
 import { footerColumns } from "@/lib/public/nav";
 import type { SiteView } from "@/lib/settings-service";
@@ -30,7 +30,7 @@ export async function SiteFooter({ site, categories }: { site: SiteView; categor
               <p className="mt-2 font-semibold text-white">Bantuan pembeli</p>
               {site.csWhatsapp && (
                 <a href={`https://wa.me/${site.csWhatsapp}`} aria-label={`WhatsApp +${site.csWhatsapp}`} className={LINK}>
-                  <ChatIcon className="size-4 shrink-0" />+{site.csWhatsapp}
+                  <WhatsAppIcon className="size-4 shrink-0" />+{site.csWhatsapp}
                 </a>
               )}
               {site.csEmail && (
