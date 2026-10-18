@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CheckoutSteps } from "@/components/checkout-steps";
 import { getEnv } from "@/lib/env";
 import { formatEventSchedule } from "@/lib/format";
 import { loadEvent, publishedSlugParams } from "../load-event";
@@ -21,33 +22,36 @@ export default async function TicketsPage({ params }: PageProps<"/events/[slug]/
   const schedule = formatEventSchedule(event.startsAt, event.endsAt, event.timezone);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:py-10">
-      <div className="flex flex-col gap-1">
-        <Link href={`/events/${event.slug}`} className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-accent-text underline-offset-4 hover:underline">
-          ← Kembali ke detail event
-        </Link>
-        <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-text sm:text-3xl">{event.title}</h1>
-        <p className="text-sm text-muted">
-          {schedule.date} · {schedule.time}
-          {event.city && <> · {event.city}</>}
-        </p>
+    <>
+      <CheckoutSteps current={1} />
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:py-10">
+        <div className="flex flex-col gap-1">
+          <Link href={`/events/${event.slug}`} className="inline-flex min-h-11 items-center self-start text-sm font-semibold text-accent-text underline-offset-4 hover:underline">
+            ← Kembali ke detail event
+          </Link>
+          <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-text sm:text-3xl">{event.title}</h1>
+          <p className="text-sm text-muted">
+            {schedule.date} · {schedule.time}
+            {event.city && <> · {event.city}</>}
+          </p>
+        </div>
+        <TicketPicker
+          slug={event.slug}
+          eventId={event.id}
+          siteKey={getEnv().TURNSTILE_SITE_KEY}
+          categories={event.ticketCategories.map((c) => ({
+            id: c.id,
+            inventoryId: c.inventoryId,
+            name: c.name,
+            description: c.description,
+            price: c.price,
+            maxPerOrder: c.maxPerOrder,
+            admitsPerUnit: c.admitsPerUnit,
+            hasMerchandise: c.hasMerchandise,
+            badge: c.badge,
+          }))}
+        />
       </div>
-      <TicketPicker
-        slug={event.slug}
-        eventId={event.id}
-        siteKey={getEnv().TURNSTILE_SITE_KEY}
-        categories={event.ticketCategories.map((c) => ({
-          id: c.id,
-          inventoryId: c.inventoryId,
-          name: c.name,
-          description: c.description,
-          price: c.price,
-          maxPerOrder: c.maxPerOrder,
-          admitsPerUnit: c.admitsPerUnit,
-          hasMerchandise: c.hasMerchandise,
-          badge: c.badge,
-        }))}
-      />
-    </div>
+    </>
   );
 }

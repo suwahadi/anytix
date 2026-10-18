@@ -159,7 +159,7 @@ export default async function EventPage({ params }: PageProps<"/events/[slug]">)
         </div>
 
         <aside className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
-          <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5 lg:sticky lg:top-6">
+          <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5 lg:sticky lg:top-22 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto">
             <h2 className="text-lg font-bold text-text">Detail acara</h2>
             <dl className="flex flex-col gap-3 text-sm">
               <div className="flex gap-3">

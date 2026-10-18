@@ -41,7 +41,7 @@ export function Countdown({
   const minutes = Math.ceil(left / 60_000);
   return (
     <span className={className}>
-      <span aria-hidden className={`text-lg font-bold tabular-nums ${left < 60_000 ? "text-danger" : "text-text"}`}>
+      <span aria-hidden className={`text-lg font-bold tabular-nums ${left < 60_000 ? "text-danger" : ""}`}>
         {formatCountdown(left)}
       </span>
       <span className="sr-only" aria-live="polite">

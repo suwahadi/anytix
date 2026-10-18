@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { CheckoutSteps } from "@/components/checkout-steps";
 import { Countdown } from "@/components/countdown";
 import { Alert } from "@/components/ui/alert";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
@@ -119,133 +120,136 @@ export function OrderStatus({ initial, cs }: { initial: OrderView; cs: { whatsap
   const contact = [cs.whatsapp && `WhatsApp +${cs.whatsapp}`, cs.email].filter(Boolean).join(" · ");
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-6 lg:py-10">
-      {pending && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning bg-warning-soft px-4 py-3">
-          <span className="font-semibold text-text">Selesaikan Pembayaran</span>
-          <Countdown expiresAt={view.payExpiresAt} serverNow={view.serverNow} receivedAt={receivedAt} onExpire={() => void refresh()} />
-        </div>
-      )}
-
-      <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h1 className="text-2xl font-extrabold tracking-tight text-text">
-            {view.displayStatus === "LUNAS" ? "Pembayaran berhasil" : view.displayStatus === "PENDING" ? "Menunggu pembayaran" : "Status pesanan"}
-          </h1>
-          <Badge tone={TONE[view.displayStatus]}>{view.displayStatus}</Badge>
-        </div>
-
+    <>
+      {pending && <CheckoutSteps current={4} />}
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-6 lg:py-10">
         {pending && (
-          <p className="text-text">
-            Silakan lakukan pembayaran sebelum <strong>{formatDateTime(new Date(view.payExpiresAt), tz)}</strong>.
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-warning bg-warning-soft px-4 py-3">
+            <span className="font-semibold text-text">Selesaikan Pembayaran</span>
+            <Countdown expiresAt={view.payExpiresAt} serverNow={view.serverNow} receivedAt={receivedAt} onExpire={() => void refresh()} />
+          </div>
         )}
-        {finalizing && (
-          <p className="text-text">Batas bayar sudah lewat. Kami sedang memastikan status pembayaran Anda, dan halaman ini diperbarui otomatis.</p>
-        )}
-        {view.displayStatus === "KEDALUWARSA" && !finalizing && <p className="text-text">Batas bayar sudah lewat, jadi pesanan ini dibatalkan dan slot tiket dilepas.</p>}
-        {view.displayStatus === "DIBATALKAN" && <p className="text-text">Pesanan ini dibatalkan oleh pengelola sebelum dibayar.</p>}
-        {view.displayStatus === "DITINJAU" && (
-          <p className="text-text">
-            Pembayaran Anda masuk setelah batas waktu. Pengelola akan menghubungi Anda untuk pengembalian dana.{contact && ` Kontak: ${contact}.`}
-          </p>
-        )}
-        {view.displayStatus === "DIKEMBALIKAN" && <p className="text-text">Dana pesanan ini sudah dikembalikan oleh pengelola.{contact && ` Kontak: ${contact}.`}</p>}
 
-        <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-muted">ID Pesanan</dt>
-            <dd className="font-semibold text-text">{view.invoice}</dd>
-          </div>
-          <div>
-            <dt className="text-muted">Metode</dt>
-            <dd className="font-semibold text-text">{view.paymentMethod.label}</dd>
-          </div>
-          <div>
-            <dt className="text-muted">Total</dt>
-            <dd className="text-lg font-extrabold text-accent-text">{formatRupiah(view.total)}</dd>
-          </div>
-          <div>
-            <dt className="text-muted">Pemesan</dt>
-            <dd className="font-semibold text-text">{view.buyerName}</dd>
-          </div>
-        </dl>
-
-        {pending && (
-          <div className="flex flex-col gap-2">
-            {snapError && <Alert>{snapError}</Alert>}
-            <Button onClick={() => void openSnap()} loading={opening} className="self-stretch sm:self-start">
-              Bayar Sekarang
-            </Button>
-            <p className="text-sm text-muted">Halaman ini diperbarui otomatis setelah pembayaran diterima.</p>
-          </div>
-        )}
-        {((view.displayStatus === "KEDALUWARSA" && !finalizing) || view.displayStatus === "DIBATALKAN") && (
-          <Link href={`/events/${view.event.slug}`} className={`${buttonClass()} self-start`}>
-            Pesan lagi
-          </Link>
-        )}
-      </section>
-
-      {view.displayStatus === "LUNAS" && (
         <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-bold text-text">E-ticket</h2>
-            <a href={`/api/orders/${view.uuid}/tickets.pdf`} download className={buttonClass("secondary")}>
-              Unduh PDF
-            </a>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h1 className="text-2xl font-extrabold tracking-tight text-text">
+              {view.displayStatus === "LUNAS" ? "Pembayaran berhasil" : view.displayStatus === "PENDING" ? "Menunggu pembayaran" : "Status pesanan"}
+            </h1>
+            <Badge tone={TONE[view.displayStatus]}>{view.displayStatus}</Badge>
           </div>
-          <p className="text-sm text-muted">Satu QR untuk satu orang. Tunjukkan di pintu masuk, dari layar atau cetakan.</p>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {view.tickets.map((t) => (
-              <li key={t.seq} className="flex flex-col items-center gap-2 rounded-md border border-border p-4 text-center">
-                <span className="font-semibold text-text">
-                  Tiket {t.seq} dari {view.tickets.length}
+
+          {pending && (
+            <p className="text-text">
+              Silakan lakukan pembayaran sebelum <strong>{formatDateTime(new Date(view.payExpiresAt), tz)}</strong>.
+            </p>
+          )}
+          {finalizing && (
+            <p className="text-text">Batas bayar sudah lewat. Kami sedang memastikan status pembayaran Anda, dan halaman ini diperbarui otomatis.</p>
+          )}
+          {view.displayStatus === "KEDALUWARSA" && !finalizing && <p className="text-text">Batas bayar sudah lewat, jadi pesanan ini dibatalkan dan slot tiket dilepas.</p>}
+          {view.displayStatus === "DIBATALKAN" && <p className="text-text">Pesanan ini dibatalkan oleh pengelola sebelum dibayar.</p>}
+          {view.displayStatus === "DITINJAU" && (
+            <p className="text-text">
+              Pembayaran Anda masuk setelah batas waktu. Pengelola akan menghubungi Anda untuk pengembalian dana.{contact && ` Kontak: ${contact}.`}
+            </p>
+          )}
+          {view.displayStatus === "DIKEMBALIKAN" && <p className="text-text">Dana pesanan ini sudah dikembalikan oleh pengelola.{contact && ` Kontak: ${contact}.`}</p>}
+
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-muted">ID Pesanan</dt>
+              <dd className="font-semibold text-text">{view.invoice}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Metode</dt>
+              <dd className="font-semibold text-text">{view.paymentMethod.label}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Total</dt>
+              <dd className="text-lg font-extrabold text-accent-text">{formatRupiah(view.total)}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Pemesan</dt>
+              <dd className="font-semibold text-text">{view.buyerName}</dd>
+            </div>
+          </dl>
+
+          {pending && (
+            <div className="flex flex-col gap-2">
+              {snapError && <Alert>{snapError}</Alert>}
+              <Button onClick={() => void openSnap()} loading={opening} className="self-stretch sm:self-start">
+                Bayar Sekarang
+              </Button>
+              <p className="text-sm text-muted">Halaman ini diperbarui otomatis setelah pembayaran diterima.</p>
+            </div>
+          )}
+          {((view.displayStatus === "KEDALUWARSA" && !finalizing) || view.displayStatus === "DIBATALKAN") && (
+            <Link href={`/events/${view.event.slug}`} className={`${buttonClass()} self-start`}>
+              Pesan lagi
+            </Link>
+          )}
+        </section>
+
+        {view.displayStatus === "LUNAS" && (
+          <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-bold text-text">E-ticket</h2>
+              <a href={`/api/orders/${view.uuid}/tickets.pdf`} download className={buttonClass("secondary")}>
+                Unduh PDF
+              </a>
+            </div>
+            <p className="text-sm text-muted">Satu QR untuk satu orang. Tunjukkan di pintu masuk, dari layar atau cetakan.</p>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {view.tickets.map((t) => (
+                <li key={t.seq} className="flex flex-col items-center gap-2 rounded-md border border-border p-4 text-center">
+                  <span className="font-semibold text-text">
+                    Tiket {t.seq} dari {view.tickets.length}
+                  </span>
+                  <span className="text-sm text-muted">
+                    {t.categoryName} · {view.buyerName}
+                  </span>
+                  {t.qr && (
+                    // eslint-disable-next-line @next/next/no-img-element -- a data: URL needs no optimisation and the custom image loader would rewrite it
+                    <img src={t.qr} alt={`QR Tiket ${t.seq} dari ${view.tickets.length}`} width={208} height={208} className="rounded-md bg-white p-2" />
+                  )}
+                  {t.token && <code className="break-all font-mono text-sm text-text">{t.token}</code>}
+                  {t.checkedInAt && (
+                    <Badge tone="muted">Sudah dipakai {formatDateTime(new Date(t.checkedInAt), tz)}</Badge>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:p-6">
+          <h2 className="text-lg font-bold text-text">{view.event.title}</h2>
+          <p className="text-sm text-muted">
+            {schedule.date} · {schedule.time}
+            {(view.event.venue || view.event.city) && <> · {[view.event.venue, view.event.city].filter(Boolean).join(", ")}</>}
+          </p>
+          <ul className="flex flex-col gap-2 border-t border-border pt-3 text-sm">
+            {view.items.map((i) => (
+              <li key={i.name} className="flex justify-between gap-3">
+                <span className="text-text">
+                  {i.name} × {i.qty}
                 </span>
-                <span className="text-sm text-muted">
-                  {t.categoryName} · {view.buyerName}
-                </span>
-                {t.qr && (
-                  // eslint-disable-next-line @next/next/no-img-element -- a data: URL needs no optimisation and the custom image loader would rewrite it
-                  <img src={t.qr} alt={`QR Tiket ${t.seq} dari ${view.tickets.length}`} width={208} height={208} className="rounded-md bg-white p-2" />
-                )}
-                {t.token && <code className="break-all font-mono text-sm text-text">{t.token}</code>}
-                {t.checkedInAt && (
-                  <Badge tone="muted">Sudah dipakai {formatDateTime(new Date(t.checkedInAt), tz)}</Badge>
-                )}
+                <span className="font-semibold text-text">{formatRupiah(i.lineTotal)}</span>
               </li>
             ))}
+            {view.discount > 0 && (
+              <li className="flex justify-between gap-3">
+                <span className="text-muted">Diskon</span>
+                <span className="text-text">−{formatRupiah(view.discount)}</span>
+              </li>
+            )}
+            <li className="flex justify-between gap-3">
+              <span className="text-muted">Biaya Layanan</span>
+              <span className="text-text">{formatRupiah(view.fee)}</span>
+            </li>
           </ul>
         </section>
-      )}
-
-      <section className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-4 sm:p-6">
-        <h2 className="text-lg font-bold text-text">{view.event.title}</h2>
-        <p className="text-sm text-muted">
-          {schedule.date} · {schedule.time}
-          {(view.event.venue || view.event.city) && <> · {[view.event.venue, view.event.city].filter(Boolean).join(", ")}</>}
-        </p>
-        <ul className="flex flex-col gap-2 border-t border-border pt-3 text-sm">
-          {view.items.map((i) => (
-            <li key={i.name} className="flex justify-between gap-3">
-              <span className="text-text">
-                {i.name} × {i.qty}
-              </span>
-              <span className="font-semibold text-text">{formatRupiah(i.lineTotal)}</span>
-            </li>
-          ))}
-          {view.discount > 0 && (
-            <li className="flex justify-between gap-3">
-              <span className="text-muted">Diskon</span>
-              <span className="text-text">−{formatRupiah(view.discount)}</span>
-            </li>
-          )}
-          <li className="flex justify-between gap-3">
-            <span className="text-muted">Biaya Layanan</span>
-            <span className="text-text">{formatRupiah(view.fee)}</span>
-          </li>
-        </ul>
-      </section>
-    </div>
+      </div>
+    </>
   );
 }

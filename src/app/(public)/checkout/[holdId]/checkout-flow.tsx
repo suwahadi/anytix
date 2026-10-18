@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
+import { CheckoutSteps } from "@/components/checkout-steps";
 import { Countdown } from "@/components/countdown";
 import { DynamicFormFields, type AnswerValues } from "@/components/dynamic-form-fields";
+import { ClockIcon } from "@/components/icons";
 import { TurnstileWidget, type TurnstileHandle } from "@/components/turnstile-widget";
 import { Alert } from "@/components/ui/alert";
 import { Button, buttonClass } from "@/components/ui/button";
@@ -21,7 +23,6 @@ type Buyer = { name: string; email: string; countryCode: string; phone: string }
 type Draft = { buyer: Buyer; answers: AnswerValues };
 
 const EMPTY: Draft = { buyer: { name: "", email: "", countryCode: "62", phone: "" }, answers: {} };
-const STEPS = ["Pilih Tiket", "Detail Pesanan", "Metode Pembayaran", "Pembayaran"];
 const noSubscription = () => () => {};
 
 function readStored(key: string): string | null {
@@ -38,26 +39,14 @@ function issuesToFields(issues: Array<{ path: PropertyKey[]; message: string }>,
   return out;
 }
 
-function Stepper({ current }: { current: number }) {
+const TIMER_BOX = "items-center justify-between gap-3 rounded-md bg-accent-soft px-3 py-2.5 text-accent-text";
+
+function TimerLabel() {
   return (
-    <ol className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
-      {STEPS.map((label, i) => {
-        const n = i + 1;
-        const state = n < current ? "done" : n === current ? "current" : "todo";
-        return (
-          <li key={label} aria-current={state === "current" ? "step" : undefined} className="flex items-center gap-2">
-            <span
-              className={`inline-flex size-6 items-center justify-center rounded-full text-xs font-bold ${
-                state === "todo" ? "border border-border-strong text-muted" : "bg-accent text-on-accent"
-              }`}
-            >
-              {n}
-            </span>
-            <span className={state === "current" ? "font-semibold text-text" : "text-muted"}>{label}</span>
-          </li>
-        );
-      })}
-    </ol>
+    <span className="flex items-center gap-2 text-sm font-semibold">
+      <ClockIcon className="size-[18px] shrink-0" />
+      Batas Waktu Tersisa
+    </span>
   );
 }
 
@@ -220,289 +209,291 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
   const qris = view.paymentMethods.find((m) => m.group === "qris");
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:py-10">
-      <Stepper current={step} />
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-10">
-        <div className="flex min-w-0 flex-col gap-5">
-          <div className="flex items-start gap-2">
-            <button
-              type="button"
-              onClick={() => (step === 3 ? setStep(2) : setBackOpen(true))}
-              aria-label={step === 3 ? "Kembali ke detail pesanan" : "Batalkan pilihan tiket"}
-              className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center rounded-md text-2xl text-text hover:bg-surface-muted"
-            >
-              ‹
-            </button>
-            <div className="min-w-0 pt-1.5">
-              <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-text">{step === 2 ? "Detail Pesanan" : "Metode Pembayaran"}</h1>
-              <p className="mt-1 text-sm text-muted">
-                {view.event.title} · {schedule.date}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-2 lg:hidden">
-            <span className="text-sm font-semibold text-text">Batas Waktu Tersisa</span>
-            <Countdown expiresAt={view.expiresAt} serverNow={view.serverNow} receivedAt={receivedAt} onExpire={() => setExpired(true)} />
-          </div>
-
-          {step === 2 ? (
-            <form ref={form} onSubmit={continueToConfirm} noValidate className="flex flex-col gap-5">
-              <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5">
-                <h2 className="text-lg font-bold text-text">Data Pemesan</h2>
-                <Field
-                  id={`${uid}-name`}
-                  label="Nama Lengkap *"
-                  autoComplete="name"
-                  value={draft.buyer.name}
-                  error={errors.name}
-                  onChange={(e) => update({ ...draft, buyer: { ...draft.buyer, name: e.target.value } })}
-                />
-                <Field
-                  id={`${uid}-email`}
-                  label="Email *"
-                  type="email"
-                  autoComplete="email"
-                  hint="Invoice dan e-ticket dikirim ke email ini."
-                  value={draft.buyer.email}
-                  error={errors.email}
-                  onChange={(e) => update({ ...draft, buyer: { ...draft.buyer, email: e.target.value } })}
-                />
-                <div className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)] gap-3">
-                  <Select
-                    id={`${uid}-country`}
-                    label="Kode negara"
-                    value={draft.buyer.countryCode}
-                    onChange={(e) => update({ ...draft, buyer: { ...draft.buyer, countryCode: e.target.value } })}
-                    options={COUNTRY_CODES.map((c) => ({ value: c.code, label: c.label }))}
-                  />
-                  <Field
-                    id={`${uid}-phone`}
-                    label="No. WhatsApp *"
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel-national"
-                    value={draft.buyer.phone}
-                    error={errors.phone}
-                    onChange={(e) => update({ ...draft, buyer: { ...draft.buyer, phone: e.target.value } })}
-                  />
-                </div>
-                {view.fields.length > 0 && (
-                  <div className="flex flex-col gap-4 border-t border-border pt-4">
-                    <DynamicFormFields
-                      idPrefix={`${uid}-answer`}
-                      fields={view.fields}
-                      values={draft.answers}
-                      errors={errors}
-                      onChange={(key, value) => update({ ...draft, answers: { ...draft.answers, [key]: value } })}
-                    />
-                  </div>
-                )}
-              </section>
-              <Button type="submit" className="self-stretch sm:self-start">
-                Lanjutkan
-              </Button>
-            </form>
-          ) : (
-            <section className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-4 sm:p-5">
-              {qris && (
-                <fieldset className="flex flex-col gap-2">
-                  <legend className="mb-2 text-lg font-bold text-text">QRIS</legend>
-                  <MethodOption uid={uid} id={qris.key} label="QRIS (semua e-wallet dan m-banking)" checked={method === qris.key} onSelect={setMethod} />
-                </fieldset>
-              )}
-              {banks.length > 0 && (
-                <fieldset className="flex flex-col gap-2">
-                  <legend className="mb-2 text-lg font-bold text-text">Transfer Bank</legend>
-                  {banks.map((b) => (
-                    <MethodOption key={b.key} uid={uid} id={b.key} label={`Virtual Account ${b.label}`} checked={method === b.key} onSelect={setMethod} />
-                  ))}
-                </fieldset>
-              )}
-            </section>
-          )}
-        </div>
-
-        <aside className="lg:col-start-2 lg:row-start-1">
-          <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5 lg:sticky lg:top-6">
-            <div className="hidden items-center justify-between gap-3 rounded-md bg-surface-muted px-3 py-2 lg:flex">
-              <span className="text-sm font-semibold text-text">Batas Waktu Tersisa</span>
-              <Countdown expiresAt={view.expiresAt} serverNow={view.serverNow} receivedAt={receivedAt} onExpire={() => setExpired(true)} />
-            </div>
-            <h2 className="text-lg font-bold text-text">Rincian Pesanan</h2>
-            <ul className="flex flex-col gap-2 text-sm">
-              {view.items.map((i) => (
-                <li key={i.inventoryId} className="flex justify-between gap-3">
-                  <span className="min-w-0 text-text">
-                    {i.name} × {i.qty}
-                  </span>
-                  <span className="shrink-0 font-semibold text-text">{formatRupiah(i.lineTotal)}</span>
-                </li>
-              ))}
-            </ul>
-            <dl className="flex flex-col gap-1 border-t border-border pt-4 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-muted">Subtotal</dt>
-                <dd className="text-text">{formatRupiah(totals.subtotal)}</dd>
-              </div>
-              {totals.discount > 0 && (
-                <div className="flex justify-between">
-                  <dt className="text-muted">Diskon{promoCode && ` (${promoCode})`}</dt>
-                  <dd className="text-text">−{formatRupiah(totals.discount)}</dd>
-                </div>
-              )}
-              <div className="flex justify-between">
-                <dt className="text-muted">Biaya Layanan</dt>
-                <dd className="text-text">{formatRupiah(totals.fee)}</dd>
-              </div>
-              <div className="mt-2 flex items-baseline justify-between">
-                <dt className="font-semibold text-text">Total Bayar</dt>
-                <dd className="text-xl font-extrabold text-accent-text">{formatRupiah(totals.total)}</dd>
-              </div>
-            </dl>
-            {step === 3 && (
-              <div className="flex flex-col gap-3 border-t border-border pt-4">
-                {promoCode ? (
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="text-text">
-                      Promo <strong>{promoCode}</strong> dipakai.
-                    </span>
-                    <Button variant="ghost" size="sm" onClick={removePromo}>
-                      Hapus promo
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    className="w-full"
-                    onClick={() => {
-                      setPromoError("");
-                      setPromoOpen(true);
-                    }}
-                  >
-                    Lebih hemat pakai promo
-                  </Button>
-                )}
-                <Consent
-                  id={`${uid}-terms`}
-                  checked={consents.terms}
-                  onChange={(v) => setConsents({ ...consents, terms: v })}
-                  label="Saya menyetujui Syarat & Ketentuan."
-                  link={{ href: "/terms", text: "Baca Syarat & Ketentuan" }}
-                />
-                <Consent
-                  id={`${uid}-privacy`}
-                  checked={consents.privacy}
-                  onChange={(v) => setConsents({ ...consents, privacy: v })}
-                  label={`Saya menyetujui Kebijakan Privasi & Pemrosesan Data${
-                    view.hasIdentityField
-                      ? ", termasuk pemrosesan nomor identitas untuk verifikasi identitas pemesan saat check-in. Nomor identitas dihapus 60 hari setelah acara berakhir."
-                      : "."
-                  }`}
-                  link={{ href: "/privacy", text: "Baca Kebijakan Privasi" }}
-                />
-                <TurnstileWidget ref={turnstile} siteKey={siteKey} onToken={setToken} />
-                {payError && <Alert>{payError}</Alert>}
-                <Button onClick={pay} loading={paying} disabled={!canPay} className="w-full" aria-describedby={`${uid}-pay-note`}>
-                  Bayar Sekarang
-                </Button>
-                <p id={`${uid}-pay-note`} className="text-sm text-muted">
-                  {method ? "Pembayaran dibuka di halaman berikutnya." : "Pilih metode pembayaran dan centang kedua persetujuan."}
+    <>
+      <CheckoutSteps current={step} />
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-6 lg:py-10">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-x-10">
+          <div className="flex min-w-0 flex-col gap-5">
+            <div className="flex items-start gap-2">
+              <button
+                type="button"
+                onClick={() => (step === 3 ? setStep(2) : setBackOpen(true))}
+                aria-label={step === 3 ? "Kembali ke detail pesanan" : "Batalkan pilihan tiket"}
+                className="-ml-2 inline-flex size-11 shrink-0 items-center justify-center rounded-md text-2xl text-text hover:bg-surface-muted"
+              >
+                ‹
+              </button>
+              <div className="min-w-0 pt-1.5">
+                <h1 className="text-2xl font-extrabold leading-tight tracking-tight text-text">{step === 2 ? "Detail Pesanan" : "Metode Pembayaran"}</h1>
+                <p className="mt-1 text-sm text-muted">
+                  {view.event.title} · {schedule.date}
                 </p>
               </div>
+            </div>
+
+            <div className={`flex ${TIMER_BOX} lg:hidden`}>
+              <TimerLabel />
+              <Countdown expiresAt={view.expiresAt} serverNow={view.serverNow} receivedAt={receivedAt} onExpire={() => setExpired(true)} />
+            </div>
+
+            {step === 2 ? (
+              <form ref={form} onSubmit={continueToConfirm} noValidate className="flex flex-col gap-5">
+                <section className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5">
+                  <h2 className="text-lg font-bold text-text">Data Pemesan</h2>
+                  <Field
+                    id={`${uid}-name`}
+                    label="Nama Lengkap *"
+                    autoComplete="name"
+                    value={draft.buyer.name}
+                    error={errors.name}
+                    onChange={(e) => update({ ...draft, buyer: { ...draft.buyer, name: e.target.value } })}
+                  />
+                  <Field
+                    id={`${uid}-email`}
+                    label="Email *"
+                    type="email"
+                    autoComplete="email"
+                    hint="Invoice dan e-ticket dikirim ke email ini."
+                    value={draft.buyer.email}
+                    error={errors.email}
+                    onChange={(e) => update({ ...draft, buyer: { ...draft.buyer, email: e.target.value } })}
+                  />
+                  <div className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)] gap-3">
+                    <Select
+                      id={`${uid}-country`}
+                      label="Kode negara"
+                      value={draft.buyer.countryCode}
+                      onChange={(e) => update({ ...draft, buyer: { ...draft.buyer, countryCode: e.target.value } })}
+                      options={COUNTRY_CODES.map((c) => ({ value: c.code, label: c.label }))}
+                    />
+                    <Field
+                      id={`${uid}-phone`}
+                      label="No. WhatsApp *"
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel-national"
+                      value={draft.buyer.phone}
+                      error={errors.phone}
+                      onChange={(e) => update({ ...draft, buyer: { ...draft.buyer, phone: e.target.value } })}
+                    />
+                  </div>
+                  {view.fields.length > 0 && (
+                    <div className="flex flex-col gap-4 border-t border-border pt-4">
+                      <DynamicFormFields
+                        idPrefix={`${uid}-answer`}
+                        fields={view.fields}
+                        values={draft.answers}
+                        errors={errors}
+                        onChange={(key, value) => update({ ...draft, answers: { ...draft.answers, [key]: value } })}
+                      />
+                    </div>
+                  )}
+                </section>
+                <Button type="submit" className="self-stretch sm:self-start">
+                  Lanjutkan
+                </Button>
+              </form>
+            ) : (
+              <section className="flex flex-col gap-5 rounded-lg border border-border bg-surface p-4 sm:p-5">
+                {qris && (
+                  <fieldset className="flex flex-col gap-2">
+                    <legend className="mb-2 text-lg font-bold text-text">QRIS</legend>
+                    <MethodOption uid={uid} id={qris.key} label="QRIS (semua e-wallet dan m-banking)" checked={method === qris.key} onSelect={setMethod} />
+                  </fieldset>
+                )}
+                {banks.length > 0 && (
+                  <fieldset className="flex flex-col gap-2">
+                    <legend className="mb-2 text-lg font-bold text-text">Transfer Bank</legend>
+                    {banks.map((b) => (
+                      <MethodOption key={b.key} uid={uid} id={b.key} label={`Virtual Account ${b.label}`} checked={method === b.key} onSelect={setMethod} />
+                    ))}
+                  </fieldset>
+                )}
+              </section>
             )}
           </div>
-        </aside>
-      </div>
 
-      <Dialog open={promoOpen} onClose={() => setPromoOpen(false)} title="Kode Promo">
-        <form onSubmit={applyPromo} className="flex flex-col gap-3" noValidate>
-          <Field
-            id={`${uid}-promo`}
-            label="Kode promo"
-            value={promoInput}
-            onChange={(e) => setPromoInput(e.target.value)}
-            error={promoError || undefined}
-            autoComplete="off"
-            autoCapitalize="characters"
-            maxLength={40}
-          />
-          <p className="text-sm text-muted">Diskon berlaku untuk harga tiket. Biaya layanan tidak didiskon.</p>
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={() => setPromoOpen(false)}>
-              Batal
-            </Button>
-            <Button type="submit" loading={applying}>
-              Pakai
-            </Button>
-          </div>
-        </form>
-      </Dialog>
-
-      <Dialog
-        open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        title="Konfirmasi Pesanan"
-        footer={
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
-              Edit Data
-            </Button>
-            <Button onClick={goToPayment}>Saya Mengerti</Button>
-          </div>
-        }
-      >
-        <dl className="flex flex-col gap-2 text-sm">
-          <div>
-            <dt className="text-muted">Nama</dt>
-            <dd className="font-semibold text-text">{draft.buyer.name}</dd>
-          </div>
-          <div>
-            <dt className="text-muted">Email</dt>
-            <dd className="break-all font-semibold text-text">{draft.buyer.email}</dd>
-          </div>
-          <div>
-            <dt className="text-muted">No. WhatsApp</dt>
-            <dd className="font-semibold text-text">+{normalizePhone(draft.buyer.countryCode, draft.buyer.phone) ?? draft.buyer.phone}</dd>
-          </div>
-        </dl>
-        <div className="mt-4 rounded-md bg-surface-muted p-3 text-sm text-text">
-          <p className="font-semibold">Informasi Penting</p>
-          <p className="mt-1">Invoice dan e-ticket dikirim ke email di atas. Cek folder spam bila belum masuk.</p>
+          <aside className="lg:col-start-2 lg:row-start-1">
+            <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface p-4 sm:p-5 lg:sticky lg:top-22 lg:max-h-[calc(100dvh-7rem)] lg:overflow-y-auto">
+              <div className={`hidden ${TIMER_BOX} lg:flex`}>
+                <TimerLabel />
+                <Countdown expiresAt={view.expiresAt} serverNow={view.serverNow} receivedAt={receivedAt} onExpire={() => setExpired(true)} />
+              </div>
+              <h2 className="text-lg font-bold text-text">Rincian Pesanan</h2>
+              <ul className="flex flex-col gap-2 text-sm">
+                {view.items.map((i) => (
+                  <li key={i.inventoryId} className="flex justify-between gap-3">
+                    <span className="min-w-0 text-text">
+                      {i.name} × {i.qty}
+                    </span>
+                    <span className="shrink-0 font-semibold text-text">{formatRupiah(i.lineTotal)}</span>
+                  </li>
+                ))}
+              </ul>
+              <dl className="flex flex-col gap-1 border-t border-border pt-4 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-muted">Subtotal</dt>
+                  <dd className="text-text">{formatRupiah(totals.subtotal)}</dd>
+                </div>
+                {totals.discount > 0 && (
+                  <div className="flex justify-between">
+                    <dt className="text-muted">Diskon{promoCode && ` (${promoCode})`}</dt>
+                    <dd className="text-text">−{formatRupiah(totals.discount)}</dd>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <dt className="text-muted">Biaya Layanan</dt>
+                  <dd className="text-text">{formatRupiah(totals.fee)}</dd>
+                </div>
+                <div className="mt-2 flex items-baseline justify-between">
+                  <dt className="font-semibold text-text">Total Bayar</dt>
+                  <dd className="text-xl font-extrabold text-accent-text">{formatRupiah(totals.total)}</dd>
+                </div>
+              </dl>
+              {step === 3 && (
+                <div className="flex flex-col gap-3 border-t border-border pt-4">
+                  {promoCode ? (
+                    <div className="flex items-center justify-between gap-3 text-sm">
+                      <span className="text-text">
+                        Promo <strong>{promoCode}</strong> dipakai.
+                      </span>
+                      <Button variant="ghost" size="sm" onClick={removePromo}>
+                        Hapus promo
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      onClick={() => {
+                        setPromoError("");
+                        setPromoOpen(true);
+                      }}
+                    >
+                      Lebih hemat pakai promo
+                    </Button>
+                  )}
+                  <Consent
+                    id={`${uid}-terms`}
+                    checked={consents.terms}
+                    onChange={(v) => setConsents({ ...consents, terms: v })}
+                    label="Saya menyetujui Syarat & Ketentuan."
+                    link={{ href: "/terms", text: "Baca Syarat & Ketentuan" }}
+                  />
+                  <Consent
+                    id={`${uid}-privacy`}
+                    checked={consents.privacy}
+                    onChange={(v) => setConsents({ ...consents, privacy: v })}
+                    label={`Saya menyetujui Kebijakan Privasi & Pemrosesan Data${
+                      view.hasIdentityField
+                        ? ", termasuk pemrosesan nomor identitas untuk verifikasi identitas pemesan saat check-in. Nomor identitas dihapus 60 hari setelah acara berakhir."
+                        : "."
+                    }`}
+                    link={{ href: "/privacy", text: "Baca Kebijakan Privasi" }}
+                  />
+                  <TurnstileWidget ref={turnstile} siteKey={siteKey} onToken={setToken} />
+                  {payError && <Alert>{payError}</Alert>}
+                  <Button onClick={pay} loading={paying} disabled={!canPay} className="w-full" aria-describedby={`${uid}-pay-note`}>
+                    Bayar Sekarang
+                  </Button>
+                  <p id={`${uid}-pay-note`} className="text-sm text-muted">
+                    {method ? "Pembayaran dibuka di halaman berikutnya." : "Pilih metode pembayaran dan centang kedua persetujuan."}
+                  </p>
+                </div>
+              )}
+            </div>
+          </aside>
         </div>
-      </Dialog>
 
-      <Dialog
-        open={backOpen}
-        onClose={() => setBackOpen(false)}
-        title="Batalkan pilihan tiket?"
-        footer={
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="secondary" onClick={() => setBackOpen(false)}>
-              Lanjutkan pesanan
-            </Button>
-            <Button onClick={release} loading={releasing}>
-              Ya, batalkan
-            </Button>
+        <Dialog open={promoOpen} onClose={() => setPromoOpen(false)} title="Kode Promo">
+          <form onSubmit={applyPromo} className="flex flex-col gap-3" noValidate>
+            <Field
+              id={`${uid}-promo`}
+              label="Kode promo"
+              value={promoInput}
+              onChange={(e) => setPromoInput(e.target.value)}
+              error={promoError || undefined}
+              autoComplete="off"
+              autoCapitalize="characters"
+              maxLength={40}
+            />
+            <p className="text-sm text-muted">Diskon berlaku untuk harga tiket. Biaya layanan tidak didiskon.</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setPromoOpen(false)}>
+                Batal
+              </Button>
+              <Button type="submit" loading={applying}>
+                Pakai
+              </Button>
+            </div>
+          </form>
+        </Dialog>
+
+        <Dialog
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          title="Konfirmasi Pesanan"
+          footer={
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
+                Edit Data
+              </Button>
+              <Button onClick={goToPayment}>Saya Mengerti</Button>
+            </div>
+          }
+        >
+          <dl className="flex flex-col gap-2 text-sm">
+            <div>
+              <dt className="text-muted">Nama</dt>
+              <dd className="font-semibold text-text">{draft.buyer.name}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">Email</dt>
+              <dd className="break-all font-semibold text-text">{draft.buyer.email}</dd>
+            </div>
+            <div>
+              <dt className="text-muted">No. WhatsApp</dt>
+              <dd className="font-semibold text-text">+{normalizePhone(draft.buyer.countryCode, draft.buyer.phone) ?? draft.buyer.phone}</dd>
+            </div>
+          </dl>
+          <div className="mt-4 rounded-md bg-surface-muted p-3 text-sm text-text">
+            <p className="font-semibold">Informasi Penting</p>
+            <p className="mt-1">Invoice dan e-ticket dikirim ke email di atas. Cek folder spam bila belum masuk.</p>
           </div>
-        }
-      >
-        <p className="text-sm text-text">Slot tiket Anda akan dilepas untuk pembeli lain. Data yang sudah diisi tetap tersimpan di perangkat ini.</p>
-      </Dialog>
+        </Dialog>
 
-      <Dialog
-        open={expired}
-        onClose={() => setExpired(false)}
-        title="Sesi Anda Berakhir"
-        footer={
-          <Link href={ticketsUrl} className={buttonClass()}>
-            Kembali
-          </Link>
-        }
-      >
-        <p className="text-sm text-text">Batas waktu pemesanan Anda sudah berakhir. Data yang sudah Anda isi akan tetap tersimpan, silakan ulangi pemesanan kembali.</p>
-      </Dialog>
-    </div>
+        <Dialog
+          open={backOpen}
+          onClose={() => setBackOpen(false)}
+          title="Batalkan pilihan tiket?"
+          footer={
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button variant="secondary" onClick={() => setBackOpen(false)}>
+                Lanjutkan pesanan
+              </Button>
+              <Button onClick={release} loading={releasing}>
+                Ya, batalkan
+              </Button>
+            </div>
+          }
+        >
+          <p className="text-sm text-text">Slot tiket Anda akan dilepas untuk pembeli lain. Data yang sudah diisi tetap tersimpan di perangkat ini.</p>
+        </Dialog>
+
+        <Dialog
+          open={expired}
+          onClose={() => setExpired(false)}
+          title="Sesi Anda Berakhir"
+          footer={
+            <Link href={ticketsUrl} className={buttonClass()}>
+              Kembali
+            </Link>
+          }
+        >
+          <p className="text-sm text-text">Batas waktu pemesanan Anda sudah berakhir. Data yang sudah Anda isi akan tetap tersimpan, silakan ulangi pemesanan kembali.</p>
+        </Dialog>
+      </div>
+    </>
   );
 }
 
