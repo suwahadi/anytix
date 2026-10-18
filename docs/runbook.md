@@ -57,3 +57,59 @@ Email transaksional (menunggu pembayaran, e-ticket, kedaluwarsa, pembayaran terl
    - Berhasil bila: skor ≥ 9/10. Bila lebih rendah, bagian DKIM dan DMARC di laporan itu menunjukkan record yang kurang.
 
 Kabari agent setelah langkah 2 selesai. Agent akan memastikan record DKIM dan DMARC terbaca dari internet.
+
+## Backup dan restore
+
+Database adalah satu-satunya tempat data pesanan dan tiket disimpan. Backup harian disimpan di VPS selama 14 hari. Salinannya juga dipindah ke luar VPS secara berkala.
+
+### Menyiapkan backup harian
+
+1. **Pasang klien PostgreSQL di VPS.** Versinya harus sama atau lebih baru dari server Supabase. Cek versi server di Supabase → Settings → Infrastructure, misalnya Postgres 17. Lalu, untuk Ubuntu/Debian:
+   ```bash
+   sudo apt install -y postgresql-common && sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+   sudo apt install -y postgresql-client-17
+   pg_dump --version
+   ```
+   - Berhasil bila: `pg_dump --version` menampilkan versi yang sama dengan server.
+2. **Isi `DATABASE_URL_DIRECT` di `.env.local`.** Ambil dari Supabase → Connect → **Session pooler** (port 5432, bukan 6543). `pg_dump` tidak bisa memakai transaction pooler.
+3. **Uji sekali secara manual.** Jalankan `bash deploy/backup-db.sh`.
+   - Berhasil bila: tampil `Backup selesai: /www/backup/anytix/anytix-YYYYMMDD-HHMM.dump (… MB)`.
+4. **Jadwalkan di aaPanel.** Buka Cron → Add Task:
+   - Type: **Shell Script**.
+   - Name: `Backup database Anytix`.
+   - Period: Daily, pukul 03:00.
+   - Script: `bash /www/wwwroot/anytix/deploy/backup-db.sh`. Sesuaikan path dengan folder aplikasi.
+
+   Berhasil bila: log cron hari berikutnya berisi `Backup selesai`.
+5. **Salin ke luar VPS.** Backup di VPS ikut hilang bila VPS rusak. Pilih salah satu:
+   - aaPanel → Cron dengan tipe **Backup directory** untuk `/www/backup/anytix` ke remote storage (Google Drive, S3, FTP) bila sudah dihubungkan.
+   - Unduh file `.dump` terbaru seminggu sekali lewat aaPanel → Files.
+6. **Cek paket Supabase.** Paket Pro menyimpan backup harian sendiri (Supabase → Database → Backups). Paket gratis tidak, sehingga backup dari VPS adalah satu-satunya cadangan.
+
+### Uji restore (minimal sekali sebelum go-live, lalu tiap 3 bulan)
+
+Restore tidak boleh diarahkan ke database produksi.
+
+1. **Siapkan database kosong untuk uji.** Pilih salah satu:
+   - Project Supabase baru (gratis) bernama `anytix-restore-test`, dengan versi Postgres yang sama.
+   - PostgreSQL lokal dengan versi yang sama.
+2. **Restore dump terbaru.**
+   ```bash
+   pg_restore --no-owner --no-privileges --dbname="<URL database uji>" /www/backup/anytix/anytix-<tanggal>.dump
+   ```
+   Peringatan tentang extension atau role yang tidak ada boleh diabaikan.
+3. **Bandingkan jumlah baris** di database uji dan di produksi, dengan SQL Editor Supabase masing-masing:
+   ```sql
+   select (select count(*) from events) as events, (select count(*) from orders) as orders,
+          (select count(*) from tickets) as tickets, (select count(*) from admins) as admins;
+   ```
+   - Berhasil bila: angkanya sama, atau produksi sedikit lebih banyak karena pesanan baru setelah jam backup.
+4. **Catat hasilnya** di sini, lalu hapus database uji.
+
+| Tanggal | Dump | Hasil | Oleh |
+|---|---|---|---|
+| | | | |
+
+Catatan:
+- Dump hanya berisi schema `public`. Jadwal pg_cron (sweeper hold, retensi identitas) ada di schema `cron`. Setelah restore ke project baru, jalankan `DB_WRITE_ALLOWED=true npm run db:migrate`, lalu periksa `select jobname from cron.job`. Bila kedua job tidak ada, terapkan ulang `db/migrations/0004_payment.sql` dan `0011_retention.sql` lewat `npm run db:apply`.
+- Bucket gambar (Supabase Storage) tidak ikut dump. Poster dan logo bisa diunggah ulang dari panel.
