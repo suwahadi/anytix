@@ -493,14 +493,14 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
       <Dialog
         open={expired}
         onClose={() => setExpired(false)}
-        title="Waktu habis, slot dilepas"
+        title="Sesi Anda Berakhir"
         footer={
           <Link href={ticketsUrl} className={buttonClass()}>
-            Pilih ulang tiket
+            Kembali
           </Link>
         }
       >
-        <p className="text-sm text-text">Batas waktu pengisian sudah lewat, jadi tiket yang Anda pilih dilepas. Data yang sudah diisi tetap tersimpan, silakan pilih tiket lagi.</p>
+        <p className="text-sm text-text">Batas waktu pemesanan Anda sudah berakhir. Data yang sudah Anda isi akan tetap tersimpan, silakan ulangi pemesanan kembali.</p>
       </Dialog>
     </div>
   );

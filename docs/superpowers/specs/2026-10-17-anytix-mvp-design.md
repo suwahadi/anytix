@@ -11,6 +11,7 @@ Sumber utama perilaku produk adalah `PRD.md` di root repo. Dokumen ini hanya men
 | Antislop | Diterapkan selama pengerjaan (UI, teks antarmuka, komentar kode) |
 | Tampilan | Tata letak dan alur meniru Artatix; palet netral dengan satu warna aksen; nama situs sementara "Anytix" (bisa diganti dari panel lewat `settings.site`) |
 | Arah visual (17 Okt 2026) | Warna aksen merah bata `#C2410C`, dipakai hemat (tombol utama, harga, status penting); sisanya netral. Font Plus Jakarta Sans. Logo sementara: teks "Anytix" dengan font yang sama; logo asli bisa diunggah dari Pengaturan Situs. Dial: ENERGY 1 / RHYTHM 2 / MOTION 1 |
+| Teks waktu habis di checkout (18 Okt 2026) | Modal saat hold habis memakai judul "Sesi Anda Berakhir", isi "Batas waktu pemesanan Anda sudah berakhir. Data yang sudah Anda isi akan tetap tersimpan, silakan ulangi pemesanan kembali." dan tombol "Kembali" (ke halaman pilih tiket), menggantikan teks PRD §8 "Waktu habis, slot dilepas" / "Pilih ulang tiket". Pesan error API 410 tetap |
 | Repo | `https://github.com/suwahadi/anytix.git`, branch `main`. Pesan commit dan deskripsi PR tidak boleh memuat co-author atau atribusi Anthropic/Claude |
 
 ## 2. Pilihan teknis (keputusan builder)
