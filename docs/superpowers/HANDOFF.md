@@ -27,9 +27,7 @@ Hasil test terakhir: `npm test` 146 lulus, `npm run test:db` 236 lulus, `lint`, 
 
 1. **Pemilik: ganti email `admin@admin.com`.** Caranya lewat panel `/admin/admins` → Ganti email (atau tambah admin baru lalu nonaktifkan yang lama). Alert admin dikirim ke semua admin aktif, dan `admin.com` adalah domain milik pihak lain. Sampai diganti, worker jangan dijalankan di lingkungan yang menerima pembayaran sungguhan.
 2. **Pemilik: perbaiki `SMTP_FROM` di `.env.local`.** Formatnya harus `AnyTix <alamat@gmail.com>`. Nilai di panel (`settings.smtp`) sudah benar dan dipakai lebih dulu.
-3. **Uji di perangkat sungguhan (belum dilakukan).** Kamera di sesi agent selalu tiruan.
-   - Buka `/admin/check-in` di ponsel lewat tunnel HTTPS (ngrok), pasang sebagai PWA, lalu scan QR dari halaman pesanan dan dari PDF cetak.
-   - Uji juga QRIS sungguhan (harus "TIDAK VALID"), dan tahan satu tiket di depan kamera ≥ 3 detik (harus tetap hijau sekali, tanpa merah).
+3. **Uji di perangkat sungguhan: selesai (18 Okt 2026).** Pemilik menguji scanner di ponsel lewat tunnel ngrok dan menyatakan semua sesuai. Riwayat mencatat 2 valid dan 3 "sudah dipakai" di Gate A. Tidak ada baris "tidak valid", jadi uji QRIS sungguhan kemungkinan tidak dilakukan. Jalur itu tercakup test `long non-ticket QR is invalid through the API`. Untuk uji lewat tunnel, jalankan server dengan `APP_URL=https://<tunnel> npm run start`, supaya cek Origin pada POST lolos.
 4. **Bila pemilik meminta Fase 4:**
    - Midtrans produksi.
    - Autentikasi domain email (DKIM, DMARC) dan paket Brevo berbayar.
