@@ -61,7 +61,7 @@ describe("orders CSV", () => {
       "Biaya Layanan", "Total", "Metode", "Identitas", "Ukuran",
     ]);
     expect(row.slice(3)).toEqual([
-      "Lunas", `Test ${slug}`, "Budi Santoso", "budi@example.com", "6281234567890", "Reguler ×2", "200000", "20000", "HEMAT", "5000", "185000", "QRIS",
+      "Lunas", `Test ${slug}`, "Budi Santoso", "budi@example.com", "62 8123 4567 890", "Reguler ×2", "200000", "20000", "HEMAT", "5000", "185000", "QRIS",
       "KTP 3201********0001", "'=cmd",
     ]);
     expect(row[1]).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);

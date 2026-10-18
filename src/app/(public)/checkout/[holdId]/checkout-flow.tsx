@@ -170,7 +170,7 @@ export function CheckoutFlow({ view, siteKey }: { view: HoldView; siteKey: strin
     setPromoCode(null);
     setPromoInput("");
     const res = await requote(null);
-    if (res.ok) setQuote(res.data);
+    setQuote(res.ok ? res.data : null);
   }
 
   async function release() {

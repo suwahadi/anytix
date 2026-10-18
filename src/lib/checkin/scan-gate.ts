@@ -1,3 +1,6 @@
+/** Served from public/; tests/unit/zxing-wasm.test.ts fails when it no longer matches the installed zxing-wasm. */
+export const ZXING_WASM = "/vendor/zxing_reader-3.1.3.wasm";
+
 /** Debounces camera reads: one request at a time, and the same code is ignored for `sameMs` after scanning resumes. */
 export class ScanGate {
   private busy = false;

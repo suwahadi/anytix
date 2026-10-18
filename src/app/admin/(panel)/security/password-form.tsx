@@ -28,7 +28,7 @@ export function PasswordForm() {
     }
     setCurrent("");
     setNext("");
-    setNotice("Kata sandi diganti. Pakai kata sandi baru saat masuk berikutnya.");
+    setNotice("Kata sandi diganti. Perangkat lain yang masih masuk sudah dikeluarkan; perangkat ini tetap masuk.");
   }
 
   return (

@@ -27,12 +27,13 @@ const PAYMENT_STATUS: Record<string, string> = {
   failure: "Gagal",
 };
 
-const CONFIRM: Record<Exclude<Action, "resend">, { title: string; body: string; button: string; path: string; done: string }> = {
+const CONFIRM: Record<Exclude<Action, "resend">, { title: string; body: string; button: string; path: string; done: string; danger?: true }> = {
   cancel: {
     title: "Batalkan pesanan?",
     body: "Pembayaran di Midtrans ikut dibatalkan, slot tiket dan voucher dilepas, dan pembeli tidak bisa membayar pesanan ini lagi.",
     button: "Ya, batalkan pesanan",
     path: "cancel",
+    danger: true,
     done: "Pesanan dibatalkan.",
   },
   issue: {
@@ -47,6 +48,7 @@ const CONFIRM: Record<Exclude<Action, "resend">, { title: string; body: string; 
     body: "QR lama tidak bisa dipakai lagi. Tiket yang sudah check-in tidak diubah. Pembeli melihat QR baru di tautan pesanan yang sama.",
     button: "Terbitkan ulang QR",
     path: "reissue-tickets",
+    danger: true,
     done: "QR baru diterbitkan.",
   },
   refund: {
@@ -323,7 +325,7 @@ export function OrderDetail() {
               <Button variant="secondary" onClick={() => setOpen(null)}>
                 Batal
               </Button>
-              <Button loading={busy} onClick={() => run(confirm.path, confirm.done)}>
+              <Button variant={confirm.danger ? "danger" : "primary"} loading={busy} onClick={() => run(confirm.path, confirm.done)}>
                 {confirm.button}
               </Button>
             </div>

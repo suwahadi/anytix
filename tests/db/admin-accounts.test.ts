@@ -84,6 +84,23 @@ describe("admin accounts", () => {
     expect(await verifyPassword("kata-sandi-baru-2", (await findAdminByEmail(address))!.password_hash)).toBe(true);
   });
 
+  it("password change ends older sessions", async () => {
+    const id = await createAdminAccount(actorId, { email: email(), password: "kata-sandi-lama-1" });
+    const old = createSessionValue(id, Date.now() - 60_000);
+    expect(await adminFromCookie(old)).not.toBeNull();
+    await changeOwnPassword(id, { current: "kata-sandi-lama-1", next: "kata-sandi-baru-2" });
+    expect(await adminFromCookie(old)).toBeNull();
+    expect(await adminFromCookie(createSessionValue(id))).not.toBeNull();
+  });
+
+  it("2fa reset ends that admin's sessions", async () => {
+    const id = await createAdminAccount(actorId, { email: email(), password: "kata-sandi-baru-1" });
+    const old = createSessionValue(id, Date.now() - 60_000);
+    await setTotpSecret(id, "JBSWY3DPEHPK3PXP");
+    await resetAdmin2fa(actorId, id);
+    expect(await adminFromCookie(old)).toBeNull();
+  });
+
   it("audit list filters by entity", async () => {
     await createAdminAccount(actorId, { email: email(), password: "kata-sandi-baru-1" });
     const page = await listAuditLogs({ entity: "admin", adminId: actorId, page: 1 });

@@ -4,10 +4,9 @@ import type { BarcodeDetector as Detector } from "barcode-detector/ponyfill";
 import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import type { CheckInResult } from "@/lib/checkin/checkin-service";
-import { openCamera, ScanGate } from "@/lib/checkin/scan-gate";
+import { openCamera, ScanGate, ZXING_WASM } from "@/lib/checkin/scan-gate";
 import { requestJson } from "@/lib/client-fetch";
 
-const WASM = "/vendor/zxing_reader-3.1.3.wasm";
 const SAME_CODE_MS = 2000;
 const RESULT_MS = 1500;
 const SCAN_EVERY_MS = 200;
@@ -18,7 +17,7 @@ async function createDetector(): Promise<Detector> {
   const Native = (window as unknown as { BarcodeDetector?: typeof Detector }).BarcodeDetector;
   if (Native && (await Native.getSupportedFormats()).includes("qr_code")) return new Native({ formats: ["qr_code"] });
   const { BarcodeDetector, prepareZXingModule } = await import("barcode-detector/ponyfill");
-  prepareZXingModule({ overrides: { locateFile: (path: string, prefix: string) => (path.endsWith(".wasm") ? WASM : prefix + path) } });
+  prepareZXingModule({ overrides: { locateFile: (path: string, prefix: string) => (path.endsWith(".wasm") ? ZXING_WASM : prefix + path) } });
   return new BarcodeDetector({ formats: ["qr_code"] });
 }
 
@@ -147,7 +146,9 @@ export function Scanner({
     let stopped = false;
     (async () => {
       if (!navigator.mediaDevices?.getUserMedia) throw new Error("unsupported");
-      const detector = await createDetector();
+      const detector = await createDetector().catch(() => {
+        throw new Error("detector");
+      });
       stream = await openCamera(
         () => navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false }),
         () => stopped || !video.current,
@@ -173,7 +174,9 @@ export function Scanner({
       setCameraError(
         denied
           ? "Akses kamera ditolak. Izinkan kamera untuk situs ini di pengaturan browser, lalu buka ulang scanner. Kode manual tetap bisa dipakai."
-          : "Kamera tidak tersedia di perangkat ini. Pakai kode manual di bawah.",
+          : e instanceof Error && e.message === "detector"
+            ? "Pemindai QR gagal dimuat. Muat ulang halaman; sementara itu pakai kode manual di bawah."
+            : "Kamera tidak tersedia di perangkat ini. Pakai kode manual di bawah.",
       );
     });
     return () => {

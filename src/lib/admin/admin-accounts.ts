@@ -1,5 +1,5 @@
 import { UserError } from "@/lib/admin-route";
-import { createAdmin, MIN_PASSWORD_LENGTH, setTotpSecret } from "@/lib/admin-service";
+import { createAdmin, MIN_PASSWORD_LENGTH, revokeSessions, setTotpSecret } from "@/lib/admin-service";
 import { diffFields, writeAudit } from "@/lib/audit";
 import { sql } from "@/lib/db";
 import { isUniqueViolation } from "@/lib/db-errors";
@@ -59,6 +59,7 @@ export async function resetAdmin2fa(actorId: number, id: number): Promise<void> 
   if (id === actorId) throw new UserError("Atur 2FA akun sendiri di halaman Keamanan.", 409);
   await getAccount(id);
   await setTotpSecret(id, null);
+  await revokeSessions(id);
   await writeAudit(sql, { adminId: actorId, action: "reset_2fa", entity: "admin", entityId: id });
 }
 
@@ -71,5 +72,6 @@ export async function changeOwnPassword(adminId: number, input: { current: strin
     throw new UserError("Periksa kembali isian yang ditandai.", 422, { next: `Minimal ${MIN_PASSWORD_LENGTH} karakter.` });
   }
   await sql`update admins set password_hash = ${await hashPassword(input.next)} where id = ${adminId}`;
+  await revokeSessions(adminId);
   await writeAudit(sql, { adminId, action: "change_password", entity: "admin", entityId: adminId });
 }

@@ -13,6 +13,11 @@ function stamp(at: Date | null, timezone: string): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(at);
 }
 
+/** Spaces keep Excel from reading the number as 6.28E+12; a leading "+" would trip the formula guard instead. */
+function phoneCell(digits: string): string {
+  return `${digits.slice(0, 2)} ${digits.slice(2).replace(/(\d{4})(?=\d)/g, "$1 ")}`;
+}
+
 function methodLabel(key: string): string {
   const m = PAYMENT_METHODS.find((p) => p.key === key);
   if (!m) return key;
@@ -86,7 +91,7 @@ export async function ordersCsv(adminId: number, f: { eventId?: number; status?:
       o.title,
       o.buyer_name,
       o.buyer_email,
-      o.buyer_phone,
+      phoneCell(o.buyer_phone),
       o.items ?? "",
       Number(o.subtotal),
       Number(o.discount_amount),

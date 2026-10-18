@@ -21,7 +21,7 @@ Ruang lingkup yang disepakati adalah Fase 0–3, dan keempatnya sudah selesai. F
 | Fase 2 (booking inti) | Selesai dan di-push |
 | Fase 3 (Hari-H) | Selesai: 13 task, review menyeluruh (3 temuan Important diperbaiki dengan RED→GREEN, 7 Minor ditunda), audit antislop 003, lalu di-push |
 
-Hasil test terakhir: `npm test` 143 lulus, `npm run test:db` 233 lulus, `lint`, `tsc` dan `build` bersih.
+Hasil test terakhir: `npm test` 146 lulus, `npm run test:db` 236 lulus, `lint`, `tsc` dan `build` bersih.
 
 ## Langkah berikutnya
 
@@ -37,17 +37,19 @@ Hasil test terakhir: `npm test` 143 lulus, `npm run test:db` 233 lulus, `lint`, 
    - Uji beban k6 di server dekat region Supabase (lihat "k6" di bawah).
    - Daftar "Bawaan untuk Fase 4".
 
-## Bawaan untuk Fase 4
+## Bawaan untuk Fase 4 dan catatan
 
-Dari review akhir Fase 3 (Minor, ditunda):
+Ketujuh temuan Minor dari review akhir Fase 3 sudah diperbaiki atas permintaan pemilik (18 Okt 2026, migrasi 0012):
 
-- `check_in_ticket`: update pemenang hanya mencocokkan `id`. Scan token lama yang sedang berjalan saat reissue bisa lolos. Perbaikan satu baris: `and token = p_token`.
-- Ganti kata sandi dan reset 2FA tidak mencabut sesi yang sudah ada (cookie stateless, 12 jam). Perlu kolom `session_version` yang dicek di `adminFromCookie`.
-- Kolom WhatsApp di CSV terbaca Excel sebagai angka ilmiah (`6.28E+12`).
-- `public/vendor/zxing_reader-3.1.3.wasm` bisa tidak cocok dengan `zxing-wasm` yang terpasang setelah `npm update`. Tambah test versi, dan pesan error terpisah bila detector gagal dimuat (sekarang tampil "Kamera tidak tersedia").
-- PDF: kata yang lebih lebar dari halaman tidak dipotong, dan judul ≥ 5 baris mendorong QR ke footer.
-- Tombol konfirmasi "Terbitkan ulang QR" belum bergaya `danger`.
-- `removePromo` di checkout: bila quote ulang gagal, total lama yang masih terdiskon tetap tampil, padahal order tetap ditagih dengan benar.
+- **Scan vs reissue:** scan yang berpacu dengan reissue token-nya kini "TIDAK VALID". Update pemenang di `check_in_ticket` juga mencocokkan token.
+- **Sesi admin:** ganti kata sandi dan reset 2FA mengakhiri sesi lama lewat `admins.sessions_valid_after` (`revokeSessions`). Perangkat yang mengganti kata sandi mendapat cookie baru.
+- **CSV:** WhatsApp ditulis bergrup, misalnya `62 8123 4567 890`, supaya Excel tidak mengubahnya jadi angka ilmiah.
+- **Scanner:**
+  - `barcode-detector` di-pin `3.2.2`. `tests/unit/zxing-wasm.test.ts` gagal bila `ZXING_WASM` tidak cocok dengan `zxing-wasm` yang terpasang.
+  - Bila detector gagal dimuat, pesannya terpisah: "Pemindai QR gagal dimuat…".
+- **PDF:** `fitLines` memotong kata panjang dan membatasi judul 3 baris dengan "…". Ukuran QR menyesuaikan ruang tersisa (120–170 pt).
+- **Panel:** tombol konfirmasi "Terbitkan ulang QR" dan "Batalkan pesanan" bergaya `danger`.
+- **Checkout:** bila quote ulang gagal saat promo dihapus, total kembali ke perhitungan tanpa diskon.
 
 Sisa dari fase sebelumnya:
 

@@ -22,7 +22,7 @@
     "@tiptap/pm": "^3.32.0",
     "@tiptap/react": "^3.32.0",
     "@tiptap/starter-kit": "^3.32.0",
-    "barcode-detector": "^3.2.2",
+    "barcode-detector": "3.2.2",
     "next": "16.4.2",
     "nodemailer": "^10.1.2",
     "pdf-lib": "^1.17.1",

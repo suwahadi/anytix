@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { ADMIN_COOKIE, readSessionValue } from "@/lib/admin-session";
+import { ADMIN_COOKIE, readSession } from "@/lib/admin-session";
 import { decrypt, encrypt } from "@/lib/crypto";
 import { sql } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
@@ -46,8 +46,17 @@ export async function markLoggedIn(adminId: number): Promise<void> {
 }
 
 export async function adminFromCookie(value: string | undefined): Promise<Admin | null> {
-  const id = readSessionValue(value);
-  return id === null ? null : getActiveAdmin(id);
+  const session = readSession(value);
+  if (!session) return null;
+  const [row] = await sql<Admin[]>`
+    select id, email from admins
+     where id = ${session.id} and is_active and (sessions_valid_after is null or sessions_valid_after <= ${session.issuedAt})`;
+  return row ?? null;
+}
+
+/** Ends every session of an admin issued before now; pass the time from Node so a cookie issued right after stays valid. */
+export async function revokeSessions(adminId: number, before: Date = new Date()): Promise<void> {
+  await sql`update admins set sessions_valid_after = ${before} where id = ${adminId}`;
 }
 
 export function requireAdmin(req: NextRequest): Promise<Admin | null> {

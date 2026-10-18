@@ -16,11 +16,21 @@ export function createSessionValue(
   return sign(`${purpose}.${adminId}.${now + ttlMs}`);
 }
 
+/** Session id and issue time; the issue time is derived from the expiry, since session cookies always get SESSION_TTL_MS. */
+export function readSession(value: string | undefined, now = Date.now()): { id: number; issuedAt: Date } | null {
+  const parsed = parse(value, now, "session");
+  return parsed && { id: parsed.id, issuedAt: new Date(parsed.exp - SESSION_TTL_MS) };
+}
+
 export function readSessionValue(
   value: string | undefined,
   now = Date.now(),
   purpose: SessionPurpose = "session",
 ): number | null {
+  return parse(value, now, purpose)?.id ?? null;
+}
+
+function parse(value: string | undefined, now: number, purpose: SessionPurpose): { id: number; exp: number } | null {
   if (!value) return null;
   const payload = verify(value);
   if (!payload) return null;
@@ -28,7 +38,7 @@ export function readSessionValue(
   const id = Number(rawId);
   const exp = Number(rawExp);
   if (kind !== purpose || !Number.isInteger(id) || !Number.isFinite(exp) || exp <= now) return null;
-  return id;
+  return { id, exp };
 }
 
 export function cookieOptions(maxAgeSec: number) {

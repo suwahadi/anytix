@@ -33,20 +33,32 @@ function winAnsi(font: PDFFont, text: string): string {
     .join("");
 }
 
-function wrap(font: PDFFont, text: string, size: number, width: number): string[] {
+/** Word-wraps to `width`, splits words that are wider than a line, and ends the last allowed line with "…". */
+export function fitLines(font: PDFFont, text: string, size: number, width: number, maxLines: number): string[] {
+  const fits = (s: string) => font.widthOfTextAtSize(s, size) <= width;
   const lines: string[] = [];
   let line = "";
   for (const word of text.split(/\s+/).filter(Boolean)) {
     const next = line ? `${line} ${word}` : word;
-    if (line && font.widthOfTextAtSize(next, size) > width) {
-      lines.push(line);
-      line = word;
-    } else {
+    if (fits(next)) {
       line = next;
+      continue;
+    }
+    if (line) lines.push(line);
+    line = "";
+    for (const ch of word) {
+      if (line && !fits(line + ch)) {
+        lines.push(line);
+        line = "";
+      }
+      line += ch;
     }
   }
   if (line) lines.push(line);
-  return lines;
+  if (lines.length <= maxLines) return lines;
+  let last = lines[maxLines - 1];
+  while (last && !fits(`${last}…`)) last = last.slice(0, -1);
+  return [...lines.slice(0, maxLines - 1), `${last.trimEnd()}…`];
 }
 
 /** One A6 page per admitted person; the QR carries only the opaque token (PRD §15). */
@@ -63,14 +75,14 @@ export async function renderTicketsPdf(data: TicketsPdfData): Promise<Uint8Array
   for (const t of data.tickets) {
     const page = doc.addPage(A6);
     let y = A6[1] - MARGIN;
-    const text = (value: string, font: PDFFont, size: number, color = INK) => {
-      for (const line of wrap(font, winAnsi(font, value), size, width)) {
+    const text = (value: string, font: PDFFont, size: number, color = INK, maxLines = 2) => {
+      for (const line of fitLines(font, winAnsi(font, value), size, width, maxLines)) {
         y -= size + 3;
         page.drawText(line, { x: MARGIN, y, size, font, color });
       }
     };
 
-    text(data.event.title, bold, 14);
+    text(data.event.title, bold, 14, INK, 3);
     y -= 2;
     text(schedule.date, regular, 9, MUTED);
     text(schedule.time, regular, 9, MUTED);
@@ -82,7 +94,8 @@ export async function renderTicketsPdf(data: TicketsPdfData): Promise<Uint8Array
     text(`Tiket ${t.seq} dari ${t.total}`, regular, 10);
     text(data.buyerName, regular, 10);
 
-    const size = 170;
+    // Space left above the token line and footer; a 120 pt (42 mm) QR still scans reliably at the gate.
+    const size = Math.max(120, Math.min(170, y - 10 - 14 - MARGIN - 12));
     const qr = await doc.embedPng(t.qrPng);
     y -= size + 10;
     page.drawImage(qr, { x: (A6[0] - size) / 2, y, width: size, height: size });

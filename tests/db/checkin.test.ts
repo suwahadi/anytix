@@ -78,6 +78,25 @@ describe("check-in", () => {
     expect(await scan(tokens[0], ev.eventId)).toEqual({ result: "invalid" });
   });
 
+  it("scan racing a reissue of its token is invalid", async () => {
+    const { ev, tokens } = await setup(1);
+    const [{ id }] = await sql<{ id: number }[]>`select id from tickets where token = ${tokens[0]}`;
+    const tx = await sql.reserve();
+    try {
+      await tx`begin`;
+      await tx`select 1 from tickets where id = ${id} for update`;
+      const pending = scan(tokens[0], ev.eventId);
+      await new Promise((r) => setTimeout(r, 400));
+      await tx`update tickets set token = ${`R${randomUUID().replace(/-/g, "").slice(0, 21)}`} where id = ${id}`;
+      await tx`commit`;
+      expect(await pending).toEqual({ result: "invalid" });
+    } finally {
+      tx.release();
+    }
+    const [t] = await sql<{ checked_in_at: Date | null }[]>`select checked_in_at from tickets where id = ${id}`;
+    expect(t.checked_in_at).toBeNull();
+  });
+
   it("garbage token is invalid", async () => {
     const ev = await createTestEvent();
     expect(await scan("https://example.com/not-a-ticket?x=1", ev.eventId)).toEqual({ result: "invalid" });
