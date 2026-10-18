@@ -1,89 +1,94 @@
-import Form from "next/form";
 import Link from "next/link";
+import { Carousel } from "@/components/carousel";
+import { CategoryRow } from "@/components/category-row";
 import { EventCard } from "@/components/event-card";
+import { PosterBanner } from "@/components/poster-banner";
 import { buttonClass } from "@/components/ui/button";
-import { getHomeEvents, getPublicCategories } from "@/lib/public/catalog-queries";
+import { getHomeEvents, getPublicCategories, getPublicSite } from "@/lib/public/catalog-queries";
+import { buildHeroSlides, type EventSlide } from "@/lib/public/hero-slides";
+
+const CARD_ITEM = "w-[78%] sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-3rem)/4)]";
+
+function SectionTitle({ id, children }: { id: string; children: string }) {
+  return (
+    <h2 id={id} className="text-xl font-bold tracking-tight text-text sm:text-2xl">
+      {children}
+    </h2>
+  );
+}
 
 export default async function Home() {
-  const [{ featured, upcoming }, categories] = await Promise.all([getHomeEvents(), getPublicCategories()]);
-  const withEvents = categories.filter((c) => c.eventCount > 0);
+  const [{ featured, bestSellers, upcoming }, categories, site] = await Promise.all([getHomeEvents(), getPublicCategories(), getPublicSite()]);
+  const hero = buildHeroSlides(featured);
+  const recommended = featured.length > 0 ? featured : upcoming;
+  const laris: EventSlide[] = buildHeroSlides(bestSellers, 0).filter((s): s is EventSlide => s.kind === "event");
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-6 sm:gap-12 sm:py-10">
-      <section className="flex flex-col gap-4">
-        <h1 className="text-2xl font-extrabold tracking-tight text-text sm:text-3xl">Cari event, beli tiket tanpa daftar akun</h1>
-        <Form action="/events" role="search" className="flex max-w-xl gap-2">
-          <label htmlFor="home-q" className="sr-only">
-            Cari event
-          </label>
-          <input
-            id="home-q"
-            name="q"
-            type="search"
-            placeholder="Nama event, kota, atau venue"
-            className="h-11 min-w-0 flex-1 rounded-md border border-border-strong bg-surface px-3 text-base text-text placeholder:text-muted"
-          />
-          <button type="submit" className={buttonClass()}>
-            Cari
-          </button>
-        </Form>
+    <div className="flex flex-col pb-14">
+      <h1 className="sr-only">{site.name}: tiket event tanpa daftar akun</h1>
+
+      <section aria-label="Event pilihan" className="mx-auto w-full max-w-6xl px-4 pt-5 sm:pt-8">
+        <Carousel
+          label="Event pilihan"
+          center
+          dots
+          autoplayMs={6000}
+          itemClassName="w-full sm:w-[88%]"
+          items={hero.map((slide, i) => <PosterBanner key={slide.key} slide={slide} preload={i === 0} />)}
+        />
       </section>
 
-      {featured.length > 0 && (
-        <section aria-labelledby="featured-heading" className="flex flex-col gap-4">
-          <h2 id="featured-heading" className="text-xl font-bold text-text">
-            Event pilihan
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featured.map((event, i) => (
-              <EventCard key={event.id} event={event} preload={i === 0} />
-            ))}
+      {recommended.length > 0 && (
+        <section aria-labelledby="rekomendasi-heading" className="mx-auto mt-10 flex w-full max-w-6xl flex-col gap-4 px-4">
+          <SectionTitle id="rekomendasi-heading">Rekomendasi Event</SectionTitle>
+          <Carousel
+            label="Rekomendasi event"
+            itemClassName={CARD_ITEM}
+            items={recommended.map((event) => <EventCard key={event.id} event={event} />)}
+          />
+        </section>
+      )}
+
+      {laris.length > 0 && (
+        <section aria-labelledby="laris-heading" className="mt-14 bg-surface-muted py-10">
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-5 px-4">
+            <div className="text-center">
+              <SectionTitle id="laris-heading">Laris Manis</SectionTitle>
+              <p className="mt-1 text-muted">Event yang paling banyak dipesan saat ini.</p>
+            </div>
+            <Carousel
+              label="Event laris"
+              center
+              dots
+              itemClassName="w-full sm:w-[72%]"
+              items={laris.map((slide) => <PosterBanner key={slide.key} slide={slide} caption />)}
+            />
           </div>
         </section>
       )}
 
-      {withEvents.length > 0 && (
-        <section aria-labelledby="categories-heading" className="flex flex-col gap-3">
-          <h2 id="categories-heading" className="text-xl font-bold text-text">
-            Kategori
-          </h2>
-          <ul className="flex flex-wrap gap-2">
-            {withEvents.map((c) => (
-              <li key={c.id}>
-                <Link
-                  href={`/events?category=${c.slug}`}
-                  className="inline-flex h-11 items-center gap-2 rounded-full border border-border-strong bg-surface px-4 text-sm font-semibold text-text hover:bg-surface-muted"
-                >
-                  {c.name}
-                  <span className="text-muted">{c.eventCount}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+      {categories.length > 0 && (
+        <section aria-labelledby="kategori-heading" className="mx-auto mt-12 flex w-full max-w-6xl flex-col gap-4 px-4">
+          <SectionTitle id="kategori-heading">Kategori Event</SectionTitle>
+          <CategoryRow categories={categories} />
         </section>
       )}
 
-      <section aria-labelledby="upcoming-heading" className="flex flex-col gap-4">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 id="upcoming-heading" className="text-xl font-bold text-text">
-            Event terdekat
-          </h2>
-          {upcoming.length > 0 && (
-            <Link href="/events" className="inline-flex min-h-11 items-center text-sm font-semibold text-accent-text underline-offset-4 hover:underline">
-              Lihat semua
-            </Link>
-          )}
-        </div>
+      <section aria-labelledby="terdekat-heading" className="mx-auto mt-12 flex w-full max-w-6xl flex-col gap-4 px-4">
+        <SectionTitle id="terdekat-heading">Event Terdekat</SectionTitle>
         {upcoming.length > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {upcoming.map((event, i) => (
-              <EventCard key={event.id} event={event} preload={featured.length === 0 && i === 0} />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {upcoming.map((event) => (
+                <EventCard key={event.id} event={event} />
+              ))}
+            </div>
+            <Link href="/events" className={`${buttonClass("secondary")} mx-auto mt-2 rounded-full px-6`}>
+              Lihat Lainnya
+            </Link>
+          </>
         ) : (
-          <p className="rounded-lg border border-dashed border-border-strong px-4 py-10 text-center text-muted">
-            Belum ada event yang dibuka. Cek lagi nanti.
-          </p>
+          <p className="rounded-lg border border-dashed border-border-strong px-4 py-10 text-center text-muted">Belum ada event yang dibuka. Cek lagi nanti.</p>
         )}
       </section>
     </div>

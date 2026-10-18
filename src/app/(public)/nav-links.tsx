@@ -16,7 +16,11 @@ function Soon({ label, className }: { label: string; className: string }) {
 }
 
 export function NavPills({ items }: { items: NavItem[] }) {
-  const pathname = usePathname();
+  return <PillList items={items} pathname={usePathname()} />;
+}
+
+/** Same pills without an active state; shown while the pathname is not known yet (prerendered shell of dynamic routes). */
+export function PillList({ items, pathname }: { items: NavItem[]; pathname: string }) {
   return (
     <ul className="flex items-center gap-1 rounded-full bg-surface-muted p-1">
       {items.map((item) => (
@@ -37,6 +41,16 @@ export function NavPills({ items }: { items: NavItem[] }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+export function MobileNavFallback() {
+  return (
+    <div className="lg:hidden">
+      <span aria-hidden className="inline-flex size-11 items-center justify-center text-text">
+        <MenuIcon />
+      </span>
+    </div>
   );
 }
 

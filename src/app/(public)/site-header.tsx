@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { SearchIcon } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { publicNav } from "@/lib/public/nav";
 import type { SiteView } from "@/lib/settings-service";
-import { MobileNav, NavPills } from "./nav-links";
+import { MobileNav, MobileNavFallback, NavPills, PillList } from "./nav-links";
 
 export function SiteHeader({ site }: { site: SiteView }) {
   const items = publicNav(site);
@@ -15,14 +16,18 @@ export function SiteHeader({ site }: { site: SiteView }) {
           {site.logoPath ? <Image src={site.logoPath} alt={site.name} width={160} height={40} preload className="h-8 w-auto" /> : site.name}
         </Link>
         <nav aria-label="Menu utama" className="mx-auto hidden lg:block">
-          <NavPills items={items} />
+          <Suspense fallback={<PillList items={items} pathname="" />}>
+            <NavPills items={items} />
+          </Suspense>
         </nav>
         <div className="flex items-center gap-1">
           <Link href="/events?fokus=cari" aria-label="Cari event" title="Cari event" className="inline-flex size-11 items-center justify-center rounded-md text-text hover:bg-surface-muted">
             <SearchIcon />
           </Link>
           <ThemeToggle />
-          <MobileNav items={items} />
+          <Suspense fallback={<MobileNavFallback />}>
+            <MobileNav items={items} />
+          </Suspense>
         </div>
       </div>
     </header>
