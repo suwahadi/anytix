@@ -313,7 +313,7 @@ Email transaksional (menunggu pembayaran, e-ticket, kedaluwarsa, pembayaran terl
    - Bila langkah ini terlewat, pengiriman gagal dengan `525 5.7.1 Unauthorized IP address`. Penyebab ini juga yang paling umum bila email tiba-tiba berhenti.
 5. **Pilih paket berbayar.** Paket gratis hanya 300 email/hari. Hitung kebutuhannya kira-kira 3 × jumlah pesanan per hari saat on-sale, lalu pilih paket di Brevo → Plans.
 6. **Atur di panel.** Buka Panel → Pengaturan → Email:
-   - Host `smtp-relay.brevo.com`, port `587`.
+   - Host `smtp-relay.brevo.com`, port `2525`. Port 587 dan 465 diblokir dari VPS ini (dicek 18 Okt 2026).
    - User dan password SMTP dari Brevo → SMTP & API → SMTP.
    - Pengirim `AnyTix <no-reply@anytix.web.id>`.
 
