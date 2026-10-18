@@ -42,18 +42,26 @@ export function resolveSmtpConfig(stored: StoredSmtp | null, env: SmtpEnv): Smtp
   return null;
 }
 
+/** Short timeouts: the worker runs jobs one at a time, so a blocked SMTP port must fail in seconds, not minutes. */
+export function transportOptions(config: SmtpConfig) {
+  return {
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    auth: config.user ? { user: config.user, pass: config.pass } : undefined,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 30_000,
+  };
+}
+
 export async function getEmailProvider(): Promise<EmailProvider> {
   const [row] = await sql<{ value: StoredSmtp; secret_enc: Buffer | null }[]>`
     select value, secret_enc from settings where key = 'smtp'`;
   const stored = row ? { ...row.value, password: row.secret_enc ? decrypt(Buffer.from(row.secret_enc)) : null } : null;
   const config = resolveSmtpConfig(stored, getEnv());
   if (!config) throw new UserError("SMTP belum diatur. Isi di Pengaturan > Email.", 400);
-  const transport = nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
-    auth: config.user ? { user: config.user, pass: config.pass } : undefined,
-  });
+  const transport = nodemailer.createTransport(transportOptions(config));
   return {
     async send(message) {
       const info = await transport.sendMail({ from: config.from, ...message });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveSmtpConfig } from "@/lib/email/email-provider";
+import { resolveSmtpConfig, transportOptions } from "@/lib/email/email-provider";
 
 const env = {
   SMTP_HOST: "smtp-relay.brevo.com",
@@ -33,5 +33,13 @@ describe("resolveSmtpConfig", () => {
   it("returns null without any usable config", () => {
     expect(resolveSmtpConfig(null, {})).toBeNull();
     expect(resolveSmtpConfig({}, { SMTP_HOST: "h" })).toBeNull();
+  });
+
+  it("a dead SMTP server fails fast instead of blocking the job queue", () => {
+    const opts = transportOptions({ host: "h", port: 587, secure: false, user: "u", pass: "p", from: "f@x.test" });
+    expect(opts).toMatchObject({ host: "h", port: 587, secure: false, auth: { user: "u", pass: "p" } });
+    expect(opts.connectionTimeout).toBeLessThanOrEqual(15_000);
+    expect(opts.greetingTimeout).toBeLessThanOrEqual(15_000);
+    expect(opts.socketTimeout).toBeLessThanOrEqual(60_000);
   });
 });
