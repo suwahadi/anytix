@@ -133,6 +133,14 @@ export function Scanner({
   useEffect(() => () => clearTimeout(dismissTimer.current), []);
 
   useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!visible) return;
     let stream: MediaStream | null = null;
     let timer: ReturnType<typeof setInterval> | undefined;

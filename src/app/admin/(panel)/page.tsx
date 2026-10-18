@@ -56,8 +56,20 @@ function EventSales({ e }: { e: SalesSummary }) {
         ))}
       </dl>
       {e.categories.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[32rem] text-sm">
+        <ul className="flex flex-col divide-y divide-border border-t border-border text-sm sm:hidden">
+          {e.categories.map((c) => (
+            <li key={c.name} className="flex flex-col gap-0.5 py-2.5">
+              <span className="font-semibold text-text">{c.name}</span>
+              <span className="text-muted">
+                Terjual {c.sold} · Di-hold {c.held} · Tersedia {c.available} dari {c.capacity} · Check-in {c.checkedIn}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {e.categories.length > 0 && (
+        <div className="hidden overflow-x-auto sm:block">
+          <table className="w-full text-sm">
             <thead className="text-left text-muted">
               <tr className="border-b border-border">
                 <th className="py-2 pr-3 font-medium">Kategori tiket</th>

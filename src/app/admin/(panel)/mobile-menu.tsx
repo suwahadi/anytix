@@ -2,7 +2,7 @@
 
 import { useRef, type KeyboardEvent, type ReactNode } from "react";
 
-export function MobileMenu({ children }: { children: ReactNode }) {
+export function MobileMenu({ email, children }: { email: string; children: ReactNode }) {
   const ref = useRef<HTMLDetailsElement>(null);
 
   function close() {
@@ -26,6 +26,9 @@ export function MobileMenu({ children }: { children: ReactNode }) {
         onClick={(e) => (e.target as HTMLElement).closest("a") && close()}
         className="absolute right-0 z-20 mt-2 flex w-56 flex-col rounded-lg border border-border bg-surface p-2"
       >
+        <p className="truncate border-b border-border px-3 pb-2 pt-1 text-sm text-muted" title={email}>
+          {email}
+        </p>
         {children}
       </nav>
     </details>

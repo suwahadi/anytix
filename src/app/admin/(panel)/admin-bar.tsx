@@ -52,7 +52,7 @@ export async function AdminBar() {
           </span>
           <ThemeToggle />
           <LogoutButton />
-          <MobileMenu>
+          <MobileMenu email={admin.email}>
             <NavLinks />
           </MobileMenu>
         </div>

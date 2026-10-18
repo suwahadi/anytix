@@ -133,8 +133,20 @@ export function CheckInConsole() {
         {!report ? (
           <Skeleton className="h-24" />
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-            <table className="w-full min-w-[28rem] text-sm">
+          <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface text-sm sm:hidden">
+            {report.stats.map((r) => (
+              <li key={r.category} className="flex items-baseline justify-between gap-3 px-3 py-2.5">
+                <span className="text-text">{r.category}</span>
+                <span className="text-muted">
+                  <span className="font-semibold text-text">{r.checkedIn}</span> dari {r.issued} · {r.issued ? Math.round((r.checkedIn / r.issued) * 100) : 0}%
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {report && (
+          <div className="hidden overflow-x-auto rounded-lg border border-border bg-surface sm:block">
+            <table className="w-full text-sm">
               <thead className="text-left text-muted">
                 <tr className="border-b border-border">
                   <th className="px-3 py-2 font-medium">Kategori tiket</th>
