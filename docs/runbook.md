@@ -20,7 +20,7 @@ Yang paling penting: `DATA_ENCRYPTION_KEY` dan `COOKIE_SECRET` di `.env.local`. 
 
 ## Deploy pertama (aaPanel, site anytix.web.id yang sudah ada sebagai PHP project)
 
-Site `anytix.web.id` yang sudah dibuat di aaPanel dipertahankan, karena domain dan sertifikat SSL-nya ada di sana. Yang diubah hanya cara site itu melayani request: bukan lagi PHP, tapi diteruskan (reverse proxy) ke aplikasi Node di `127.0.0.1:3000`. Kode aplikasi diletakkan di folder terpisah, `/www/wwwroot/anytix`. Folder bawaan site (`/www/wwwroot/anytix.web.id`) tidak dipakai lagi.
+Site `anytix.web.id` yang sudah dibuat di aaPanel dipertahankan, karena domain dan sertifikat SSL-nya ada di sana. Yang diubah hanya cara site itu melayani request: bukan lagi PHP, tapi diteruskan (reverse proxy) ke aplikasi Node di `127.0.0.1:3100`. Kode aplikasi diletakkan di folder terpisah, `/www/wwwroot/anytix`. Folder bawaan site (`/www/wwwroot/anytix.web.id`) tidak dipakai lagi.
 
 Urutan kerja: **A** cek VPS → **B** pasang Node dan PM2 → **C** ambil kode dan isi `.env.local` → **D** build dan jalankan → **E** ubah site PHP menjadi reverse proxy → **F** firewall → **G** verifikasi → **H** langkah sesudahnya.
 
@@ -49,7 +49,7 @@ Urutan kerja: **A** cek VPS → **B** pasang Node dan PM2 → **C** ambil kode d
    git --version || apt install -y git
    ```
    - Berhasil bila: keempat perintah menampilkan versi.
-   - Jangan membuat "Node Project" di menu Website aaPanel untuk aplikasi ini. Aplikasi dijalankan oleh PM2 lewat `deploy/ecosystem.config.cjs`. Dua pengelola untuk satu aplikasi akan saling bentrok di port 3000.
+   - Jangan membuat "Node Project" di menu Website aaPanel untuk aplikasi ini. Aplikasi dijalankan oleh PM2 lewat `deploy/ecosystem.config.cjs`. Dua pengelola untuk satu aplikasi akan saling bentrok di port aplikasi (3100).
 
 ### C. Ambil kode dan isi `.env.local`
 
@@ -127,7 +127,7 @@ Urutan kerja: **A** cek VPS → **B** pasang Node dan PM2 → **C** ambil kode d
 
 ### F. Firewall
 
-aaPanel → **Security**: yang terbuka hanya port **22** (SSH), **80**, **443**, dan port panel aaPanel. Port **3000 tidak boleh dibuka**. Aplikasi memang hanya mendengar di `127.0.0.1`, tapi aturan ini menutup celah bila suatu saat salah konfigurasi.
+aaPanel → **Security**: yang terbuka hanya port **22** (SSH), **80**, **443**, dan port panel aaPanel. Port **3100** (dan port aplikasi lain) **tidak boleh dibuka**. Aplikasi memang hanya mendengar di `127.0.0.1`, tapi aturan ini menutup celah bila suatu saat salah konfigurasi.
 
 ### G. Verifikasi
 
